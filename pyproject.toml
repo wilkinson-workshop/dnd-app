@@ -22,8 +22,10 @@ dependencies = [
     "pydantic_core==2.14.6",
     "sniffio==1.3.0",
     "starlette==0.35.1",
+    "types-psutil==5.9.5.20240106",
     "typing_extensions==4.9.0",
     "uvicorn==0.25.0",
+    "websockets==12.0",
     "Werkzeug==3.0.1",
 ]
 name = "dnd-app"
@@ -31,4 +33,4 @@ requires-python = ">=3.12"
 version = "0.0.0"
 
 [project.scripts]
-scryer = "scryer.main:main"
+scryer = "scryer.cli:main"
