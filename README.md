@@ -33,10 +33,10 @@ this project.
 $ pip3 install -U pip && pip3 install -U .
 ```
 
-The above  command chain will update `pip` the Python package manager
+The above command chain will update `pip` the Python package manager
 and install our application as a package into the virtual environment.
 For most Python projects, this would be superfluous, however I've
-set up our application with quick shortcut cli for easy start up.
+set up our application with a quick shortcut cli for easy start up.
 
 ```
 $ scryer --help
@@ -48,6 +48,7 @@ Options:
   --help  Show this message and exit.
 
 Commands:
+  make   Build this project and install into the environment.
   start  Starts the web server.
 ```
 
