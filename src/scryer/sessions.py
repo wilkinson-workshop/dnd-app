@@ -1,5 +1,10 @@
+import asyncio
 import enum
 import typing
+
+from fastapi import WebSocket
+
+type Action[C: WebSocket, **P] = typing.Callable[typing.Concatenate[C, P], typing.Coroutine[tuple[C, int]]]
 
 
 class Condition(typing.NamedTuple):
@@ -10,6 +15,7 @@ class Condition(typing.NamedTuple):
 
     name:        str
     description: str
+    color:       int
 
 
 class HitPoints(int):
@@ -90,15 +96,55 @@ class Creature(typing.Protocol):
         """The user who 'owns' this creature."""
 
 
-class Session:
-    """Active game session."""
+class Session[C: WebSocket, **P](typing.Protocol):
+    """
+    Active session that manages connections and
+    action requests available to users.
+    """
 
-    owner: User # otherwise known as the DM.
-    """Active owner of the session."""
-    users: list[User]
-    """Active users connected to this session."""
-    creatures: list[Creature]
+    async def attach_client(self, client: C):
+        """Process a `connect` request."""
+
+    # [inline]
+    async def broadcast_action(self, action: Action[C, P]) -> typing.Sequence[tuple[C, int]]:
+        """
+        Do an action against all connections.
+        Returns the number of bytes sent to each
+        client.
+        """
+
+        return await asyncio.gather(*[action(c) for c in self.clients()])
+
+    def clients(self) -> typing.Sequence[C]:
+        """Active client connections."""
+    async def delete(self):
+        """
+        Stop all connections and perform any
+        required cleanup.
+        """
+    async def detach_client(self, client: C):
+        """Disconnect a client."""
+
+
+class SessionBroker(typing.Protocol):
     """
-    Creatures that are active in the session. This
-    includes players and non-player characters.
+    Maintains session information between this
+    appliction and the data layer.
     """
+
+    async def create(self) -> Session:
+        """
+        Create a new `Session` instance, record
+        meta to the data layer, then return it.
+        """
+    async def delete(self, label: str):
+        """
+        Deletes a `Session` from the data layer,
+        if it exists, perform any required
+        cleanup.
+        """
+    async def locate(self, label: str) -> Session | None:
+        """
+        Attempt to locate a `Session` from the
+        label.
+        """
