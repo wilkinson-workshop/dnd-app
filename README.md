@@ -32,3 +32,24 @@ this project.
 ```bash
 $ pip3 install -U pip && pip3 install -U .
 ```
+
+The above  command chain will update `pip` the Python package manager
+and install our application as a package into the virtual environment.
+For most Python projects, this would be superfluous, however I've
+set up our application with quick shortcut cli for easy start up.
+
+```
+$ scryer --help
+Usage: scryer [OPTIONS] COMMAND [ARGS]...
+
+  Manage this application.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  start  Starts the web server.
+```
+
+Running `scryer start` from the virtual environment will kick off the
+application locally on your machine.
