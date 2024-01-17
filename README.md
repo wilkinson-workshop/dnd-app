@@ -54,3 +54,23 @@ Commands:
 
 Running `scryer start` from the virtual environment will kick off the
 application locally on your machine.
+
+## The UI ##
+All these commands will be run inside the client folder so navigate there first in your terminal.
+
+For first-time set-up of the application you will need to first ensure you have node.js available on your machine. 
+```
+  node -v
+```
+If you dont yuo can download it from https://nodejs.org/en
+
+The next step is to install dependencies.
+```
+  npm i
+```
+This should create a node_modules folder under the client directory.
+
+To start the application running locally in dev mode. Once running you can go to the Run and Debug Tab in VS Code and run Launch React in Chrome. This will open a browser with the app loaded for debugging. Optionally just go to the local host url given when running.
+```
+  npm run dev
+```
