@@ -1,5 +1,5 @@
 export interface Npc {
-    id: number,
+    id: string,
     name: string,
     hp: number,
     conditions: ConditionType[]

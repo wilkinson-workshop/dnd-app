@@ -6,54 +6,78 @@ import AddNpcButton from "./add-npc-button";
 import { useState } from "react";
 import NpcHp from "./npc-hp";
 import NpcConditions from "./npc-conditions";
+import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from "./_apis/characterApi";
 
 export default function HomePage() {
-  const start: Npc[] = [{id: 1, name: "Character1", hp: 100, conditions:[ConditionType.BardicInspiration, ConditionType.Asleep]}]
+  const [npcs, setNpcs] = useState<Npc[]>([]);
+  const [isApi, setApi] = useState(false);
 
-
-  const [npcs, setNpcs] = useState(start);  
-  const [id, setId] = useState(1);
+  if(!isApi){
+    setApi(true);
+    getCharacters().then(c => {
+      setNpcs(c);
+    });
+  }
 
   function handleAddCharacter(npc: Npc){
-    const nextId = id+1;
-    let newStart = npcs.slice();
-    newStart.push(npc);
-    setNpcs(newStart);
-    setId(nextId);
+    addCharacter(npc)
+    .then(_=> {
+      return getCharacters();
+    }).then(c => {
+      setNpcs(c);
+    });
   }
 
-  function onDelete(npcId: number){
-    let newStart = npcs.slice();
-    const npcToDelete = newStart.findIndex(x => x.id == npcId);
-    newStart.splice(npcToDelete,1);
-    setNpcs(newStart);
+  function onDelete(npcId: string){
+    deleteCharacter(npcId)
+    .then(_=> {
+      return getCharacters();
+    }).then(c => {
+      setNpcs(c);
+    });
   }
 
-  function onHpUpdate(npcId: number, newHp: number){
+  function onHpUpdate(npcId: string, newHp: number){
     if(newHp == 0){
       onDelete(npcId);
     } else {
-      let newStart = npcs.slice();
-      const npcToUpdate = newStart.findIndex(x => x.id == npcId);
-      newStart[npcToUpdate].hp = newHp;
-      setNpcs(newStart);
+      const npcToUpdate = npcs.findIndex(x => x.id == npcId);
+      npcs[npcToUpdate].hp = newHp;
+
+      saveCharacter(npcs[npcToUpdate])
+      .then(_=> {
+        return getCharacters();
+      }).then(c => {
+        setNpcs(c);
+      });
     }
   }
 
-  function onConditionUpdate(npcId: number, newConditions: ConditionType[]){
-    let newStart = npcs.slice();
-    const npcToUpdate = newStart.findIndex(x => x.id == npcId);
-    newStart[npcToUpdate].conditions = newConditions;
-    setNpcs(newStart);
+  function onConditionUpdate(npcId: string, newConditions: ConditionType[]){
+    const npcToUpdate = npcs.findIndex(x => x.id == npcId);
+    npcs[npcToUpdate].conditions = newConditions;
+
+    saveCharacter(npcs[npcToUpdate])
+    .then(_=> {
+      return getCharacters();
+    }).then(c => {
+      setNpcs(c);
+    });
   }
 
-  function onConditionDelete(npcId:number, condition:ConditionType){
-    let newStart = npcs.slice();
-    const npcToUpdate = newStart.find(x => x.id == npcId);
+  function onConditionDelete(npcId:string, condition:ConditionType){
+    const npcToUpdate = npcs.find(x => x.id == npcId);
     const conditionToDelete = npcToUpdate!.conditions.findIndex(x => x == condition);
-    npcToUpdate?.conditions.splice(conditionToDelete,1);
-    setNpcs(newStart);
+    npcToUpdate!.conditions.splice(conditionToDelete,1);
+
+    saveCharacter(npcToUpdate!)
+    .then(_=> {
+      return getCharacters();
+    }).then(c => {
+      setNpcs(c);
+    });
   }
+
 
   return (
     <div>
@@ -75,8 +99,7 @@ export default function HomePage() {
         ))}
         </tbody>
       </table>  
-      <AddNpcButton onAddClick={handleAddCharacter} />
-      
+      <AddNpcButton onAddClick={handleAddCharacter} />      
     </div>
   )
 }

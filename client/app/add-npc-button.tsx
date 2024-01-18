@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { ConditionType } from "./npc";
 
 export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
@@ -7,11 +7,11 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
-    function handleSubmit(e) {
+    function handleSubmit(e: FormEvent): void {
         e.preventDefault();
         onEdit(false);
         onAddClick({
-            id: Math.floor(Math.random()*10000), //use database for this.
+            id: '', //use database for this.
             name: name, 
             hp: hp, 
             conditions:conditions
