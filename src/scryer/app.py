@@ -113,3 +113,9 @@ async def session_sock(sock: WebSocket):
     while True:
         data = await sock.receive_text()
         await sock.send_text(f"Got {data!s} from connection.")
+
+
+if __name__ == "__main__":
+    # .\.venv\Scripts\python.exe -m src.scryer.app
+    import uvicorn
+    exit(uvicorn.run("src.scryer.app:setup_application", reload=True))
