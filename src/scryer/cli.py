@@ -26,6 +26,9 @@ def make():
     environment.
     """
 
+    # TODO: implement any setup requirements
+    # for client-side application.
+
     # Will install this project into the active
     # environment.
     subprocess.call(["pip3", "install", "-U", "."])
@@ -37,6 +40,8 @@ def make():
 @click.option("-W", "--workers", type=int, default=None)
 def start(hostname: str, port: int, *, workers: int | None):
     """Starts the web server."""
+
+    # TODO: implement startup for `client` app.
 
     kwds = dict(factory=True, host=hostname, port=port, reload=True)
     if workers:
