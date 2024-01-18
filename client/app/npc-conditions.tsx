@@ -6,7 +6,7 @@ import Condition from "./condition";
 export default function NpcConditions({npc, onConditionUpdate, onConditionDelete}: {npc: Npc, onConditionUpdate: any, onConditionDelete: any}) {
     const [edit, onEdit] = useState(false);
     if(edit){
-        return <UpdateConditions id={npc.id} currentConditions={npc.conditions} onUpdateConClick={(id: number,conditions: ConditionType[]) =>{
+        return <UpdateConditions id={npc.id} currentConditions={npc.conditions} onUpdateConClick={(id: string, conditions: ConditionType[]) =>{
             onEdit(false);
             onConditionUpdate(id, conditions)}
         } />

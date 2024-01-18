@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { ConditionType } from "./npc";
+import { ConditionOptions, ConditionType } from "./npc";
 
-export default function UpdateConditions({id, currentConditions, onUpdateConClick}: {id: number, currentConditions: ConditionType[], onUpdateConClick: any}) {
+export default function UpdateConditions({id, currentConditions, onUpdateConClick}: {id: string, currentConditions: ConditionType[], onUpdateConClick: any}) {
     const [conditions, setConditions] = useState(currentConditions);
+
+    const handleChange = (e) => {
+        const options = [...e.target.selectedOptions];
+        const values  = options.map(x => (Number).parseInt(x.value));
+        setConditions(values)
+    };
 
     return <form onSubmit={e => {
         let newStart = conditions.slice();
@@ -14,21 +20,10 @@ export default function UpdateConditions({id, currentConditions, onUpdateConClic
             name="conditions"
             multiple={true}
             value={conditions.map(x => x.toString())}
-            onChange={e => {
-                const options = [...e.target.selectedOptions];
-                const values  = options.map(x => (Number).parseInt(x.value));
-                setConditions(values)
-            }}>
-            <option value={ConditionType.BardicInspiration}>BardicInspiration</option>
-            <option value={ConditionType.Stunned}>Stunned</option>
-            <option value={ConditionType.Burned}>Burned</option>
-            <option value={ConditionType.Poisoned}>Poisoned</option>
-            <option value={ConditionType.KnockedOut}>KnockedOut</option>
-            <option value={ConditionType.KnockedProne}>KnockedProne</option>
-            <option value={ConditionType.Charmed}>Charmed</option>
-            <option value={ConditionType.Asleep}>Asleep</option>
-            <option value={ConditionType.Petrified}>Petrified</option>
-            <option value={ConditionType.Scared}>Scared</option>
+            onChange={handleChange}>
+                {ConditionOptions.map(c =>
+                    <option value={c.id}>{c.name}</option>
+                )}
         </select>
         <button type="submit">Update</button>
         </form>

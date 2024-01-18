@@ -11,7 +11,7 @@ export default function NpcHp({npc, onUpdateClick}: {npc: Npc, onUpdateClick: an
     }
 
     if(edit){
-        return <UpdateHpButton id={npc.id} currentHp={npc.hp} onUpdateClick={(id: number, hp:number) => {
+        return <UpdateHpButton id={npc.id} currentHp={npc.hp} onUpdateClick={(id: string, hp:number) => {
             onEdit(false);
             onUpdateClick(id, hp);
         }} />

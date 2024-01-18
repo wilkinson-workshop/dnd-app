@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function UpdateHpButton({id, currentHp, onUpdateClick}: {id: number, currentHp: number, onUpdateClick: any}) {
+export default function UpdateHpButton({id, currentHp, onUpdateClick}: {id: string, currentHp: number, onUpdateClick: any}) {
     const [hp, setHp] = useState(currentHp);
 
     return <form onSubmit={e => {
