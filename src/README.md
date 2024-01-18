@@ -107,4 +107,98 @@ def things_list():
     ...
 ```
 
+### Mounts ###
+Mounts allow us to attach separate applications to **Scryer**. The
+main example being where we can extend Scryer to serve pages to a
+user via `static files`.
+
+The declaration for additional mounts can be done as in the example. A
+tuple pairing of an endpoint and the application itself.
+
+```python3
+ASGI_APP_MOUNTS = (
+    ("/static", StaticFiles(directory=EXECUTION_ROOT / "static", html=True)),
+)
+```
+
 ## Services ##
+A `Service` object is an abstraction representing some external thing
+our application depends on. Typically, a `Service` will be another
+application which serves data to ours; however, it can also be an
+in-memory or persistent implementation.
+
+Services will be required to return their `status` or availability
+in otherwords.
+
+#### Status Types ####
+- ACTIVE
+- BUSY
+- OFFLINE
+- ONLINE
+- UNAVAILABLE
+
+These *types* are defined as an enum `scryer.services.ServiceStatus`.
+
+### Service Protocol ###
+This asks for only one method to be implemented. As stated prior, this
+method will return the `status` of the service. Although it is
+available publicly, it likely more useful to implement its children
+defined in `scryer.services`.
+
+#### Services Interface ####
+```python3
+class Service(typing.Protocol):
+    """
+    An external data source, task or subprocess
+    """
+
+    @property
+    @abc.abstractmethod
+    def status(self) -> ServiceStatus:
+        """The current status of the service."""
+```
+
+#### Broker Interfaces ####
+A broker encapsulates some data source and moves a resource of a
+specified type between `Python` and the data origin.
+
+```python3
+class Broker[K, R](Service):
+    """
+    Manages, or maintains, some resource.
+    Typically used for brokering in-memory
+    objects.
+    """
+    ...
+```
+
+The `ShelfBroker` is a partial implementation of a `Broker` service
+where the external source is a persistent layer written to disk. Note,
+this broker only works to its potential if the `shelve` built-in
+module is available on your system. In the event your system does not
+support `shelve`, data is intead brokered in-memory.
+
+```python3
+class ShelfBroker[R](Broker[str, R]):
+    """
+    A partial implementation of a broker which
+    utilizes the `shelve` module to store
+    resources persistently.
+    """
+    ...
+```
+
+#### Session Interface ####
+
+This service type represents the basic actions we want to expect from
+sockets connected to a single session. This interface is probably the
+most unstable and is subject to change.
+
+```python3
+class Session[C](Service):
+    """
+    Active session that manages connections and
+    action requests available to users.
+    """
+    ...
+```
