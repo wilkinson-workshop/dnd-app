@@ -75,6 +75,10 @@ class ShelfBroker[R](Broker[str, R]):
     def __exit__(self, *_):
         self.shelf.close() #type: ignore
 
+    @property
+    def status(self) -> ServiceStatus:
+        return ServiceStatus.ONLINE
+
     async def delete(self, key: str):
         with self as opened:
             opened.shelf.pop(key, None)
@@ -82,6 +86,3 @@ class ShelfBroker[R](Broker[str, R]):
     async def locate(self, key: str) -> typing.Sequence[R]:
         with self as opened:
             return opened.shelf.get(key, None)
-
-    async def status(self) -> ServiceStatus:
-        return ServiceStatus.ONLINE

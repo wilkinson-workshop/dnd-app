@@ -2,6 +2,7 @@
 The HTTP server core implementation.
 """
 
+import asyncio
 import pathlib
 import uuid
 
@@ -12,6 +13,10 @@ from fastapi import APIRouter, FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from scryer.asyncit import _aiter
+from scryer.services import ServiceStatus
+from scryer.services.sessions import Session, SessionShelver
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -57,11 +62,31 @@ class CharacterService():
 
 
 # -----------------------------------------------
+# Appliction Services.
+# -----------------------------------------------
+APP_SERIVCES = {
+    "sessions": SessionShelver("scryer_sessions", Session),
+}
+
+# -----------------------------------------------
 # Web/HTTP Application Defintion.
 # -----------------------------------------------
 # Initialize the application config in static
 # space.
 app = FastAPI()
+
+
+def check_application():
+    """
+    Performs a healthcheck against all
+    services and returns those results.
+    """
+
+    return [check_application_service(name) for name in APP_SERIVCES]
+
+
+def check_application_service(name: str):
+    return {"name": name, "status": APP_SERIVCES[name].status}
 
 
 def setup_application():
@@ -173,9 +198,15 @@ async def healthcheck():
     Ping the server, and its services, to see if
     it is online and available.
     """
-    # TODO: implement healthcheck to ensure all
-    # services are running.
-    return "online"
+
+    statuses = check_application()
+    result   = {"status": ServiceStatus.ONLINE, "services": statuses}
+    for status in statuses:
+        if status["status"] not in (ServiceStatus.ONLINE, ServiceStatus.ACTIVE):
+            result["status"] = ServiceStatus.FAILING
+            break
+
+    return {"count": 1, "results": [result]}
 
 
 @APP_ROUTERS["root"].get("/healthcheck/{service}")
@@ -184,9 +215,8 @@ async def healthcheck_service(service: str):
     Ping the server, and its services, to see if
     it is online and available.
     """
-    # TODO: implement healtcheck handling for
-    # internal services.
-    return "online"
+
+    return {"count": 1, "results": [check_application_service(service)]}
 
 
 @APP_ROUTERS["session"].patch("/sessions/{idn}")

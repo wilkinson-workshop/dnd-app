@@ -15,6 +15,12 @@ class ServiceStatus(enum.StrEnum):
     to being preoccupied.
     """
 
+    FAILING = "failing"
+    """
+    Service is online, can be pinged, but is not
+    running properly.
+    """
+
     OFFLINE = "offline"
     """
     Either the service, its host, or both are
