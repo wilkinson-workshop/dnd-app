@@ -6,9 +6,8 @@ import pathlib
 import uuid
 
 # Third-party dependencies.
-import click
-from fastapi.responses import JSONResponse
 import uvicorn
+from fastapi.responses import JSONResponse
 from fastapi import APIRouter, FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,39 +18,41 @@ from pydantic import BaseModel
 # fetching assets related to the application.
 EXECUTION_ROOT = pathlib.Path.cwd()
 
+
 # Should change to use legit type in the future
 class Character(BaseModel):
-    id: str
-    name:str
-    hp:int
+    id:         str
+    name:       str
+    hp:         int
     conditions: list[int]
 
-# Service layer workin with in-memory data
+
+# Service layer working with in-memory data
 class CharacterService():
     __characters:list[Character]= []
 
     @classmethod
-    def get(self):
-        return self.__characters
-    
+    def get(cls):
+        return cls.__characters
+
     @classmethod
-    def add(self, character):
+    def add(cls, character):
         character.id = str(uuid.uuid1())
-        self.__characters.append(character)
+        cls.__characters.append(character)
         return
     
     @classmethod
-    def edit(self, id:str, character:Character):
-        for index, item in enumerate(self.__characters):
+    def edit(cls, id:str, character:Character):
+        for index, item in enumerate(cls.__characters):
             if item.id == id:
-                self.__characters[index] = character
+                cls.__characters[index] = character
         return
     
     @classmethod
-    def delete(self, id: str):
-        for index, item in enumerate(self.__characters):
+    def delete(cls, id: str):
+        for index, item in enumerate(cls.__characters):
             if item.id == id:
-                self.__characters.remove(item)
+                cls.__characters.remove(item)
         return
 
 
@@ -69,28 +70,61 @@ def setup_application():
     the appliction on each reload.
     """
 
+    # Load middlewares
+    for cls, args, kwds in APP_MIDDLEWARES:
+        app.add_middleware(cls, *args, **kwds) #type: ignore
+    # Install external application mounts.
     for mount in ASGI_APP_MOUNTS:
         app.mount(*mount)
-
+    # Intall routes from appliction routers.
     for _, router in APP_ROUTERS.items():
         app.include_router(router)
 
-# Middleware needed for CORS since the UI is on a different port.
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )    
-
     return app
 
-# List of origins allowed by CORS
-origins = [
-    "http://localhost",
-    "http://localhost:3000",
-]
+
+# -----------------------------------------------
+# API Middlewares.
+# -----------------------------------------------
+# Predefine middleware layers our application will
+# use on each transaction between server and
+# client.
+# `AppMiddleware` represents how config entries of
+# `APP_MIDDLEWARES` will be defined; where `type`
+# is the middleware class, the `tuple` and `dict`
+# types are the positional and key-word arguments
+# passed to the middleware constuctor.
+type AppMiddleware = tuple[type, tuple, dict]
+
+APP_MIDDLEWARES: tuple[AppMiddleware, ...] = (
+    (
+        # Middleware needed for CORS since the UI
+        # is on a different port.
+        CORSMiddleware,
+        tuple(),
+        dict(
+            allow_origins=("http://localhost", "http://localhost:3000"),
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"]
+        )
+    ),
+)
+
+# -----------------------------------------------
+# API Routes.
+# -----------------------------------------------
+APP_ROUTERS = {
+    # Define character/creature manipulation
+    # endpoints.
+    "character": APIRouter(),
+    # Defines the routes available at the root of our
+    # HTTP server.
+    "root": APIRouter(),
+    # Defines the routes available to managing
+    # game sessions.
+    "session": APIRouter()
+}
 
 # -----------------------------------------------
 # External ASGI applications.
@@ -102,17 +136,35 @@ ASGI_APP_MOUNTS = (
     ("/static", StaticFiles(directory=EXECUTION_ROOT / "static", html=True)),
 )
 
-# -----------------------------------------------
-# API Routes.
-# -----------------------------------------------
-APP_ROUTERS = {
-    # Defines the routes available at the root of our
-    # HTTP server.
-    "root": APIRouter(),
-    # Defines the routes available to managing
-    # game sessions.
-    "session": APIRouter()
-}
+
+@APP_ROUTERS["character"].get("/characters")
+async def character_list():
+    """List current characters on the field."""
+
+    return CharacterService.get()
+
+
+@APP_ROUTERS["character"].post("/characters")
+async def character_add(character: Character):
+    """Add a new character"""
+
+    CharacterService.add(character);
+
+
+@APP_ROUTERS["character"].patch("/characters/{id}")
+async def character_modify(id:str, character: Character):
+    """Update the Specified character"""
+
+    CharacterService.edit(id, character)
+
+
+@APP_ROUTERS["character"].delete("/characters/{id}")
+async def character_delete(id:str):
+    """Update the Specified character"""
+
+    CharacterService.delete(id);
+    return JSONResponse(None)
+
 
 @APP_ROUTERS["root"].get("/healthcheck")
 @APP_ROUTERS["root"].head("/healthcheck")
@@ -157,35 +209,6 @@ async def sessions_make():
 
     return NotImplemented
 
-@APP_ROUTERS["session"].get("/characters")
-async def character_list():
-    """List current characters on the field."""
-
-    return CharacterService.get()
-
-@APP_ROUTERS["session"].post("/characters")
-async def character_add(character: Character):
-    """Add a new character"""
-
-    CharacterService.add(character);
-
-    return 
-
-@APP_ROUTERS["session"].patch("/characters/{id}")
-async def character_update(id:str, character: Character):
-    """Update the Specified character"""
-
-    CharacterService.edit(id, character)
-
-    return
-
-@APP_ROUTERS["session"].delete("/characters/{id}")
-async def character_update(id:str):
-    """Update the Specified character"""
-
-    CharacterService.delete(id);
-
-    return JSONResponse(None)
 
 @APP_ROUTERS["session"].websocket("socket")
 async def session_sock(sock: WebSocket):
@@ -200,4 +223,4 @@ async def session_sock(sock: WebSocket):
 if __name__ == "__main__":
     # .\.venv\Scripts\python.exe -m src.scryer.app
     import uvicorn
-    exit(uvicorn.run("src.scryer.app:setup_application", reload=True))
+    uvicorn.run("src.scryer.app:setup_application", reload=True)
