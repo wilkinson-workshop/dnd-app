@@ -1,8 +1,23 @@
 
-import abc, typing, uuid
+import abc, asyncio, typing, uuid
+
+from fastapi import WebSocket
 
 from scryer.services.brokers import ShelfBroker
 from scryer.services.service import Service
+
+class _aiter[T]:
+    """Barebones asyncronous iteratator."""
+
+    def __init__(self, obj: typing.Iterable[T]):
+        self.obj_iter = iter(obj)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> T:
+        return next(self.obj_iter)
+
 
 # Special types used only in `Session` specific
 # implementations.
@@ -20,11 +35,15 @@ connection.
 """
 
 
-class Session[C](Service):
+class Session[C: WebSocket](Service):
     """
     Active session that manages connections and
     action requests available to users.
     """
+
+    # Set is an array of hashable objects that are
+    # unique. Much like a mathematical set.
+    __clients: set[C]
 
     @classmethod
     @abc.abstractmethod
@@ -32,39 +51,63 @@ class Session[C](Service):
         """Creates a new session instance."""
 
     @property
-    @abc.abstractmethod
     def label(self) -> str:
         """Identity of this session."""
+
+        return "00000000-0000-0000-0000-000000000000"
+
     @property
-    @abc.abstractmethod
     def clients(self) -> typing.Sequence[C]:
         """Active client connections."""
 
-    @abc.abstractmethod
+        return tuple(self.__clients)
+
     async def attach_client(self, client: C):
         """Process a `connect` request."""
-    @abc.abstractmethod
+
+        await client.accept()
+        self.__clients.add(client)
+
     async def broadcast_action[**P](self, action: Action[C, P]) -> typing.Sequence[ActionResult]:
         """
         Do an action against all connections.
         Returns the number of bytes sent to each
         client.
         """
-    @abc.abstractmethod
+
+        actions = asyncio.Queue()
+        async for client in _aiter(self.clients):
+            await actions.put(await self.do_action(client, action))
+
+        results = []
+        while actions.qsize():
+            results.append(actions.get_nowait())
+
+        return tuple(results)
+
     async def delete(self):
         """
         Stop all connections and perform any
         required cleanup.
         """
-    @abc.abstractmethod
+
+        async for client in _aiter(self.clients):
+            await self.detach_client(client)
+        self.__clients.clear()
+
     async def detach_client(self, client: C):
         """Disconnect a client."""
+
+        await client.close()
+
     @abc.abstractmethod
-    async def do_action[**P](self, client: C, action: Action[C, P]) -> ActionResult:
+    async def do_action[**P](self, client: C, action: Action[C, P], **kwds) -> ActionResult:
         """
         Serve an action to the target client
         connection.
         """
+
+        return (await action(client, **kwds)) #type: ignore
 
 
 class SessionShelver(ShelfBroker[Session]):
