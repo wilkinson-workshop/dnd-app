@@ -77,4 +77,34 @@ wrapped within a tuple. These args and kwargs are specific to each
 class and will vary. Make sure to read the documentation of each
 middleware before applying to this collection.
 
+### Routes ###
+Different parts of our API have been broken out into sections to ease
+up on maintenance. Whenever we define new endpoints those endpoints
+will point to a router defined in the `APP_ROUTERS` constant.
+
+```python3
+APP_ROUTERS = {
+    # Define character/creature manipulation
+    # endpoints.
+    "character": APIRouter(),
+    # Defines the routes available at the root of our
+    # HTTP server.
+    "root": APIRouter(),
+    # Defines the routes available to managing
+    # game sessions.
+    "session": APIRouter()
+}
+```
+
+To add a new route/method to a router from this mapping, the wrapper
+per the appropriate method should be accessible directly from
+`APP_ROUTERS`.
+
+```python3
+@APP_ROUTERS["root"].get("all/the/things")
+def things_list():
+    "List all the things"
+    ...
+```
+
 ## Services ##
