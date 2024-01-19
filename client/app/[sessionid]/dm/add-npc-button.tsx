@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { ConditionType } from "./npc";
+import { ConditionOptions, ConditionType } from "../../_apis/npc";
 
 export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
     const [edit, onEdit] = useState(false);
@@ -47,16 +47,9 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
                             const values  = options.map(x => (Number).parseInt(x.value));
                             setConditions(values)
                         }}>
-                        <option value={ConditionType.BardicInspiration}>BardicInspiration</option>
-                        <option value={ConditionType.Stunned}>Stunned</option>
-                        <option value={ConditionType.Burned}>Burned</option>
-                        <option value={ConditionType.Poisoned}>Poisoned</option>
-                        <option value={ConditionType.KnockedOut}>KnockedOut</option>
-                        <option value={ConditionType.KnockedProne}>KnockedProne</option>
-                        <option value={ConditionType.Charmed}>Charmed</option>
-                        <option value={ConditionType.Asleep}>Asleep</option>
-                        <option value={ConditionType.Petrified}>Petrified</option>
-                        <option value={ConditionType.Scared}>Scared</option>
+                        {ConditionOptions.map(c =>
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        )}
                     </select>
                 </label>                
             </div>
