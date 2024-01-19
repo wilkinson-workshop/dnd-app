@@ -1,0 +1,107 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+table {
+  border-collapse: collapse;
+  text-align: left;
+  width: 100%;
+}
+
+td, th {
+  padding: 8px;
+}
+
+.condition{
+  display: inline-block;
+  border-width: 2px;
+  font-size: 10px;
+  padding: 2px 5px;
+  margin: 0 5px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.condition > button {
+  background-color: transparent;
+  border-width: 0;
+  font-size: 10px;
+  float:right;
+  color: inherit;
+}
+
+.bardic-inspiration{
+  background-color: yellow;
+  border-color: rgb(90, 84, 2);
+  color: rgb(90, 84, 2);
+}
+
+.stunned{  
+  background-color: rgb(3, 3, 75);
+  border-color: rgb(156, 139, 255);
+  color: rgb(156, 139, 255);
+}
+
+.burned{
+  background-color: rgb(150, 2, 2);
+  border-color: rgb(255, 107, 101);
+  color: rgb(255, 107, 101);
+}
+
+.poisoned{  
+  background-color: rgb(85, 1, 85);
+  border-color: rgb(252, 2, 252);
+  color: rgb(252, 2, 252);
+}
+
+.knocked-out{
+  background-color: rgb(52, 255, 1);
+  border-color: rgb(1, 63, 9);
+  color: rgb(1, 63, 9);
+}
+
+.knocked-prone{  
+  background-color: grey;
+  border-color: rgb(0, 0, 0);
+  color: rgb(0, 0, 0);
+}
+
+.charmed{
+  background-color: pink;
+  border-color: rgb(90, 1, 83);
+  color: rgb(90, 1, 83);
+}
+
+.asleep{  
+  background-color: orange;
+  border-color: rgb(100, 60, 0);
+  color: rgb(100, 60, 0);
+}
+
+.petrified{
+  background-color: lightgrey;
+  border-color: rgb(0, 0, 0);
+  color: rgb(0, 0, 0);
+}
+
+.scared{  
+  background-color: rgb(112, 219, 255);
+  border-color: rgb(0, 49, 65);
+  color: rgb(0, 49, 65) ;
+}
+
+
