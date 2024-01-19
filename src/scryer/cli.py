@@ -3,10 +3,41 @@ The CLI application. A shortcut script for loading
 our application as configured per our
 preferrences.
 """
+
+import asyncio
 import subprocess
+import sys
 
 import click
 import uvicorn
+
+
+def application_path(dev_mode: bool):
+    if dev_mode:
+        # Points to the project level package
+        # explicitly. Ensures application is run
+        # from the project and not from the
+        # environment.
+        return "src.scryer.app:setup_application"
+    return "scryer.app:setup_appliction"
+
+
+def npm(*args: str):
+    """Execute npm as a subprocess."""
+
+    subprocess.call(["npm", *args])
+
+
+def pip(*args: str):
+    """Execute pip as a subprocess."""
+
+    subprocess.call([python_path(), "-m", "pip", *args])
+
+
+def python_path() -> str:
+    """Get the path to the Python executable."""
+
+    return sys.executable
 
 
 # -----------------------------------------------
@@ -31,14 +62,15 @@ def make():
 
     # Will install this project into the active
     # environment.
-    subprocess.call(["pip3", "install", "-U", "."])
+    pip("install", "-U", ".")
 
 
 @main.command()
 @click.option("-H", "--hostname", default="localhost")
 @click.option("-p", "--port", default=8000)
+@click.option("--dev", is_flag=True, default=False)
 @click.option("-W", "--workers", type=int, default=None)
-def start(hostname: str, port: int, *, workers: int | None):
+def start(hostname: str, port: int, *, dev: bool, workers: int | None):
     """Starts the web server."""
 
     # TODO: implement startup for `client` app.
@@ -51,7 +83,7 @@ def start(hostname: str, port: int, *, workers: int | None):
         kwds["workers"] = workers
         kwds["reload"]  = False
 
-    uvicorn.run("scryer.app:setup_application", **kwds) #type: ignore[arg-type]
+    uvicorn.run(application_path(dev), **kwds) #type: ignore[arg-type]
 
 
 if __name__ == "__main__":
