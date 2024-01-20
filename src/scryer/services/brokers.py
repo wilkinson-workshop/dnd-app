@@ -3,6 +3,9 @@ import abc, typing
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import shelves
 
+type LocatedPair[K, R] = tuple[K, R]
+type Located[K, R] = typing.Sequence[LocatedPair[K, R]]
+
 
 class Broker[K, R](Service):
     """
@@ -20,7 +23,7 @@ class Broker[K, R](Service):
         Delete a resource related to the key.
         """
     @abc.abstractmethod
-    def locate(self, *keys: R) -> typing.Sequence[tuple[K, R]]:
+    def locate(self, *keys: K) -> typing.Sequence[tuple[K, R]]:
         """
         Attempt to find resources that are related
         to the given keys.
@@ -83,6 +86,38 @@ class ShelfBroker[R](Broker[str, R]):
         with self as opened:
             opened.shelf.pop(key, None)
 
-    async def locate(self, key: str) -> typing.Sequence[R]:
+    async def locate(self, *keys: str) -> typing.Sequence[tuple[str, R]]:
         with self as opened:
-            return opened.shelf.get(key, None)
+            if len(keys) == 0: return shelf_locate_all(opened)
+            if len(keys) == 1:
+                locate_inator = shelf_locate_one
+            else:
+                locate_inator = shelf_locate_any
+            return locate_inator(opened, *keys)
+
+
+def shelf_locate_all[R](sb: ShelfBroker) -> Located[str, R]:
+    """
+    Returns all resource entries in the shelf.
+    """
+
+    return shelf_locate_any(sb, *sb.shelf.keys())
+
+
+def shelf_locate_any[R](sb: ShelfBroker, *keys: str) -> Located[str, R]:
+    """
+    Return all resources that match the given
+    key(s).
+    """
+
+    pred = lambda lp: lp[1] is not None
+    return tuple(filter(pred, ((k, shelf_locate_one(sb, k)) for k in keys)))        
+
+
+def shelf_locate_one[R](sb: ShelfBroker, key: str) -> LocatedPair[str, R]:
+    """
+    Attempt to locate a resource entry at the
+    specified key.
+    """
+
+    return sb.shelf.get(key, None)

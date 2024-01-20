@@ -5,6 +5,7 @@ from fastapi import WebSocket
 
 from scryer.services.brokers import ShelfBroker
 from scryer.services.service import Service, ServiceStatus
+from scryer.util import request_uuid
 from scryer.util.asyncit import _aiter
 
 # Special types used only in `Session` specific
@@ -14,7 +15,7 @@ type ActionResult[C] = tuple[C, int]
 Result from a session action. Returns the
 connection and the number of bytes written to it.
 """
-type ActionAwaitable[C] = typing.Coroutine[ActionResult[C], None, None]
+type ActionAwaitable[C] = typing.Coroutine[None, None, ActionResult[C]]
 """Awaitable `Action` type."""
 type Action[C, **P] = typing.Callable[typing.Concatenate[C, P], ActionAwaitable]
 """
@@ -88,7 +89,6 @@ class Session[C: WebSocket](Service):
 
         await client.close()
 
-    @abc.abstractmethod
     async def do_action[**P](self, client: C, action: Action[C, P], **kwds) -> ActionResult:
         """
         Serve an action to the target client
@@ -96,6 +96,24 @@ class Session[C: WebSocket](Service):
         """
 
         return (await action(client, **kwds)) #type: ignore
+
+
+class CombatSession(Session):
+    __label: uuid.UUID
+
+    @classmethod
+    def new_instance(cls) -> typing.Self:
+        inst = cls()
+        inst.__label = request_uuid()
+        return inst
+
+    @property
+    def label(self) -> str:
+        return str(self.__label)
+    
+    @property
+    def status(self) -> ServiceStatus:
+        return ServiceStatus.ACTIVE
 
 
 class SessionShelver(ShelfBroker[Session]):
@@ -112,13 +130,10 @@ class SessionShelver(ShelfBroker[Session]):
     """
 
     async def create(self) -> tuple[str, Session]:
-        # TODO: move to a separate function.
         session = self.resource_cls.new_instance()
-        key     = str(uuid.uuid1())
-
         with self as opened:
-            opened.shelf[key] = session
-        return (key, session)
+            opened.shelf[session.label] = session
+        return (session.label, session)
 
     async def modify(self, key: str, resource: Session):
         with self as opened:
