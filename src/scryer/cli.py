@@ -13,13 +13,9 @@ import uvicorn
 
 
 def application_path(dev_mode: bool):
-    if dev_mode:
-        # Points to the project level package
-        # explicitly. Ensures application is run
-        # from the project and not from the
-        # environment.
-        return "src.scryer.app:setup_application"
-    return "scryer.app:setup_appliction"
+    """Module path to application loader"""
+
+    return "scryer.app:setup_application"
 
 
 def npm(*args: str):
@@ -51,7 +47,8 @@ def main():
 
 
 @main.command()
-def make():
+@click.option("--release", is_flag=True, default=False)
+def make(*, release: bool):
     """
     Build this project and install into the
     environment.
@@ -60,17 +57,17 @@ def make():
     # TODO: implement any setup requirements
     # for client-side application.
 
-    # Will install this project into the active
-    # environment.
-    pip("install", "-U", ".")
+    args = ["--require-virtualenv", "install", "-U"]
+    if not release:
+        args.append("--editable")
+    pip(*args, ".")
 
 
 @main.command()
 @click.option("-H", "--hostname", default="localhost")
 @click.option("-p", "--port", default=8000)
-@click.option("--dev", is_flag=True, default=False)
 @click.option("-W", "--workers", type=int, default=None)
-def start(hostname: str, port: int, *, dev: bool, workers: int | None):
+def start(hostname: str, port: int, *, workers: int | None):
     """Starts the web server."""
 
     # TODO: implement startup for `client` app.
@@ -83,7 +80,7 @@ def start(hostname: str, port: int, *, dev: bool, workers: int | None):
         kwds["workers"] = workers
         kwds["reload"]  = False
 
-    uvicorn.run(application_path(dev), **kwds) #type: ignore[arg-type]
+    uvicorn.run(application_path(), **kwds) #type: ignore[arg-type]
 
 
 if __name__ == "__main__":
