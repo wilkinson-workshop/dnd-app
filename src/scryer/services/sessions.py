@@ -3,9 +3,9 @@ import abc, asyncio, typing, uuid
 
 from fastapi import WebSocket
 
-from scryer.asyncit import _aiter
 from scryer.services.brokers import ShelfBroker
 from scryer.services.service import Service, ServiceStatus
+from scryer.util.asyncit import _aiter
 
 # Special types used only in `Session` specific
 # implementations.

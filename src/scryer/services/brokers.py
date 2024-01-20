@@ -1,7 +1,7 @@
 import abc, typing
 
-from scryer import shelves
 from scryer.services.service import Service, ServiceStatus
+from scryer.util import shelves
 
 
 class Broker[K, R](Service):
