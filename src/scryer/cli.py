@@ -4,7 +4,6 @@ our application as configured per our
 preferrences.
 """
 
-import asyncio
 import subprocess
 import sys
 
@@ -12,7 +11,7 @@ import click
 import uvicorn
 
 
-def application_path(dev_mode: bool):
+def application_path():
     """Module path to application loader"""
 
     return "scryer.app:setup_application"
