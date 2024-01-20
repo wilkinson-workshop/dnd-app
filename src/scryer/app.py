@@ -61,12 +61,10 @@ class PlayerInputService():
     @classmethod
     def add(cls, input):
         cls.__inputs.append(input)
-        return
     
     @classmethod
     def clear(cls):
         cls.__inputs = []
-        return
 
 
 # Service layer working with in-memory data
@@ -81,21 +79,18 @@ class CharacterService():
     def add(cls, character):
         character.id = str(uuid.uuid1())
         cls.__characters.append(character)
-        return
     
     @classmethod
     def edit(cls, id:str, character:Character):
         for index, item in enumerate(cls.__characters):
             if item.id == id:
                 cls.__characters[index] = character
-        return
-    
+
     @classmethod
     def delete(cls, id: str):
         for index, item in enumerate(cls.__characters):
             if item.id == id:
                 cls.__characters.remove(item)
-        return
 
 
 # -----------------------------------------------

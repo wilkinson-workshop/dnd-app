@@ -35,6 +35,34 @@ def python_path() -> str:
     return sys.executable
 
 
+def scryer_make_api(release: bool):
+    """
+    Install/Update this project and its
+    dependencies. If `release` is `True`, install
+    this project into the environment as a
+    package.
+    """
+
+    args = ["--require-virtualenv", "install", "-U"]
+    if not release:
+        args.append("--editable")
+    pip(*args, ".")
+
+
+def scryer_start_api(hostname: str, port: int, workers: int):
+    """Run the REST application."""
+
+    kwds = dict(factory=True, host=hostname, port=port, reload=True)
+    if workers:
+        # Workers are ignored when 'reload' is
+        # enabled. Might not want to implicitly
+        # disable reload in this context.
+        kwds["workers"] = workers
+        kwds["reload"]  = False
+
+    uvicorn.run(application_path(), **kwds) #type: ignore[arg-type]
+
+
 # -----------------------------------------------
 # Command Line Interface (CLI).
 # -----------------------------------------------
@@ -55,11 +83,7 @@ def make(*, release: bool):
 
     # TODO: implement any setup requirements
     # for client-side application.
-
-    args = ["--require-virtualenv", "install", "-U"]
-    if not release:
-        args.append("--editable")
-    pip(*args, ".")
+    scryer_make_api(release)
 
 
 @main.command()
@@ -70,16 +94,7 @@ def start(hostname: str, port: int, *, workers: int | None):
     """Starts the web server."""
 
     # TODO: implement startup for `client` app.
-
-    kwds = dict(factory=True, host=hostname, port=port, reload=True)
-    if workers:
-        # Workers are ignored when 'reload' is
-        # enabled. Might not want to implicitly
-        # disable reload in this context.
-        kwds["workers"] = workers
-        kwds["reload"]  = False
-
-    uvicorn.run(application_path(), **kwds) #type: ignore[arg-type]
+    scryer_start_api(hostname, port, workers)
 
 
 if __name__ == "__main__":
