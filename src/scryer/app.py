@@ -4,29 +4,29 @@ The HTTP server core implementation.
 
 import enum
 import pathlib
-import typing
 import uuid
 
 # Third-party dependencies.
 import uvicorn
-from fastapi.responses import JSONResponse
-from fastapi import APIRouter, FastAPI, WebSocket
+from fastapi import APIRouter, FastAPI, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Project level modules go here.
 from scryer.services import ServiceStatus
-from scryer.services.sessions import Session, SessionShelver
+from scryer.services.sessions import CombatSession, SessionShelver
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
 # fetching assets related to the application.
 EXECUTION_ROOT = pathlib.Path.cwd()
 
+
 class CharacterType(enum.StrEnum):
     PLAYER = enum.auto()
     DM = enum.auto()
+
 
 # Should change to use legit type in the future
 class Character(BaseModel):
@@ -35,10 +35,12 @@ class Character(BaseModel):
     hp:         int
     conditions: list[int]
 
+
 class JoinSessionRequest(BaseModel):
     clientId:    str
     name:        str
     type:        CharacterType
+
 
 class PlayerInput(BaseModel):
     input:      int
@@ -65,6 +67,7 @@ class PlayerInputService():
     def clear(cls):
         cls.__inputs = []
         return
+
 
 # Service layer working with in-memory data
 class CharacterService():
@@ -99,7 +102,7 @@ class CharacterService():
 # Appliction Services.
 # -----------------------------------------------
 APP_SERIVCES = {
-    "sessions": SessionShelver("scryer_sessions", Session),
+    "sessions": SessionShelver("scryer_sessions", CombatSession),
 }
 
 # -----------------------------------------------
@@ -262,12 +265,22 @@ async def healthcheck(service_name: str | None = None):
     return {"count": 1, "results": [result]}
 
 
-@APP_ROUTERS["session"].patch("/{session_uuid}")
-async def sessions_join(session_uuid: str, request: JoinSessionRequest):
+@APP_ROUTERS["session"].websocket("/{session_uuid}")
+async def sessions_join(sock: WebSocket, session_uuid: str, request: JoinSessionRequest):
     """
     Join an active session. Passes in some
     arbitrary `client_uuid`.
     """
+
+    found = (await APP_SERIVCES["sessions"].locate(session_uuid))
+    if not found:
+        raise HTTPException(404, f"No such session {session_uuid!r}")
+
+    _, session = found[0]
+    # TODO: Replace the lower code with new
+    # interfaces for `Character` types and event
+    # types.
+    session.attach_client(sock)
 
     # Probably use attach_clients
     if(request.type == "player"):
@@ -279,13 +292,10 @@ async def sessions_join(session_uuid: str, request: JoinSessionRequest):
 @APP_ROUTERS["session"].get("/{session_uuid}", description="Get a specific, active, session.")
 async def sessions_find(session_uuid: str | None = None):
     """Attempt to fetch session(s)."""
-    # Was just trying to do something from what I
-    # saw.
-    sessions:list[Session]= []
-    def getLabels(s: Session):
-        return s.label
 
-    return map(getLabels, sessions)
+    locator = APP_SERIVCES["sessions"].locate
+    locator = locator(session_uuid) if session_uuid else locator()
+    return await locator
 
 
 @APP_ROUTERS["session"].post("/")
@@ -295,13 +305,14 @@ async def sessions_make():
     `session_uuid`.
     """
 
-    # Use new_instance used by SessionShelver?
-    return str(uuid.uuid1())
+    return (await APP_SERIVCES["sessions"].create())[0]
 
 
-@APP_ROUTERS["session"].post("/{idn}")
-async def sessions_stop(idn: str):
-    """Ends an active session. """
+@APP_ROUTERS["session"].post("/{session_uuid}")
+async def sessions_stop(session_uuid: str):
+    """Ends an active session."""
+
+    await APP_SERIVCES["sessions"].delete(session_uuid)
 
 
 # I just created an arbirtrary endpoints. Subject
