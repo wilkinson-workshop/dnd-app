@@ -14,9 +14,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from scryer.asyncit import _aiter
 from scryer.services import ServiceStatus
 from scryer.services.sessions import Session, SessionShelver
+from scryer.util.asyncit import _aiter
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
