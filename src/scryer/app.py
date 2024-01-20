@@ -2,8 +2,9 @@
 The HTTP server core implementation.
 """
 
-import asyncio
+import enum
 import pathlib
+import typing
 import uuid
 
 # Third-party dependencies.
@@ -13,11 +14,10 @@ from fastapi import APIRouter, FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import enum
 
+# Project level modules go here.
 from scryer.services import ServiceStatus
 from scryer.services.sessions import Session, SessionShelver
-from scryer.util.asyncit import _aiter
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -174,18 +174,17 @@ APP_MIDDLEWARES: tuple[AppMiddleware, ...] = (
 # API Routes.
 # -----------------------------------------------
 APP_ROUTERS = {
+    # Defines the routes available to the server
+    # admin.
+    "admin": APIRouter(prefix="/admin"),
     # Define character/creature manipulation
     # endpoints.
-    "character": APIRouter(),
-    # Defines the routes available at the root of our
-    # HTTP server.
-    "root": APIRouter(),
+    "character": APIRouter(prefix="/characters"),
+    # Defines the routes available for clients
+    "client": APIRouter(prefix="/client"),
     # Defines the routes available to managing
     # game sessions.
-    "session": APIRouter(),
-    # Defines the routes available for clients
-    "client": APIRouter()
-
+    "session": APIRouter(prefix="/sessions")
 }
 
 # -----------------------------------------------
@@ -199,45 +198,62 @@ ASGI_APP_MOUNTS = (
 )
 
 
-@APP_ROUTERS["character"].get("/characters/{sessionId}")
-async def character_list(sessionId:str,):
+@APP_ROUTERS["character"].get("/")
+@APP_ROUTERS["character"].get("/{session_uuid}")
+async def characters_find(session_uuid: str | None = None):
     """List current characters on the field."""
 
     return CharacterService.get()
 
 
-@APP_ROUTERS["character"].post("/characters/{sessionId}")
-async def character_add(sessionId:str, character: Character):
-    """Add a new character"""
+@APP_ROUTERS["character"].post("/{session_uuid}")
+async def characters_make(session_uuid:str, character: Character):
+    """Create a new character"""
 
     CharacterService.add(character);
 
 
-@APP_ROUTERS["character"].patch("/characters/{sessionId}/{id}")
-async def character_modify(sessionId:str, id:str, character: Character):
-    """Update the Specified character"""
+@APP_ROUTERS["character"].patch("/{session_uuid}/{idn}")
+async def characters_push(session_uuid:str, idn:str, character: Character):
+    """Update the specified character."""
 
     CharacterService.edit(id, character)
 
 
-@APP_ROUTERS["character"].delete("/characters/{sessionId}/{id}")
-async def character_delete(sessionId:str, id:str):
-    """Update the Specified character"""
+@APP_ROUTERS["character"].delete("/{session_uuid}/{idn}")
+async def characters_kill(session_uuid:str, idn:str):
+    """Delete the specified character."""
 
     CharacterService.delete(id);
-    return JSONResponse(None)
 
 
-@APP_ROUTERS["root"].get("/healthcheck")
-@APP_ROUTERS["root"].head("/healthcheck")
-async def healthcheck():
+@APP_ROUTERS["client"].post("/")
+async def clients_make():
+    """
+    Create a new `client_id` to be used for
+    websockets and session tracking. Returns new
+    clientId
+    """
+
+    return str(uuid.uuid1())
+
+
+@APP_ROUTERS["admin"].get("/healthcheck")
+@APP_ROUTERS["admin"].get("/healthcheck/{service_name}", description="Ping a specific service.")
+@APP_ROUTERS["admin"].head("/healthcheck")
+async def healthcheck(service_name: str | None = None):
     """
     Ping the server, and its services, to see if
     it is online and available.
     """
 
-    statuses = check_application()
-    result   = {"status": ServiceStatus.ONLINE, "services": statuses}
+    if service_name:
+        statuses = []
+        result   = check_application_service(service_name)
+    else:
+        statuses = check_application()
+        result   = {"status": ServiceStatus.ONLINE, "services": statuses}
+
     for status in statuses:
         if status["status"] not in (ServiceStatus.ONLINE, ServiceStatus.ACTIVE):
             result["status"] = ServiceStatus.FAILING
@@ -246,80 +262,74 @@ async def healthcheck():
     return {"count": 1, "results": [result]}
 
 
-@APP_ROUTERS["root"].get("/healthcheck/{service}")
-async def healthcheck_service(service: str):
+@APP_ROUTERS["session"].patch("/{session_uuid}")
+async def sessions_join(session_uuid: str, request: JoinSessionRequest):
     """
-    Ping the server, and its services, to see if
-    it is online and available.
+    Join an active session. Passes in some
+    arbitrary `client_uuid`.
     """
 
-    return {"count": 1, "results": [check_application_service(service)]}
+    # Probably use attach_clients
+    if(request.type == "player"):
+        character = Character(id = '', name = request.name, hp = 500, conditions = [])
+        CharacterService.add(character)
 
-@APP_ROUTERS["client"].post("/clients")
-async def client_make():
-    """Create a new clientId to be used for websockets and session tracking. Returns new clientId"""
 
-    return str(uuid.uuid1())
-
-@APP_ROUTERS["session"].get("/sessions")
-async def sessions_list():
-    """List active sessions."""
-
-    # Was just trying to do something from what I saw.
+@APP_ROUTERS["session"].get("/", description="Get all active sessions.")
+@APP_ROUTERS["session"].get("/{session_uuid}", description="Get a specific, active, session.")
+async def sessions_find(session_uuid: str | None = None):
+    """Attempt to fetch session(s)."""
+    # Was just trying to do something from what I
+    # saw.
     sessions:list[Session]= []
     def getLabels(s: Session):
         return s.label
 
     return map(getLabels, sessions)
 
-@APP_ROUTERS["session"].post("/sessions")
+
+@APP_ROUTERS["session"].post("/")
 async def sessions_make():
-    """Create a new joinable session. Returns new sessionId"""
+    """
+    Create a new joinable session. Returns new
+    `session_uuid`.
+    """
 
     # Use new_instance used by SessionShelver?
-
     return str(uuid.uuid1())
 
-@APP_ROUTERS["session"].patch("/sessions/{idn}")
-async def sessions_join(idn: str, request: JoinSessionRequest):
-    """Join an active session. Passes in some arbitrary clientId"""
 
-    # Probably use attach_clients
-
-    if(request.type == "player"):
-        character = Character(id = '', name = request.name, hp = 500, conditions = [])
-
-        CharacterService.add(character)
-
-    return JSONResponse(None)
+@APP_ROUTERS["session"].post("/{idn}")
+async def sessions_stop(idn: str):
+    """Ends an active session. """
 
 
-@APP_ROUTERS["session"].post("/sessions/{idn}")
-async def sessions_end(idn: str):
-    """Ends a new joinable session. """
-
-    return JSONResponse(None)
-
-# I just created an arbirtrary endpoints. Subject to change. Request body structure to change.
-@APP_ROUTERS["session"].get("/sessions/{idn}/player-input")
-async def player_input_get(idn: str):
-    """Endpoint that displays the results of all player input such as dice roll for initiative ect. """
+# I just created an arbirtrary endpoints. Subject
+# to change. Request body structure to change.
+@APP_ROUTERS["session"].get("/{idn}/player-input")
+async def sessions_player_input_find(idn: str):
+    """
+    Get all player inputs.
+    """
 
     return PlayerInputService.getAll()
 
-# I just created an arbirtrary endpoints. Subject to change. Request body structure to change.
-@APP_ROUTERS["session"].post("/sessions/{idn}/player-input")
-async def player_input_add(idn: str, request:PlayerInput):
-    """Endpoint that accepts a player input such as dice roll for initiative ect. """
+
+# I just created an arbirtrary endpoints. Subject
+# to change. Request body structure to change.
+@APP_ROUTERS["session"].post("/{idn}/player-input")
+async def sessions_player_input_send(idn: str, request:PlayerInput):
+    """
+    Send a player input to session.
+    """
 
     PlayerInputService.add(request)
+    # this should trigger DM client to call
+    # player_input_get so it refreshes live on dm
+    # dashboard
 
-    #this should trigger DM client to call player_input_get so it refreshes live on dm dashboard
 
-    return JSONResponse(None)
-
-
-@APP_ROUTERS["session"].websocket("socket")
+@APP_ROUTERS["session"].websocket("/socket")
 async def session_sock(sock: WebSocket):
     """Initiate a session `WebSocket`"""
 
