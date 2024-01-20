@@ -1,105 +1,61 @@
-
 'use client'
 
-import { ConditionType, Npc } from "./npc"
-import AddNpcButton from "./add-npc-button";
+import Link from "next/link";
+import { createSession, endSession, getSessions, joinSession } from "./_apis/sessionApi";
 import { useState } from "react";
-import NpcHp from "./npc-hp";
-import NpcConditions from "./npc-conditions";
-import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from "./_apis/characterApi";
+import QRCode from "react-qr-code";
+import { createClient } from "./_apis/clientApi";
+
+const baseUrl = 'http://localhost:8000';
 
 export default function HomePage() {
-  const [npcs, setNpcs] = useState<Npc[]>([]);
-  const [isApi, setApi] = useState(false);
+  const [session, setSession] = useState<string>('');
+  const [sessions, setSessions] = useState<string[]>([]);
+  const [client, setClient] = useState<string>('');  
+  const [hasClient, setHasClient] = useState(false);
 
-  if(!isApi){
-    setApi(true);
-    getCharacters().then(c => {
-      setNpcs(c);
+  if(!hasClient){
+    setHasClient(true);//assumes success no retry logic
+    createClient()
+    .then(c => {
+      setClient(c);
     });
   }
 
-  function handleAddCharacter(npc: Npc){
-    addCharacter(npc)
-    .then(_=> {
-      return getCharacters();
-    }).then(c => {
-      setNpcs(c);
+  function listSessions(){
+    getSessions()
+    .then(sessions => {
+      setSessions(sessions)
     });
   }
 
-  function onDelete(npcId: string){
-    deleteCharacter(npcId)
-    .then(_=> {
-      return getCharacters();
-    }).then(c => {
-      setNpcs(c);
+  function handleCreateSession(){
+    createSession()
+    .then(session => {
+      setSession(session);
+      joinSession(session, {clientId: client, name: 'DM', type: 'dm'});
     });
   }
 
-  function onHpUpdate(npcId: string, newHp: number){
-    if(newHp == 0){
-      onDelete(npcId);
-    } else {
-      const npcToUpdate = npcs.findIndex(x => x.id == npcId);
-      npcs[npcToUpdate].hp = newHp;
-
-      saveCharacter(npcs[npcToUpdate])
-      .then(_=> {
-        return getCharacters();
-      }).then(c => {
-        setNpcs(c);
-      });
-    }
-  }
-
-  function onConditionUpdate(npcId: string, newConditions: ConditionType[]){
-    const npcToUpdate = npcs.findIndex(x => x.id == npcId);
-    npcs[npcToUpdate].conditions = newConditions;
-
-    saveCharacter(npcs[npcToUpdate])
-    .then(_=> {
-      return getCharacters();
-    }).then(c => {
-      setNpcs(c);
+  function handleEndSession(){
+    endSession(session)
+    .then(_ => {
+      setSession('')
     });
   }
 
-  function onConditionDelete(npcId:string, condition:ConditionType){
-    const npcToUpdate = npcs.find(x => x.id == npcId);
-    const conditionToDelete = npcToUpdate!.conditions.findIndex(x => x == condition);
-    npcToUpdate!.conditions.splice(conditionToDelete,1);
-
-    saveCharacter(npcToUpdate!)
-    .then(_=> {
-      return getCharacters();
-    }).then(c => {
-      setNpcs(c);
-    });
-  }
-
-
-  return (
-    <div>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>HP</th>
-            <th>Conditions</th>
-          </tr>
-        </thead>
-        <tbody>
-        {npcs.map((npc) => (
-          <tr key={npc.id}>
-            <td>{npc.name}</td>
-            <td><NpcHp npc={npc} onUpdateClick={onHpUpdate} /></td>
-            <td><NpcConditions npc={npc} onConditionUpdate={onConditionUpdate} onConditionDelete={onConditionDelete} /></td>
-          </tr>
-        ))}
-        </tbody>
-      </table>  
-      <AddNpcButton onAddClick={handleAddCharacter} />      
+  if(session != ''){
+    return (
+      <div>
+        <Link href={`/${session}/dm`}>View Session Dashboard</Link>
+        <QRCode value={`${baseUrl}/${session}`} />
+        <button type="button" onClick={handleEndSession}>End Session</button>
+      </div>
+    )
+  } else {
+    return ( <div>
+      <button type="button" onClick={handleCreateSession}>Create Session</button>
     </div>
-  )
+    )
+  }
 }

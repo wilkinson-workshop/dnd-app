@@ -1,6 +1,8 @@
+'use client'
+
 import { useEffect, useState } from "react";
 import UpdateHpButton from "./update-hp-button";
-import { Npc } from "./npc";
+import { Npc } from "../../_apis/npc";
 
 export default function NpcHp({npc, onUpdateClick}: {npc: Npc, onUpdateClick: any}) {
     const [edit, onEdit] = useState(false);
