@@ -200,6 +200,14 @@ async def characters_find(session_uuid: str | None = None):
 
     return CharacterService.get()
 
+@APP_ROUTERS["character"].get("/{session_uuid}/initiative")
+async def characters_find(session_uuid: str):
+    """List initiative order for characters on the field. For use by player so shows limited info."""
+
+    def getNames(s: Character):
+        return {"id":s.id, "name": s.name}
+    mapping = map(getNames, CharacterService.get())
+    return list(mapping)
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
 async def characters_make(session_uuid:str, character: Character):
@@ -278,6 +286,7 @@ async def sessions_join(sock: WebSocket, session_uuid: str, request: JoinSession
     if(request.type == "player"):
         character = Character(id = '', name = request.name, hp = 500, conditions = [])
         CharacterService.add(character)
+    # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
 
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")

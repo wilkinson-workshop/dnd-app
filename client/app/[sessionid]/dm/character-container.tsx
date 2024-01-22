@@ -37,6 +37,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
           ],
         }),
       )
+      console.log(cards);
     }, [])
 
     function onDelete(npcId: string){
@@ -83,6 +84,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
     return (
       <>
         <div style={style}>{cards.map((card, i) => renderCard(card, i))}</div>
+        <button type="button" onClick={reloadList}>Load Characters</button>
         <AddCharacter onAddClick={handleAddCharacter} /> 
       </>
     )

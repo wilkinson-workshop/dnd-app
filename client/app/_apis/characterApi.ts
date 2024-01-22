@@ -17,6 +17,20 @@ export async function getCharacters(sessionId: string) {
   return res.json()
 } 
 
+export async function getInitiativeOrder(sessionId: string) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative`, {
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+} 
+
 export async function saveCharacter(sessionId: string, character:Character) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/${character.id}`, {
     method: 'PATCH',
