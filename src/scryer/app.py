@@ -12,6 +12,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from scryer.creatures.attrs import Role
 
 # Project level modules go here.
 from scryer.services import ServiceStatus
@@ -21,12 +22,6 @@ from scryer.services.sessions import CombatSession, SessionShelver
 # from. Will be used for creating and
 # fetching assets related to the application.
 EXECUTION_ROOT = pathlib.Path.cwd()
-
-
-class CharacterType(enum.StrEnum):
-    NPC = enum.auto()
-    PLAYER = enum.auto()
-    DM = enum.auto()
 
 
 # Should change to use legit type in the future
@@ -41,7 +36,7 @@ class Character(BaseModel):
 class JoinSessionRequest(BaseModel):
     clientId:    str
     name:        str
-    type:        CharacterType
+    type:        Role
 
 
 class PlayerInput(BaseModel):

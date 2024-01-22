@@ -33,7 +33,7 @@ export default function HomePage() {
     createSession()
     .then(session => {
       setSession(session);
-      joinSession(session, {clientId: client, name: 'DM', type: 'dm'});
+      joinSession(session, {clientId: client, name: 'DM', type: 'dungeon_master'});
     });
   }
 

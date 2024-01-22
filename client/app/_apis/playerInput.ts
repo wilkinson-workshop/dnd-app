@@ -7,5 +7,5 @@ export interface PlayerInput {
 export interface JoinSessionRequest {
     clientId: string,
     name: string,
-    type: "player" | "dm"
+    type: "player" | "dungeon_master" | 'non_player'
 }
