@@ -31,6 +31,7 @@ class Character(BaseModel):
     hp:         int
     conditions: list[int]
     initiative: int
+    type:       Role
 
 
 class JoinSessionRequest(BaseModel):
@@ -284,7 +285,7 @@ async def sessions_join(sock: WebSocket, session_uuid: str, request: JoinSession
 
     # Probably use attach_clients
     if(request.type == "player"):
-        character = Character(id = '', name = request.name, hp = 500, conditions = [])
+        character = Character(id = '', name = request.name, hp = 500, conditions = [], type = request.type)
         CharacterService.add(character)
     # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
 

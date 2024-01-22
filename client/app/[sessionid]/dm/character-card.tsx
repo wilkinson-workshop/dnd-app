@@ -11,7 +11,6 @@ const style = {
   border: '1px solid lightgray',
   padding: '0.5rem 1rem',
   marginBottom: '.5rem',
-  backgroundColor: 'white',
   cursor: 'move',
 }
 
@@ -104,7 +103,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
   const opacity = isDragging ? 0 : 1
   drag(drop(ref))
   return (
-    <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
+    <div ref={ref} className={character.type} style={{ ...style, opacity }} data-handler-id={handlerId}>
       <div className="char-section">{character.initiative }</div>
       <div className="char-section">{character.name}</div>
       <div className="char-section"><CharacterHp character={character} updateCharacter={updateCharacter} /></div>

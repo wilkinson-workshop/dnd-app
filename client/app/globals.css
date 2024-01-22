@@ -16,6 +16,14 @@
   }
 }
 
+.non_player {
+  background-color:white;
+}
+
+.player {
+  background-color: #ebebeb;
+}
+
 .char-section {
   display: inline-block;
   margin: 0 20px;

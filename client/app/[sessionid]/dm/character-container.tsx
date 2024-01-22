@@ -4,11 +4,9 @@ import { useCallback, useState } from 'react'
 import { Card } from './character-card'
 import { Character } from '@/app/_apis/character'
 import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import AddCharacter from './add-character'
+import { AddCharacter } from './add-character'
 
-const style = {
-  //width: 400,
-}
+const style = {}
 
 export interface ContainerState {
   cards: Character[]

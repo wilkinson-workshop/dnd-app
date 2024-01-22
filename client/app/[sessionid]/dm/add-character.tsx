@@ -1,7 +1,11 @@
-import { FormEvent, useState } from "react";
-import { ConditionOptions, ConditionType } from "../../_apis/character";
+import { FC, FormEvent, useState } from "react";
+import { Character, CharacterType, ConditionOptions, ConditionType } from "../../_apis/character";
 
-export default function AddCharacter({onAddClick}: {onAddClick: any}) {
+export interface AddCharacterProps{
+    onAddClick: (character: Character) => void
+}
+
+export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [edit, onEdit] = useState(false);
     const [hp, setHp] = useState(1);
     const [initiative, setInitiative] = useState(1);
@@ -16,7 +20,8 @@ export default function AddCharacter({onAddClick}: {onAddClick: any}) {
             initiative: initiative,
             name: name, 
             hp: hp, 
-            conditions:conditions
+            conditions:conditions,
+            type: CharacterType.NonPlayer
           });
           setHp(1);
           setName('Character')
