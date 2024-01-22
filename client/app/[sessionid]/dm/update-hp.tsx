@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { FC, useState } from "react";
 
-export default function UpdateHpButton({id, currentHp, onUpdateClick}: {id: string, currentHp: number, onUpdateClick: any}) {
+export interface UpdateHpProps{id: string, currentHp: number, onUpdateClick: any}
+
+export const UpdateHp:FC<UpdateHpProps> = ({id, currentHp, onUpdateClick}) => {
     const [hp, setHp] = useState(currentHp);
 
     return <form onSubmit={e => {

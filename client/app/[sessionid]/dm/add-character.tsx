@@ -1,9 +1,10 @@
 import { FormEvent, useState } from "react";
-import { ConditionOptions, ConditionType } from "../../_apis/npc";
+import { ConditionOptions, ConditionType } from "../../_apis/character";
 
-export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
+export default function AddCharacter({onAddClick}: {onAddClick: any}) {
     const [edit, onEdit] = useState(false);
     const [hp, setHp] = useState(1);
+    const [initiative, setInitiative] = useState(1);
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
@@ -12,6 +13,7 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
         onEdit(false);
         onAddClick({
             id: '', //use database for this.
+            initiative: initiative,
             name: name, 
             hp: hp, 
             conditions:conditions
@@ -23,6 +25,12 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
 
       if(edit){ return (
         <form onSubmit={handleSubmit}>
+                        <div>
+                <label>
+                    Initiative:
+                    <input type="number" value={initiative} onChange={x => setInitiative(Number.parseInt(x.target.value))}></input>
+                </label>                
+            </div>
             <div>
                 <label>
                     Name:

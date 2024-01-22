@@ -24,6 +24,7 @@ EXECUTION_ROOT = pathlib.Path.cwd()
 
 
 class CharacterType(enum.StrEnum):
+    NPC = enum.auto()
     PLAYER = enum.auto()
     DM = enum.auto()
 
@@ -34,6 +35,7 @@ class Character(BaseModel):
     name:       str
     hp:         int
     conditions: list[int]
+    initiative: int
 
 
 class JoinSessionRequest(BaseModel):
@@ -215,14 +217,14 @@ async def characters_make(session_uuid:str, character: Character):
 async def characters_push(session_uuid:str, idn:str, character: Character):
     """Update the specified character."""
 
-    CharacterService.edit(id, character)
+    CharacterService.edit(idn, character)
 
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{idn}")
 async def characters_kill(session_uuid:str, idn:str):
     """Delete the specified character."""
 
-    CharacterService.delete(id);
+    CharacterService.delete(idn);
 
 
 @APP_ROUTERS["client"].post("/")

@@ -33,6 +33,9 @@ export async function createSession() {
 }
 
 export async function joinSession(id: string, request: JoinSessionRequest) {
+  return Promise.resolve()
+
+  //was resplaces with websocket
   const res = await fetch(`${apiBaseUrl}/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(request),

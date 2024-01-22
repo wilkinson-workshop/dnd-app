@@ -1,4 +1,4 @@
-import { Npc } from "./npc";
+import { Character } from "./character";
 
 const baseUrl = 'http://localhost:8000';
 const apiBaseUrl = `${baseUrl}/characters`;
@@ -17,7 +17,7 @@ export async function getCharacters(sessionId: string) {
   return res.json()
 } 
 
-export async function saveCharacter(sessionId: string, character:Npc) {
+export async function saveCharacter(sessionId: string, character:Character) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/${character.id}`, {
     method: 'PATCH',
     body: JSON.stringify(character),
@@ -33,7 +33,7 @@ export async function saveCharacter(sessionId: string, character:Npc) {
   return res.json()
 } 
 
-export async function addCharacter(sessionId: string, character:Npc) {
+export async function addCharacter(sessionId: string, character:Character) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     method: 'POST',
     body: JSON.stringify(character),

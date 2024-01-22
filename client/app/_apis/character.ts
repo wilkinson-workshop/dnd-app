@@ -1,6 +1,7 @@
-export interface Npc {
+export interface Character {
     id: string,
     name: string,
+    initiative: number,
     hp: number,
     conditions: ConditionType[]
 }

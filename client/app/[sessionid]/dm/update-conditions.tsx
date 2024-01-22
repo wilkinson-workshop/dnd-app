@@ -1,7 +1,9 @@
-import { ChangeEvent, useState } from "react";
-import { ConditionOptions, ConditionType } from "../../_apis/npc";
+import { FC, useState } from "react";
+import { ConditionOptions, ConditionType } from "../../_apis/character";
 
-export default function UpdateConditions({id, currentConditions, onUpdateConClick}: {id: string, currentConditions: ConditionType[], onUpdateConClick: any}) {
+export interface UpdateConditionProps {id: string, currentConditions: ConditionType[], onUpdateConClick: any}
+
+export const UpdateConditions:FC<UpdateConditionProps> = ({id, currentConditions, onUpdateConClick}) => {
     const [conditions, setConditions] = useState(currentConditions);
 
     const handleChange = (e: any) => {
@@ -23,7 +25,7 @@ export default function UpdateConditions({id, currentConditions, onUpdateConClic
                 value={conditions.map(x => x.toString())}
                 onChange={handleChange}>
                     {ConditionOptions.map(c =>
-                        <option value={c.id}>{c.name}</option>
+                        <option key={c.id} value={c.id}>{c.name}</option>
                     )}
             </select>
             <button type="submit">Update</button>
