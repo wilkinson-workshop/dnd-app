@@ -2,6 +2,7 @@ export interface Character {
     id: string,
     name: string,
     initiative: number,
+    maxHp: number,
     hp: number,
     conditions: ConditionType[],
     type: CharacterType 

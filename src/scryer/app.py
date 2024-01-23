@@ -27,6 +27,7 @@ class CharacterV1(BaseModel):
     id:         str	
     name:       str	
     hp:         int	
+    maxHp:      int
     conditions: list[int]
     initiative: int
     type:       Role 

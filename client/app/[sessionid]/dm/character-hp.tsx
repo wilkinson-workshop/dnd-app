@@ -28,7 +28,7 @@ export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) =
             <>    
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', mr: 1 }}>
-                    <LinearWithValueLabel maxValue={200} value={character.hp} />
+                    <LinearWithValueLabel maxValue={character.maxHp} value={character.hp} />
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
                     <IconButton aria-label="edit" onClick={x => onEdit(true)}>

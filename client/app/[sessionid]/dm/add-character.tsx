@@ -1,6 +1,6 @@
 import { FC, FormEvent, useState } from "react";
 import { Character, CharacterType, ConditionOptions, ConditionType } from "../../_apis/character";
-import { Button, Grid, IconButton, TextField } from "@mui/material";
+import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
@@ -37,7 +37,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             id: '', //use database for this.
             initiative: initiative,
             name: name, 
-            hp: hp, 
+            hp: hp,
+            maxHp: hp,
             conditions:conditions,
             type: CharacterType.NonPlayer
           });
@@ -58,17 +59,19 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
 
       if(edit){ return (
         <>
-            <div>
+        <Box sx={{width: '100%', textAlign: 'center'}}>
+            <h2>Add New Character</h2>
+            <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
-            </div>
-            <div>
+            </Box>
+            <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
-            </div>
-            <div>
+            </Box>
+            <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="HP" value={hp} variant="outlined" onChange={x => setHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
-            </div>
-            <div>
-                <FormControl sx={{ m: 1, width: 300 }}>  
+            </Box>
+            <Box sx={{margin: '10px 0'}}>
+                <FormControl sx={{ width: 300 }}>  
                     <InputLabel id="label">Conditions</InputLabel>  
                     <Select  
                         labelId="label"  
@@ -89,8 +92,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                         )}  
                     </Select>  
                 </FormControl> 
-            </div>
-            <div>
+            </Box>
+            <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
                     Add
                 </Button>
@@ -98,7 +101,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                     Cancel
                 </Button>
 
-            </div>
+            </Box>
+        </Box>
+
         </>
         )
       } else {
