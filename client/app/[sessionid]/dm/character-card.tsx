@@ -6,14 +6,12 @@ import { ItemTypes } from './item-types'
 import { Character } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './characer-conditions'
-import { IconButton } from "@mui/material";
-import EditIcon from '@mui/icons-material/Edit';
+import { Box, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 
 const style = {
   border: '1px solid lightgray',
-  padding: '0.5rem 1rem',
-  marginBottom: '.5rem',
+  //padding: '0.5rem 1rem',
   cursor: 'move',
 }
 
@@ -103,19 +101,38 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
     }),
   })
 
+  const Item = styled(Box)(({ theme }) => ({
+    padding: theme.spacing(1),  
+  })); 
+  
+
   const opacity = isDragging ? 0 : 1
   drag(drop(ref))
   return (
     <div ref={ref} className={character.type} style={{ ...style, opacity }} data-handler-id={handlerId}>
-      <div className="char-section">{character.initiative }</div>
-      <div className="char-section">{character.name}</div>
-      <div className="char-section"><CharacterHp character={character} updateCharacter={updateCharacter} /></div>
-      <div className="char-section"><CharacterConditions character={character} updateCharacter={updateCharacter}/></div>
-      <div className="char-section">            
-        <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hp:0})}>
-            <DeleteIcon />
-        </IconButton>
-      </div>    
+      <Box>
+        <Grid container spacing={2}>
+          <Grid item xs={1}>
+            <Item>{character.initiative }</Item>
+          </Grid>
+          <Grid item xs={2}>
+            <Item>{character.name}</Item>
+          </Grid>
+          <Grid item xs={2}>
+            <Item><CharacterHp character={character} updateCharacter={updateCharacter} /></Item>
+          </Grid>
+          <Grid item xs={6}>
+            <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
+          </Grid>
+          <Grid item xs={1}>
+            <Item>            
+              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hp:0})}>
+                  <DeleteIcon />
+              </IconButton>
+            </Item> 
+          </Grid>
+        </Grid>
+      </Box>
     </div>
   )
 }

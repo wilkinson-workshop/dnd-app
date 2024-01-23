@@ -10,7 +10,7 @@ import { Button } from '@mui/material'
 const style = {
     minHeight: '30px',
     border: '#ebebeb solid 1px',
-    margin: '10px'
+    margin: '10px 0'
 
 }
 

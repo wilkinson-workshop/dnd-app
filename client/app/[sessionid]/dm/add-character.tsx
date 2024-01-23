@@ -104,9 +104,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
       } else {
           return (
             <>
-                <IconButton aria-label="save" onClick={_ => onEdit(true)}>
-                    <AddIcon />
-                </IconButton>
+                <Button variant="contained" endIcon={<AddIcon />} onClick={_ => onEdit(true)}>
+                    Add
+                </Button>
             </>
           )
       }    
