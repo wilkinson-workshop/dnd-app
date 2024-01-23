@@ -3,16 +3,14 @@
 import { FC, useState } from "react";
 import { UpdateHp } from "./update-hp";
 import { Character } from "../../_apis/character";
+import { IconButton } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete'
 
 export interface CharacterHpProps{character: Character, updateCharacter: any}
 
 export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) => {
     const [edit, onEdit] = useState(false);
-
-    function instaKill(){
-        onEdit(false);
-        updateCharacter(updatedNpc(0));
-    }
 
     function updatedNpc(hp: number): Character{
         let updatedCharacter = {...character}
@@ -29,8 +27,9 @@ export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) =
         return (
             <>
             <span>{character.hp}</span>
-            <button type="button" onClick={x => onEdit(true)} >Edit</button>
-            <button type="button" onClick={instaKill} >InstaKill</button>
+            <IconButton aria-label="edit" onClick={x => onEdit(true)}>
+                <EditIcon />
+            </IconButton>
             </>
         )
     }

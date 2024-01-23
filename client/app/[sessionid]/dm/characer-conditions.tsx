@@ -4,6 +4,9 @@ import { FC, useState } from "react";
 import { ConditionType, Character } from "../../_apis/character";
 import { UpdateConditions } from "./update-conditions";
 import Condition from "./condition-item";
+import { IconButton } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import Stack from '@mui/material/Stack';
 
 export interface CharacterConditionsProps {character: Character, updateCharacter: any}
 
@@ -33,7 +36,9 @@ export const CharacterConditions: FC<CharacterConditionsProps> = ({character, up
                 {character.conditions.map((condition)=> (
                     <Condition key={condition} id={character.id} condition={condition} onDeleteCondition={(id: string, condition: ConditionType) => onConditionDelete(id, condition)}  />
                 ))}
-                <button type="button" onClick={x => onEdit(true)} >Edit</button>
+                <IconButton aria-label="edit" onClick={x => onEdit(true)}>
+                    <EditIcon />
+                </IconButton>
             </>
         )
     }

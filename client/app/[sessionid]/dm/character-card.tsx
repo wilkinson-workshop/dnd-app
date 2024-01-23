@@ -6,6 +6,9 @@ import { ItemTypes } from './item-types'
 import { Character } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './characer-conditions'
+import { IconButton } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete'
 
 const style = {
   border: '1px solid lightgray',
@@ -108,6 +111,11 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
       <div className="char-section">{character.name}</div>
       <div className="char-section"><CharacterHp character={character} updateCharacter={updateCharacter} /></div>
       <div className="char-section"><CharacterConditions character={character} updateCharacter={updateCharacter}/></div>
+      <div className="char-section">            
+        <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hp:0})}>
+            <DeleteIcon />
+        </IconButton>
+      </div>    
     </div>
   )
 }

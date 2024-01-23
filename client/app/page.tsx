@@ -5,6 +5,8 @@ import { createSession, endSession, getSessions, joinSession } from "./_apis/ses
 import { useState } from "react";
 import QRCode from "react-qr-code";
 import { createClient } from "./_apis/clientApi";
+import { Button } from "@mui/material";
+import { CharacterType } from "./_apis/character";
 
 const baseUrl = 'http://localhost:8000';
 
@@ -33,28 +35,25 @@ export default function HomePage() {
     createSession()
     .then(session => {
       setSession(session);
-      joinSession(session, {clientId: client, name: 'DM', type: 'dungeon_master'});
-    });
-  }
-
-  function handleEndSession(){
-    endSession(session)
-    .then(_ => {
-      setSession('')
+      joinSession(session, {clientId: client, name: 'DM', type: CharacterType.DuneonMaster});
     });
   }
 
   if(session != ''){
     return (
       <div>
-        <Link href={`/${session}/dm`}>View Session Dashboard</Link>
         <QRCode value={`${baseUrl}/${session}`} />
-        <button type="button" onClick={handleEndSession}>End Session</button>
+        <div>
+          <Link href={`/${session}/dm`}>View Session Dashboard</Link>
+        </div>       
       </div>
     )
   } else {
-    return ( <div>
-      <button type="button" onClick={handleCreateSession}>Create Session</button>
+    return ( 
+    <div>
+      <Button variant="contained" aria-label="create session" onClick={handleCreateSession}>
+        Create Session
+      </Button>
     </div>
     )
   }

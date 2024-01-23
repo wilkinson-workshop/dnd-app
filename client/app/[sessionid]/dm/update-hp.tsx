@@ -1,15 +1,16 @@
 import { FC, useState } from "react";
+import { IconButton, TextField } from "@mui/material";
+import SaveIcon from '@mui/icons-material/Save'
 
 export interface UpdateHpProps{id: string, currentHp: number, onUpdateClick: any}
 
 export const UpdateHp:FC<UpdateHpProps> = ({id, currentHp, onUpdateClick}) => {
     const [hp, setHp] = useState(currentHp);
 
-    return <form onSubmit={e => {
-                e.preventDefault();
-                onUpdateClick(id, hp)
-            }}>
-                <input type="number" value={hp} onChange={x => setHp(Number.parseInt(x.target.value))}></input>
-                <button type="submit">Update</button>
-            </form>
+    return <>
+            <TextField size="small" label="HP" value={hp} variant="outlined" onChange={x => setHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+            <IconButton aria-label="save" onClick={_ => onUpdateClick(id, hp)}>
+                <SaveIcon />
+            </IconButton>
+        </>
 }

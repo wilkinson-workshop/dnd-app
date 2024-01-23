@@ -10,7 +10,7 @@ export interface Character {
 export enum CharacterType{
     NonPlayer = 'non_player',
     Player = 'player',
-    DuneonMasteer = 'duneon_master'
+    DuneonMaster = 'duneon_master'
 }
 
 export enum ConditionType {
