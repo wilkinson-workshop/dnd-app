@@ -2,20 +2,20 @@
 The HTTP server core implementation.
 """
 
-import enum
 import pathlib
-import uuid
+import pprint
 
 # Third-party dependencies.
-import uvicorn
-from fastapi import APIRouter, FastAPI, HTTPException, WebSocket
+from fastapi import APIRouter, FastAPI, HTTPException, WebSocket, WebSocketException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Project level modules go here.
+from scryer.creatures import Character, Role
 from scryer.services import ServiceStatus
 from scryer.services.sessions import CombatSession, SessionShelver
+from scryer.util import request_uuid
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -23,23 +23,10 @@ from scryer.services.sessions import CombatSession, SessionShelver
 EXECUTION_ROOT = pathlib.Path.cwd()
 
 
-class CharacterType(enum.StrEnum):
-    PLAYER = enum.auto()
-    DM = enum.auto()
-
-
-# Should change to use legit type in the future
-class Character(BaseModel):
-    id:         str
-    name:       str
-    hp:         int
-    conditions: list[int]
-
-
 class JoinSessionRequest(BaseModel):
-    clientId:    str
+    client_uuid: str
     name:        str
-    type:        CharacterType
+    role:        Role
 
 
 class PlayerInput(BaseModel):
@@ -77,11 +64,11 @@ class CharacterService():
 
     @classmethod
     def add(cls, character):
-        character.id = str(uuid.uuid1())
+        character.id = str(request_uuid())
         cls.__characters.append(character)
     
     @classmethod
-    def edit(cls, id:str, character:Character):
+    def edit(cls, id: str, character: Character):
         for index, item in enumerate(cls.__characters):
             if item.id == id:
                 cls.__characters[index] = character
@@ -134,7 +121,9 @@ def setup_application():
     for mount in ASGI_APP_MOUNTS:
         app.mount(*mount)
     # Intall routes from appliction routers.
-    for _, router in APP_ROUTERS.items():
+    for name, router in APP_ROUTERS.items():
+        if name == "session":
+            pprint.pp(router.routes)
         app.include_router(router)
 
     return app
@@ -179,7 +168,7 @@ APP_ROUTERS = {
     # endpoints.
     "character": APIRouter(prefix="/characters"),
     # Defines the routes available for clients
-    "client": APIRouter(prefix="/client"),
+    "client": APIRouter(prefix="/clients"),
     # Defines the routes available to managing
     # game sessions.
     "session": APIRouter(prefix="/sessions")
@@ -233,7 +222,7 @@ async def clients_make():
     clientId
     """
 
-    return str(uuid.uuid1())
+    return request_uuid()
 
 
 @APP_ROUTERS["admin"].get("/healthcheck")
@@ -260,26 +249,28 @@ async def healthcheck(service_name: str | None = None):
     return {"count": 1, "results": [result]}
 
 
-@APP_ROUTERS["session"].websocket("/{session_uuid}")
-async def sessions_join(sock: WebSocket, session_uuid: str, request: JoinSessionRequest):
+@APP_ROUTERS["session"].websocket("/{session_uuid}/ws")
+async def sessions_join(sock: WebSocket, session_uuid: str, event: JoinSessionRequest):
     """
     Join an active session. Passes in some
     arbitrary `client_uuid`.
     """
 
+    await sock.accept()
+
     found = (await APP_SERIVCES["sessions"].locate(session_uuid))
     if not found:
-        raise HTTPException(404, f"No such session {session_uuid!r}")
+        raise WebSocketException(404, f"No such session {session_uuid!r}")
 
     _, session = found[0]
     # TODO: Replace the lower code with new
     # interfaces for `Character` types and event
     # types.
-    session.attach_client(sock)
+    await session.attach_client(sock)
 
     # Probably use attach_clients
-    if(request.type == "player"):
-        character = Character(id = '', name = request.name, hp = 500, conditions = [])
+    if(event.type == "player"):
+        character = Character(id = '', name = event.name, hp = 500, conditions = [])
         CharacterService.add(character)
 
 
@@ -335,10 +326,14 @@ async def sessions_player_input_send(idn: str, request:PlayerInput):
     # dashboard
 
 
-@APP_ROUTERS["session"].websocket("/socket")
-async def session_sock(sock: WebSocket):
+@app.websocket_route("/ws")
+async def session_sock(sock: WebSocket, *args, **kwds):
     """Initiate a session `WebSocket`"""
 
+    import logging
+
+    logger = logging.getLogger("uvicorn")
+    logger.info(f"Recieved connection {sock}")
     await sock.accept()
     while True:
         data = await sock.receive_text()
@@ -348,4 +343,4 @@ async def session_sock(sock: WebSocket):
 if __name__ == "__main__":
     # .\.venv\Scripts\python.exe -m src.scryer.app
     import uvicorn
-    uvicorn.run("src.scryer.app:setup_application", reload=True)
+    uvicorn.run(setup_application())

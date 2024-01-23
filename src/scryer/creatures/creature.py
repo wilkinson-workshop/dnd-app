@@ -1,11 +1,18 @@
 import abc, typing
 
+from pydantic import ConfigDict, BaseModel, Field
+
 from scryer.creatures.attrs import Condition, HitPoints, Role
 from scryer.creatures.users import User
+from scryer.util import UUID
 
 # A dummy type to represent the actual session
 # object.
 type Session[T] = object
+
+
+class CreatureMeta(type(typing.Protocol), type(BaseModel)):
+    pass
 
 
 class Creature(typing.Protocol):
@@ -16,27 +23,40 @@ class Creature(typing.Protocol):
 
     @property
     @abc.abstractmethod
-    def conditions(self) -> typing.Sequence[Condition]:
-        """Active conditions on this creature."""
-    @property
-    @abc.abstractmethod
-    def hit_points(self) -> HitPoints:
-        """
-        Returns the hit-points (HP) of this
-        creature.
-        """
-    @property
-    @abc.abstractmethod
     def is_player(self) -> bool:
         """
         Whether creater is a Player Character or a
         Non-Player Character.
         """
-    @property
-    @abc.abstractmethod
-    def owner(self) -> User:
-        """The user who 'owns' this creature."""
 
     @abc.abstractmethod
     def role(self, session: Session) -> Role:
         """The role assigned to this creature."""
+
+
+class CreatureModel(BaseModel):
+    """
+    Base creature model. Attributes of a playable
+    or non-playable character.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    label:      UUID
+    name:       str | None
+    conditions: list[Condition]
+    """Active conditions on this creature."""
+    hit_points: int
+    """
+    Returns the hit-points (HP) of this
+    creature.
+    """
+    # owner: User | None
+    # """The user who 'owns' this creature."""
+
+
+class CreatureBase(CreatureModel, Creature, metaclass=CreatureMeta):
+    """
+    Shortcut class to subclass from both
+    `Creature` protocol and `CreatureModel` class.
+    """

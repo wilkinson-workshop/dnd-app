@@ -10,12 +10,12 @@ from scryer.util.asyncit import _aiter
 
 # Special types used only in `Session` specific
 # implementations.
-type ActionResult[C] = tuple[C, int]
+type ActionResult[C: WebSocket] = tuple[C, int]
 """
 Result from a session action. Returns the
 connection and the number of bytes written to it.
 """
-type ActionAwaitable[C] = typing.Coroutine[None, None, ActionResult[C]]
+type ActionAwaitable[C: WebSocket] = typing.Coroutine[None, None, ActionResult[C]]
 """Awaitable `Action` type."""
 type Action[C, **P] = typing.Callable[typing.Concatenate[C, P], ActionAwaitable]
 """
@@ -54,7 +54,6 @@ class Session[C: WebSocket](Service):
     async def attach_client(self, client: C):
         """Process a `connect` request."""
 
-        await client.accept()
         self.__clients.add(client)
 
     async def broadcast_action[**P](self, action: Action[C, P]) -> typing.Sequence[ActionResult]:

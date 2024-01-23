@@ -1,13 +1,17 @@
 import abc
 import typing
 
-# A dummy type to represent the actual session
-# object.
-type Session[T] = object
+import typing
+if typing.TYPE_CHECKING:
+    from scryer.services import Session
+else:
+    # A dummy type to represent the actual session
+    # object.
+    type Session[T] = object
 
 
+@typing.runtime_checkable
 class User(typing.Protocol):
-
     @property
     @abc.abstractmethod
     def is_active(self) -> bool:
@@ -15,6 +19,7 @@ class User(typing.Protocol):
         User is currently online and in a
         session.
         """
+
     @property
     @abc.abstractmethod
     def session(self) -> Session[typing.Any]:
