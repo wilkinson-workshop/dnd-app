@@ -1,9 +1,14 @@
-import { FormEvent, useState } from "react";
-import { ConditionOptions, ConditionType } from "../../_apis/npc";
+import { FC, FormEvent, useState } from "react";
+import { Character, CharacterType, ConditionOptions, ConditionType } from "../../_apis/character";
 
-export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
+export interface AddCharacterProps{
+    onAddClick: (character: Character) => void
+}
+
+export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [edit, onEdit] = useState(false);
     const [hp, setHp] = useState(1);
+    const [initiative, setInitiative] = useState(1);
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
@@ -12,9 +17,11 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
         onEdit(false);
         onAddClick({
             id: '', //use database for this.
+            initiative: initiative,
             name: name, 
             hp: hp, 
-            conditions:conditions
+            conditions:conditions,
+            type: CharacterType.NonPlayer
           });
           setHp(1);
           setName('Character')
@@ -23,6 +30,12 @@ export default function AddNpcButton({onAddClick}: {onAddClick: any}) {
 
       if(edit){ return (
         <form onSubmit={handleSubmit}>
+                        <div>
+                <label>
+                    Initiative:
+                    <input type="number" value={initiative} onChange={x => setInitiative(Number.parseInt(x.target.value))}></input>
+                </label>                
+            </div>
             <div>
                 <label>
                     Name:

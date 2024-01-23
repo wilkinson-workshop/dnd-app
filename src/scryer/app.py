@@ -10,6 +10,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, WebSocket, WebSocketExcep
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from scryer.creatures.attrs import Role
 
 # Project level modules go here.
 from scryer.creatures import Character, Role
@@ -192,6 +193,14 @@ async def characters_find(session_uuid: str | None = None):
 
     return CharacterService.get()
 
+@APP_ROUTERS["character"].get("/{session_uuid}/initiative")
+async def characters_find(session_uuid: str):
+    """List initiative order for characters on the field. For use by player so shows limited info."""
+
+    def getNames(s: Character):
+        return {"id":s.id, "name": s.name}
+    mapping = map(getNames, CharacterService.get())
+    return list(mapping)
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
 async def characters_make(session_uuid:str, character: Character):
@@ -204,14 +213,14 @@ async def characters_make(session_uuid:str, character: Character):
 async def characters_push(session_uuid:str, idn:str, character: Character):
     """Update the specified character."""
 
-    CharacterService.edit(id, character)
+    CharacterService.edit(idn, character)
 
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{idn}")
 async def characters_kill(session_uuid:str, idn:str):
     """Delete the specified character."""
 
-    CharacterService.delete(id);
+    CharacterService.delete(idn);
 
 
 @APP_ROUTERS["client"].post("/")
@@ -272,6 +281,7 @@ async def sessions_join(sock: WebSocket, session_uuid: str, event: JoinSessionRe
     if(event.type == "player"):
         character = Character(id = '', name = event.name, hp = 500, conditions = [])
         CharacterService.add(character)
+    # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
 
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")

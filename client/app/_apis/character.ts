@@ -1,8 +1,16 @@
-export interface Npc {
+export interface Character {
     id: string,
     name: string,
+    initiative: number,
     hp: number,
-    conditions: ConditionType[]
+    conditions: ConditionType[],
+    type: CharacterType 
+}
+
+export enum CharacterType{
+    NonPlayer = 'non_player',
+    Player = 'player',
+    DuneonMasteer = 'duneon_master'
 }
 
 export enum ConditionType {

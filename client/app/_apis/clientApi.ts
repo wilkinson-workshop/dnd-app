@@ -1,6 +1,6 @@
 
 const baseUrl = 'http://localhost:8000';
-const apiBaseUrl = `${baseUrl}/clients`;
+const apiBaseUrl = `${baseUrl}/client`;
 
 export async function createClient(): Promise<string>{
   const res = await fetch(`${apiBaseUrl}/`, {

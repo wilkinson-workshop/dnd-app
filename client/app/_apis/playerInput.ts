@@ -1,3 +1,5 @@
+import { CharacterType } from "./character"
+
 export interface PlayerInput {
     input: number,
     clientId: string,
@@ -7,5 +9,5 @@ export interface PlayerInput {
 export interface JoinSessionRequest {
     clientId: string,
     name: string,
-    type: "player" | "dm"
+    type: CharacterType
 }
