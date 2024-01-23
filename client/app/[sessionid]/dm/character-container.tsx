@@ -7,7 +7,12 @@ import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/a
 import { AddCharacter } from './add-character'
 import { Button } from '@mui/material'
 
-const style = {}
+const style = {
+    minHeight: '30px',
+    border: '#ebebeb solid 1px',
+    margin: '10px'
+
+}
 
 export interface ContainerState {
   cards: Character[]
@@ -81,14 +86,18 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
 
     return (
       <>
-        <div style={style}>
-          {cards.map((card, i) => renderCard(card, i))}
+        <div style={style}>{cards.length > 0 ?
+          cards.map((card, i) => renderCard(card, i)):
+          (
+            <div style={{display:"inline-block", padding: "5px"}}>Please add Characters</div>
+          )        
+        }
         </div>        
         <AddCharacter onAddClick={handleAddCharacter} />
         <div>
-          <Button variant="contained" aria-label="load" onClick={reloadList}>
+          {/* <Button variant="contained" aria-label="load" onClick={reloadList}>
             Load Characters
-          </Button>
+          </Button> */}
         </div>
          
       </>

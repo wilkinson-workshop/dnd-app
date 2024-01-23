@@ -1,7 +1,7 @@
 import { FC, FormEvent, useState } from "react";
 import { Character, CharacterType, ConditionOptions, ConditionType } from "../../_apis/character";
 import { Button, Grid, IconButton, TextField } from "@mui/material";
-import AddIcon from '@mui/icons-material/Add'
+import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
