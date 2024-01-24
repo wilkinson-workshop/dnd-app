@@ -118,10 +118,10 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
           <Grid item xs={2}>
             <Item>{character.name}</Item>
           </Grid>
-          <Grid item xs={2}>
+          <Grid item xs={3}>
             <Item><CharacterHp character={character} updateCharacter={updateCharacter} /></Item>
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={5}>
             <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
           </Grid>
           <Grid item xs={1}>

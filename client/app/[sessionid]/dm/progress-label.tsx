@@ -1,17 +1,23 @@
 import LinearProgress, { LinearProgressProps } from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import { styled } from '@mui/material';
 
-function LinearProgressWithLabel(props: LinearProgressProps & { value: number, text: number }) {
+function LinearProgressWithLabel(props: LinearProgressProps & { value: number, text: string }) {
+  const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
+    height: 20,
+  }));
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Box sx={{ width: '100%', mr: 1 }}>
-        <LinearProgress variant="determinate" {...props} />
+        <BorderLinearProgress variant="determinate" {...props} />
+        <Box sx={{position: 'relative', bottom: '20px', textAlign: 'center', color:'white'}}>
+        <Typography variant="body2">{
+            props.text}</Typography>
+        </Box>
       </Box>
-      <Box sx={{ minWidth: 35 }}>
-        <Typography variant="body2" color="text.secondary">{
-          props.text}</Typography>
-      </Box>
+
     </Box>
   );
 }
@@ -21,7 +27,7 @@ export default function LinearWithValueLabel(props: LinearProgressProps & { valu
   
   return (
     <Box sx={{ width: '100%' }}>
-      <LinearProgressWithLabel color={percent < 10 ? 'error': 'primary'} text={props.value} value={percent } />
+      <LinearProgressWithLabel color={percent < 10 ? 'error': 'primary'} text={`${props.value}/${props.maxValue}`} value={percent } />
     </Box>
   );
 }

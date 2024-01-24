@@ -1,6 +1,5 @@
 'use client'
 
-import Link from "next/link";
 import { createSession, getSessions, joinSession } from "./_apis/sessionApi";
 import { useState } from "react";
 import { createClient } from "./_apis/clientApi";
@@ -33,17 +32,18 @@ export default function HomePage() {
     });
   }
 
-  function joinActiveSession(){
-    joinSession(session, {clientId: client, name: 'DM', type: CharacterType.DuneonMaster})
-    .then(_=> router.push(`/${session}/dm`));
+  function joinActiveSession(selectedSession:string){
+    joinSession(selectedSession, {clientId: client, name: 'DM', type: CharacterType.DuneonMaster})
+    .then(_=> {
+      router.push(`/${selectedSession}/dm`);
+    });
   }
-
 
   function handleCreateSession(){
     createSession()
-    .then(session => {
+    .then(session => {     
+      joinActiveSession(session);
       setSession(session);
-      joinActiveSession();
     });
   }
 
@@ -60,8 +60,7 @@ export default function HomePage() {
           <InputLabel id="session">Session</InputLabel>
           <Select
             labelId="session"
-            id="demo-simple-select"
-            value={session}
+            value={''}
             label="Session"
             onChange={handleChangeSession}
           >
@@ -70,7 +69,7 @@ export default function HomePage() {
             )}
           </Select>
       </FormControl>
-      <Button variant="contained" aria-label="create session" onClick={joinActiveSession}>
+      <Button variant="contained" aria-label="create session" onClick={() => joinActiveSession(session)}>
         Join
       </Button>
 
