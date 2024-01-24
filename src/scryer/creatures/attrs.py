@@ -1,4 +1,4 @@
-import enum, typing
+import enum, math, typing
 
 
 class Condition(typing.NamedTuple):
@@ -12,38 +12,49 @@ class Condition(typing.NamedTuple):
     color:       int
 
 
-class HitPoints(int):
+class HitPoints(typing.NamedTuple):
     """
     Integer alias to represent **Hit Points**
     where an upper bound, and a lower bound value,
     is defined.
     """
 
-    max_hitpoints: int
-    min_hitpoints: int = 0
+    type Self  = typing.Self
+    type Other = Self | typing.SupportsFloat | typing.SupportsIndex | typing.SupportsInt
 
-    def __new__(
-            cls,
-            max_hitpoints: int,
-            min_hitpoints: int | None = None,
-            current_hitpoints: int | None = None):
+    current: int | float
+    maximum: int | float = -1
 
-        if current_hitpoints:
-            initial_hitpoints = current_hitpoints
-        else:
-            initial_hitpoints = max_hitpoints
+    def try_maximum(self) -> int | float:
+        """
+        Conditionally returns 'infinity' if the
+        maximum value was not specified.
+        """
 
-        inst = super().__new__(initial_hitpoints) #type: ignore[call-overload]
-        inst.max_hitpoints = max_hitpoints
-        inst.min_hitpoints = min_hitpoints or cls.min_hitpoints
+        if self.maximum == -1:
+            return math.inf
+        return self.maximum
 
-        return inst
+    def __add__(self, other: Other) -> Self:
+        change = HitPoints._parse_other_value(other)
+        max_hp = self.try_maximum()
+        return self._new(min(self.current + change, max_hp), max_hp)
 
-    def __add__(self, other):
-        return min(self + other, self.max_hitpoints)
+    def __sub__(self, other: Other) -> Self:
+        change = HitPoints._parse_other_value(other)
+        min_hp = 0
+        max_hp = self.maximum
+        return self._new(max(self.current - change, min_hp), max_hp)
 
-    def __sub__(self, other):
-        return max(self - other, self.min_hitpoints)
+    @classmethod
+    def _new(cls, current: int, maximum: int) -> Self:
+        return cls(current, maximum)
+
+    @staticmethod
+    def _parse_other_value(other: Other) -> int | float:
+        if isinstance(other, HitPoints):
+            return other.current
+        return other
 
 
 class Role(enum.StrEnum):
