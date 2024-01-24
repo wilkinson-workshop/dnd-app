@@ -6,14 +6,20 @@ import pathlib
 import pprint
 
 # Third-party dependencies.
-from fastapi import APIRouter, FastAPI, HTTPException, WebSocket, WebSocketException
+from fastapi import (
+    APIRouter,
+    FastAPI,
+    HTTPException,
+    WebSocket,
+    WebSocketException
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from scryer.creatures.attrs import Role
 
 # Project level modules go here.
-from scryer.creatures import Character, Role
+from scryer.creatures import CharacterV2, Role
 from scryer.services import ServiceStatus
 from scryer.services.sessions import CombatSession, SessionShelver
 from scryer.util import request_uuid
@@ -21,7 +27,10 @@ from scryer.util import request_uuid
 # Root directory appliction is being executed
 # from. Will be used for creating and
 # fetching assets related to the application.
-EXECUTION_ROOT = pathlib.Path.cwd()
+EXECUTION_ROOT   = pathlib.Path.cwd()
+APPLICATION_ROOT = pathlib.Path(__file__).parent
+SOURCE_ROOT      = APPLICATION_ROOT.parent
+
 
 class CharacterV1(BaseModel):	
     id:         str	
@@ -192,7 +201,7 @@ APP_ROUTERS = {
 # the root application later. Will be used for
 # serving additional materials to the front-end.
 ASGI_APP_MOUNTS = (
-    ("/static", StaticFiles(directory=EXECUTION_ROOT / "static", html=True)),
+    ("/static", StaticFiles(directory=SOURCE_ROOT / "static", html=True)),
 )
 
 
