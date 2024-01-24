@@ -23,6 +23,16 @@ from scryer.util import request_uuid
 # fetching assets related to the application.
 EXECUTION_ROOT = pathlib.Path.cwd()
 
+class CharacterV1(BaseModel):	
+    id:         str	
+    name:       str	
+    hp:         int	
+    maxHp:      int
+    conditions: list[int]
+    initiative: int
+    type:       Role 
+
+
 
 class JoinSessionRequest(BaseModel):
     client_uuid: str
@@ -57,7 +67,7 @@ class PlayerInputService():
 
 # Service layer working with in-memory data
 class CharacterService():
-    __characters:list[Character]= []
+    __characters:list[CharacterV1]= []
 
     @classmethod
     def get(cls):
@@ -69,7 +79,7 @@ class CharacterService():
         cls.__characters.append(character)
     
     @classmethod
-    def edit(cls, id: str, character: Character):
+    def edit(cls, id: str, character: CharacterV1):
         for index, item in enumerate(cls.__characters):
             if item.id == id:
                 cls.__characters[index] = character
@@ -197,20 +207,20 @@ async def characters_find(session_uuid: str | None = None):
 async def characters_find(session_uuid: str):
     """List initiative order for characters on the field. For use by player so shows limited info."""
 
-    def getNames(s: Character):
+    def getNames(s: CharacterV1):
         return {"id":s.id, "name": s.name}
     mapping = map(getNames, CharacterService.get())
     return list(mapping)
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
-async def characters_make(session_uuid:str, character: Character):
+async def characters_make(session_uuid:str, character: CharacterV1):
     """Create a new character"""
 
     CharacterService.add(character);
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{idn}")
-async def characters_push(session_uuid:str, idn:str, character: Character):
+async def characters_push(session_uuid:str, idn:str, character: CharacterV1):
     """Update the specified character."""
 
     CharacterService.edit(idn, character)
