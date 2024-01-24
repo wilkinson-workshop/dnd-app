@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from 'react';
 import QRCode from "react-qr-code";
 import { endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
@@ -10,6 +10,9 @@ import { Container } from "./character-container";
 import { Button } from "@mui/material";
 import Dialog from '@mui/material/Dialog';
 import { useRouter } from "next/navigation";
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { CharacterType } from '@/app/_apis/character';
+import { EventType } from '@/app/_apis/eventType';
 
 const baseUrl = 'http://localhost:3000/';
 
@@ -39,6 +42,22 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
   const [open, setOpen] = useState(false);
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
   const router = useRouter();
+  
+  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.DungeonMaster}});
+
+  const handleClickSendMessage = useCallback(() => sendJsonMessage({event_type: EventType.RequestInitiative, event_body: {name: 'test', value: 10}}), []);
+
+  useEffect(() => {
+    if (lastMessage !== null) {
+      //this is the websocket
+      switch(lastMessage.data){
+        case EventType.ReceiveInitiative: {
+          handleGetPlayerInput();
+        }
+      }
+    }
+  }, [lastMessage]);
+
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -85,6 +104,9 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
         </div>
       ))}  
       <div>
+        <button onClick={handleClickSendMessage}>
+          Request Initiative
+        </button>
         {/* <Button variant="contained" aria-label="load input" onClick={handleGetPlayerInput}>
           Get Player Input 
         </Button> */}

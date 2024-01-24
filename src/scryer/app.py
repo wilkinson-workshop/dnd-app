@@ -2,15 +2,17 @@
 The HTTP server core implementation.
 """
 
+import enum
 import pathlib
 import pprint
 
 # Third-party dependencies.
 from fastapi import (
-    APIRouter,
-    FastAPI,
-    HTTPException,
-    WebSocket,
+    APIRouter, 
+    FastAPI, 
+    HTTPException, 
+    WebSocket, 
+    WebSocketDisconnect,
     WebSocketException
 )
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +25,49 @@ from scryer.creatures import CharacterV2, Role
 from scryer.services import ServiceStatus
 from scryer.services.sessions import CombatSession, SessionShelver
 from scryer.util import request_uuid
+
+class EventType(enum.StrEnum):
+    """
+    The types of events the system uses.
+    """
+    REQUEST_INITIATIVE  = enum.auto()
+    RECEIVE_INITIATIVE  = enum.auto()
+
+class EventMessage(BaseModel):
+    event_type: EventType
+    event_body: str
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[str, list[WebSocket]] = {"players": [], "dm": []}
+
+    async def connect(self, websocket: WebSocket, is_player: bool):
+        await websocket.accept()
+        if(is_player):
+            self.active_connections["players"].append(websocket)
+        else:
+            self.active_connections["dm"].append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        try:
+            self.active_connections["players"].remove(websocket)
+        except:
+            self.active_connections["dm"].remove(websocket)
+
+    async def send_player_session_event(self, session_id: str, message: EventMessage):        
+        for connection in self.active_connections["players"]:
+            await connection.send_text(message.event_type)
+
+    async def send_dm_session_event(self, session_id: str, message: EventMessage):
+        for connection in self.active_connections["dm"]:
+            await connection.send_text(message.event_type)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+
+manager = ConnectionManager()
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -298,7 +343,7 @@ async def sessions_join(sock: WebSocket, session_uuid: str, event: JoinSessionRe
 
     # Probably use attach_clients
     if(event.type == "player"):
-        character = Character(id = '', name = event.name, hp = 500, conditions = [])
+        character = CharacterV1(id = '', name = event.name, hp = 500, conditions = [])
         CharacterService.add(character)
     # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
 
@@ -350,9 +395,8 @@ async def sessions_player_input_send(idn: str, request:PlayerInput):
     """
 
     PlayerInputService.add(request)
-    # this should trigger DM client to call
-    # player_input_get so it refreshes live on dm
-    # dashboard
+    # this sends a websocket event to the dm connected.
+    await manager.send_dm_session_event("", EventMessage(event_type=EventType.RECEIVE_INITIATIVE, event_body="test"))
 
 
 @app.websocket_route("/ws")
@@ -363,10 +407,16 @@ async def session_sock(sock: WebSocket, *args, **kwds):
 
     logger = logging.getLogger("uvicorn")
     logger.info(f"Recieved connection {sock}")
-    await sock.accept()
-    while True:
-        data = await sock.receive_text()
-        await sock.send_text(f"Got {data!s} from connection.")
+
+    await manager.connect(sock, sock.query_params["type"] == Role.PLAYER)
+
+    try:
+        while True:
+            data = await sock.receive_text()
+            # this sends a websocket event to all players. I am triggering it for all incoming messages Ideally it should be triggered by a specific input.
+            await manager.send_player_session_event("", EventMessage(event_type=EventType.REQUEST_INITIATIVE, event_body="test"))
+    except WebSocketDisconnect: 
+        manager.disconnect(sock)
 
 
 if __name__ == "__main__":
