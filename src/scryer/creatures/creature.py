@@ -40,22 +40,25 @@ class CreatureModel(BaseModel):
     or non-playable character.
     """
 
+
+class CreatureModelV2(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     label:      UUID
     name:       str | None
     conditions: list[Condition]
     """Active conditions on this creature."""
-    hit_points: int
+    hit_points: HitPoints
     """
     Returns the hit-points (HP) of this
     creature.
     """
+    initiative: int
     # owner: User | None
     # """The user who 'owns' this creature."""
 
 
-class CreatureBase(CreatureModel, Creature, metaclass=CreatureMeta):
+class CreatureV2(CreatureModelV2, Creature, metaclass=CreatureMeta):
     """
     Shortcut class to subclass from both
     `Creature` protocol and `CreatureModel` class.

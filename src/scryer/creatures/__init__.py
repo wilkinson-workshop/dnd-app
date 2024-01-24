@@ -1,8 +1,9 @@
 __all__ = (
     "Creature",
-    "CreatureBase",
+    "CreatureV2",
     "CreatureMeta",
     "CreatureModel",
+    "CreatureModelV2",
     "Condition",
     "HitPoints",
     "Role",
@@ -12,9 +13,10 @@ __all__ = (
 from scryer.creatures.attrs import Condition, HitPoints, Role
 from scryer.creatures.creature import (
     Creature,
-    CreatureBase,
+    CreatureV2,
     CreatureMeta,
-    CreatureModel)
+    CreatureModel,
+    CreatureModelV2)
 from scryer.creatures.users import User
 
 import typing
@@ -26,7 +28,7 @@ else:
     type Session[T] = object
 
 
-class Character(CreatureBase):
+class CharacterV2(CreatureV2):
     """A playable/non-playable creature."""
 
     @property
@@ -35,10 +37,3 @@ class Character(CreatureBase):
 
     def role(self, session: Session):
         raise NotImplemented("TODO: implement `role`")
-
-
-class Monster(CreatureBase):
-    """
-    A non-playable creature that is potentially
-    hostile in combat.
-    """
