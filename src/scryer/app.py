@@ -2,8 +2,8 @@
 The HTTP server core implementation.
 """
 
+import enum
 import pathlib
-import pprint
 
 # Third-party dependencies.
 from fastapi import (
@@ -11,17 +11,20 @@ from fastapi import (
     FastAPI,
     HTTPException,
     WebSocket,
+    WebSocketDisconnect,
     WebSocketException
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from scryer.creatures.attrs import Role
 
 # Project level modules go here.
-from scryer.creatures import CharacterV2, Role
-from scryer.services import ServiceStatus
-from scryer.services.sessions import CombatSession, SessionShelver
+from scryer.creatures import CharacterV1, Role
+from scryer.services import (
+    CombatSession,
+    ServiceStatus,
+    SessionMemoryBroker
+)
 from scryer.util import request_uuid
 
 # Root directory appliction is being executed
@@ -30,17 +33,6 @@ from scryer.util import request_uuid
 EXECUTION_ROOT   = pathlib.Path.cwd()
 APPLICATION_ROOT = pathlib.Path(__file__).parent
 SOURCE_ROOT      = APPLICATION_ROOT.parent
-
-
-class CharacterV1(BaseModel):	
-    id:         str	
-    name:       str	
-    hp:         int	
-    maxHp:      int
-    conditions: list[int]
-    initiative: int
-    type:       Role 
-
 
 
 class JoinSessionRequest(BaseModel):
@@ -55,8 +47,6 @@ class PlayerInput(BaseModel):
     clientId:   str
 
 
-# Service layer working with in-memory data
-    
 # Ideally only one value should be for each client using client id in playerInput
 class PlayerInputService():
     __inputs:list[PlayerInput]= []
@@ -74,37 +64,27 @@ class PlayerInputService():
         cls.__inputs = []
 
 
-# Service layer working with in-memory data
-class CharacterService():
-    __characters:list[CharacterV1]= []
+async def _character_make(session_uuid: str, character: CharacterV1):
+    session: CombatSession
+    _, session = (await _sessions_find(session_uuid))[0]
+    await session.characters.modify(character.creature_uuid, character)
 
-    @classmethod
-    def get(cls):
-        return cls.__characters
 
-    @classmethod
-    def add(cls, character):
-        character.id = str(request_uuid())
-        cls.__characters.append(character)
-    
-    @classmethod
-    def edit(cls, id: str, character: CharacterV1):
-        for index, item in enumerate(cls.__characters):
-            if item.id == id:
-                cls.__characters[index] = character
+async def _sessions_find(session_uuid: str | None = None):
+    locator = APP_SERIVCES["sessions"].locate
+    locator = locator(request_uuid(session_uuid)) if session_uuid else locator()
 
-    @classmethod
-    def delete(cls, id: str):
-        for index, item in enumerate(cls.__characters):
-            if item.id == id:
-                cls.__characters.remove(item)
+    found = await locator
+    if not found and session_uuid:
+        raise HTTPException(404, f"No session at {session_uuid}")
+    return found
 
 
 # -----------------------------------------------
 # Appliction Services.
 # -----------------------------------------------
 APP_SERIVCES = {
-    "sessions": SessionShelver("scryer_sessions", CombatSession),
+    "sessions": SessionMemoryBroker(CombatSession),
 }
 
 # -----------------------------------------------
@@ -141,9 +121,7 @@ def setup_application():
     for mount in ASGI_APP_MOUNTS:
         app.mount(*mount)
     # Intall routes from appliction routers.
-    for name, router in APP_ROUTERS.items():
-        if name == "session":
-            pprint.pp(router.routes)
+    for _, router in APP_ROUTERS.items():
         app.include_router(router)
 
     return app
@@ -210,36 +188,51 @@ ASGI_APP_MOUNTS = (
 async def characters_find(session_uuid: str | None = None):
     """List current characters on the field."""
 
-    return CharacterService.get()
+    found = await _sessions_find(session_uuid)
+    data  = {
+        f[1].session_uuid: [c[1] for c in await f[1].characters.locate()]
+        for f in found
+    }
+
+    if session_uuid:
+        data = data[request_uuid(session_uuid)]
+    return data
+
 
 @APP_ROUTERS["character"].get("/{session_uuid}/initiative")
 async def characters_find(session_uuid: str):
-    """List initiative order for characters on the field. For use by player so shows limited info."""
+    """
+    List initiative order for characters on the
+    field. For use by player so shows limited
+    info.
+    """
 
-    def getNames(s: CharacterV1):
-        return {"id":s.id, "name": s.name}
-    mapping = map(getNames, CharacterService.get())
-    return list(mapping)
+    _, session = (await _sessions_find(session_uuid))[0]
+    return {c.creature_id: c.initiative for c in session.creatures}
+
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
-async def characters_make(session_uuid:str, character: CharacterV1):
+async def characters_make(session_uuid: str, character: CharacterV1):
     """Create a new character"""
 
-    CharacterService.add(character);
+    character.id = str(request_uuid())
+    await _character_make(session_uuid, character)
 
 
-@APP_ROUTERS["character"].patch("/{session_uuid}/{idn}")
-async def characters_push(session_uuid:str, idn:str, character: CharacterV1):
+@APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
+async def characters_push(session_uuid: str, character_uuid: str, character: CharacterV1):
     """Update the specified character."""
 
-    CharacterService.edit(idn, character)
+    await _character_make(session_uuid, character)
 
 
-@APP_ROUTERS["character"].delete("/{session_uuid}/{idn}")
-async def characters_kill(session_uuid:str, idn:str):
+@APP_ROUTERS["character"].delete("/{session_uuid}/{character_uuid}")
+async def characters_kill(session_uuid:str, character_uuid:str):
     """Delete the specified character."""
 
-    CharacterService.delete(idn);
+    session: CombatSession
+    _, session = (await _sessions_find(session_uuid))[0]
+    await session.characters.delete(request_uuid(character_uuid))
 
 
 @APP_ROUTERS["client"].post("/")
@@ -286,20 +279,15 @@ async def sessions_join(sock: WebSocket, session_uuid: str, event: JoinSessionRe
 
     await sock.accept()
 
-    found = (await APP_SERIVCES["sessions"].locate(session_uuid))
-    if not found:
-        raise WebSocketException(404, f"No such session {session_uuid!r}")
-
-    _, session = found[0]
+    _, session = (await _sessions_find(session_uuid))[0]
     # TODO: Replace the lower code with new
     # interfaces for `Character` types and event
     # types.
-    await session.attach_client(sock)
+    _ = await session.attach_client(sock)
 
     # Probably use attach_clients
     if(event.type == "player"):
-        character = Character(id = '', name = event.name, hp = 500, conditions = [])
-        CharacterService.add(character)
+        _, character = await APP_SERIVCES["characters"].create(id="", name=event.name, hp=500, conditions=[])
     # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
 
 
@@ -310,7 +298,7 @@ async def sessions_find(session_uuid: str | None = None):
 
     locator = APP_SERIVCES["sessions"].locate
     locator = locator(session_uuid) if session_uuid else locator()
-    return await locator
+    return [session_uuid for session_uuid, _ in await locator]
 
 
 @APP_ROUTERS["session"].post("/")
@@ -359,10 +347,6 @@ async def sessions_player_input_send(idn: str, request:PlayerInput):
 async def session_sock(sock: WebSocket, *args, **kwds):
     """Initiate a session `WebSocket`"""
 
-    import logging
-
-    logger = logging.getLogger("uvicorn")
-    logger.info(f"Recieved connection {sock}")
     await sock.accept()
     while True:
         data = await sock.receive_text()

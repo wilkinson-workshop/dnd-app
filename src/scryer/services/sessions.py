@@ -3,9 +3,11 @@ import abc, asyncio, typing, uuid
 
 from fastapi import WebSocket
 
-from scryer.services.brokers import ShelfBroker
+from scryer.creatures import Creature, CharacterV1
+from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
+from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
-from scryer.util import request_uuid
+from scryer.util import UUID, request_uuid
 from scryer.util.asyncit import _aiter
 
 # Special types used only in `Session` specific
@@ -32,7 +34,7 @@ class Session[C: WebSocket](Service):
 
     # Set is an array of hashable objects that are
     # unique. Much like a mathematical set.
-    __clients: set[C]
+    _clients: dict[UUID, C]
 
     @classmethod
     @abc.abstractmethod
@@ -40,21 +42,23 @@ class Session[C: WebSocket](Service):
         """Creates a new session instance."""
 
     @property
-    def label(self) -> str:
+    def session_uuid(self) -> UUID:
         """Identity of this session."""
 
-        return "00000000-0000-0000-0000-000000000000"
+        return uuid.UUID()
 
     @property
-    def clients(self) -> typing.Sequence[C]:
+    def clients(self) -> dict[UUID, C]:
         """Active client connections."""
 
-        return tuple(self.__clients)
+        return self._clients
 
-    async def attach_client(self, client: C):
+    async def attach_client(self, client: C) -> UUID:
         """Process a `connect` request."""
 
-        self.__clients.add(client)
+        client_uuid = request_uuid()
+        self.clients[client_uuid] = client
+        return client_uuid
 
     async def broadcast_action[**P](self, action: Action[C, P]) -> typing.Sequence[ActionResult]:
         """
@@ -79,13 +83,14 @@ class Session[C: WebSocket](Service):
         required cleanup.
         """
 
-        async for client in _aiter(self.clients):
+        async for client in _aiter(self.clients.values()):
             await self.detach_client(client)
-        self.__clients.clear()
+        self.clients.clear()
 
-    async def detach_client(self, client: C):
+    async def detach_client(self, client_uuid: UUID):
         """Disconnect a client."""
 
+        client = self.clients.pop(client_uuid)
         await client.close()
 
     async def do_action[**P](self, client: C, action: Action[C, P], **kwds) -> ActionResult:
@@ -98,21 +103,44 @@ class Session[C: WebSocket](Service):
 
 
 class CombatSession(Session):
-    __label: uuid.UUID
+    _session_uuid: UUID
+    _characters:    Broker[UUID, Creature]
 
     @classmethod
     def new_instance(cls) -> typing.Self:
         inst = cls()
-        inst.__label = request_uuid()
+        inst._session_uuid = request_uuid()
+        inst._clients      = dict()
+        inst._characters   = CreaturesMemoryBroker(CharacterV1)
         return inst
 
     @property
-    def label(self) -> str:
-        return str(self.__label)
+    def characters(self) -> Broker[UUID, Creature]:
+        return self._characters
+
+    @property
+    def session_uuid(self) -> UUID:
+        return self._session_uuid
     
     @property
     def status(self) -> ServiceStatus:
         return ServiceStatus.ACTIVE
+
+
+class SessionMemoryBroker(MemoryBroker[UUID, Session]):
+    """
+    Implementation of `MemoryBroker` for storing
+    and maintaining `Session` objects.
+    """
+
+    async def create(self):
+        session      = self.resource_cls.new_instance()
+        session_uuid = session.session_uuid
+        self.resource_map[session_uuid] = session
+        return (session_uuid, session)
+
+    async def modify(self, key: UUID, resource: Session):
+            self.resource_map[key] = resource
 
 
 class SessionShelver(ShelfBroker[Session]):
@@ -129,10 +157,11 @@ class SessionShelver(ShelfBroker[Session]):
     """
 
     async def create(self) -> tuple[str, Session]:
-        session = self.resource_cls.new_instance()
+        session      = self.resource_cls.new_instance()
+        session_uuid = str(session.session_uuid)
         with self as opened:
-            opened.shelf[session.label] = session
-        return (session.label, session)
+            opened.shelf[session_uuid] = session
+        return (session_uuid, session)
 
     async def modify(self, key: str, resource: Session):
         with self as opened:
