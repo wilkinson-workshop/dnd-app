@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import QRCode from "react-qr-code";
-import { endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
-import { PlayerInput } from "@/app/_apis/playerInput";
+import { endSession, getAllSessionInput, requestPlayerInput } from "@/app/_apis/sessionApi";
+import { DiceTypes, PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
-import { Button } from "@mui/material";
+import { Autocomplete, Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
 import Dialog from '@mui/material/Dialog';
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
@@ -36,22 +36,34 @@ function SimpleDialog(props: SimpleDialogProps) {
   );
 }
 
+const recipients = ['All'];//This should contain individual player characters too.
+const rollOptions = ['Initiative']
 
 export default function DmDashboardPage({ params }: { params: { sessionid: string } }) {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [open, setOpen] = useState(false);
+  const [requestDiceType, setRequestDiceType] = useState(20);
+  const [recipient, setRecipient] = useState(recipients[0]);
+  const [reason, setReason] = useState('');
+
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
   const router = useRouter();
   
   const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.DungeonMaster}});
 
-  const handleClickSendMessage = useCallback(() => sendJsonMessage({event_type: EventType.RequestInitiative, event_body: {name: 'test', value: 10}}), []);
+  function handleClickRequestRoll() {
+    requestPlayerInput(params.sessionid, {
+      diceType: requestDiceType, 
+      recipient: recipient, 
+      reason: reason
+    }).then();
+  }
 
   useEffect(() => {
     if (lastMessage !== null) {
       //this is the websocket
       switch(lastMessage.data){
-        case EventType.ReceiveInitiative: {
+        case EventType.DmReceiveRoll: {
           handleGetPlayerInput();
         }
       }
@@ -80,6 +92,20 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
     });
   }
 
+  function handleChangeDiceType(event: SelectChangeEvent<typeof requestDiceType>){
+    const {  
+      target: { value },  
+    } = event;
+    setRequestDiceType(Number.parseInt(value as string));
+  }
+
+  function handleChangeRecipient(event: SelectChangeEvent<typeof recipient>){
+    const {  
+      target: { value },  
+    } = event;
+    setRecipient(value);
+  }
+
   return (
     <div>
       <div>
@@ -103,14 +129,45 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
           Name: {input.name} - Value: {input.input}
         </div>
       ))}  
-      <div>
-        <button onClick={handleClickSendMessage}>
-          Request Initiative
-        </button>
-        {/* <Button variant="contained" aria-label="load input" onClick={handleGetPlayerInput}>
-          Get Player Input 
-        </Button> */}
-      </div>         
+      <Box sx={{m:10}}>
+      <Autocomplete
+        id="role-reason"
+        freeSolo
+        onChange={(e, v) => 
+          setReason(v!)}
+        options={rollOptions.map((option) => option)}
+        renderInput={(params) => <TextField {...params} label="Reason"  size="small" variant="outlined" />}
+      />    
+        <FormControl fullWidth>
+          <InputLabel id="recipient">Recipient</InputLabel>
+          <Select
+            labelId="recipient"
+            value={recipient}
+            label="Recipient"
+            onChange={handleChangeRecipient}
+          >
+            {recipients.map(s =>  
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+            )}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <InputLabel id="diceType">Dice Type</InputLabel>
+          <Select
+            labelId="diceType"
+            value={requestDiceType}
+            label="Dice Type"
+            onChange={handleChangeDiceType}
+          >
+            {DiceTypes.map(s =>  
+            <MenuItem key={s} value={s}>{s}</MenuItem>
+            )}
+          </Select>
+        </FormControl>
+        <Button variant="contained" aria-label="create session" onClick={handleClickRequestRoll}>
+          Request Roll
+        </Button>
+      </Box>         
     </div>
   )
 }

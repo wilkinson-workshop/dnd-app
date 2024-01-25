@@ -30,8 +30,10 @@ class EventType(enum.StrEnum):
     """
     The types of events the system uses.
     """
-    REQUEST_INITIATIVE  = enum.auto()
-    RECEIVE_INITIATIVE  = enum.auto()
+    DM_RECEIVE_ROLL             = enum.auto()
+    PLAYER_RECEIVE_SECRET       = enum.auto()
+    PLAYER_REQUEST_ROLL         = enum.auto()
+    PLAYER_RECEIVE_ORDER_UPDATE = enum.auto()
 
 class EventMessage(BaseModel):
     event_type: EventType
@@ -93,11 +95,24 @@ class JoinSessionRequest(BaseModel):
     name:        str
     role:        Role
 
-
+# this is the reqeust and response class for sending dice roles from player to dm
 class PlayerInput(BaseModel):
     input:      int
     name:       str
     clientId:   str
+
+# This is the reqeust of the player(s) to submit a dice role for use by the dm. 
+# Recipient value could be All for all players or a specific client id to send the notification to ony one.    
+class RequestPlayerInput(BaseModel):
+    diceType:   int
+    recipient:  str
+    reason:     str
+
+# this is the reqeust for sending secrets from dm to player
+class PlayerSecret(BaseModel):
+    secret:     str
+    clientId:   str
+
 
 
 # Service layer working with in-memory data
@@ -386,8 +401,6 @@ async def sessions_player_input_find(idn: str):
     return PlayerInputService.getAll()
 
 
-# I just created an arbirtrary endpoints. Subject
-# to change. Request body structure to change.
 @APP_ROUTERS["session"].post("/{idn}/player-input")
 async def sessions_player_input_send(idn: str, request:PlayerInput):
     """
@@ -396,7 +409,33 @@ async def sessions_player_input_send(idn: str, request:PlayerInput):
 
     PlayerInputService.add(request)
     # this sends a websocket event to the dm connected.
-    await manager.send_dm_session_event("", EventMessage(event_type=EventType.RECEIVE_INITIATIVE, event_body="test"))
+    await manager.send_dm_session_event("", EventMessage(event_type=EventType.DM_RECEIVE_ROLL, event_body="test"))
+
+@APP_ROUTERS["session"].post("/{idn}/request-player-input")
+async def sessions_player_input_request(idn: str, request:RequestPlayerInput):
+    """
+    Requests player input based on requeust parameters.
+    """
+    # this sends a websocket event to the players connected.
+
+    event_body_string = dict(diceType = request.diceType, reason = request.reason)
+
+    # request.recipient could be all or just a specific player
+    if(request.recipient == "All"):
+        await manager.send_player_session_event("", EventMessage(event_type=EventType.PLAYER_REQUEST_ROLL, event_body=request.reason))
+    else:
+        # Send the request to a single player using client id lookup. Need to implement that functionality.
+        await manager.send_player_session_event("", EventMessage(event_type=EventType.PLAYER_REQUEST_ROLL, event_body=event_body_string))
+
+
+@APP_ROUTERS["session"].post("/{idn}/secret")
+async def sessions_player_secret(idn: str, request: PlayerSecret):
+    """
+    Send a secret to to a specific player.
+    """
+    # this sends a websocket event to a specific player based on reqeust.clientId
+    await manager.send_player_session_event("", EventMessage(event_type=EventType.PLAYER_RECEIVE_SECRET, event_body=request.secret))
+
 
 
 @app.websocket_route("/ws")
@@ -413,8 +452,10 @@ async def session_sock(sock: WebSocket, *args, **kwds):
     try:
         while True:
             data = await sock.receive_text()
-            # this sends a websocket event to all players. I am triggering it for all incoming messages Ideally it should be triggered by a specific input.
-            await manager.send_player_session_event("", EventMessage(event_type=EventType.REQUEST_INITIATIVE, event_body="test"))
+            # this sends a websocket event to all players. 
+            # I am triggering it for all incoming messages. 
+            # This trigger has been moved to sessions/{idn}/request-player-input
+            await manager.send_player_session_event("", EventMessage(event_type=EventType.PLAYER_REQUEST_ROLL, event_body="test"))
     except WebSocketDisconnect: 
         manager.disconnect(sock)
 

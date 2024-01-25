@@ -18,7 +18,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
   const [hasJoined, setHasJoined] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [initiativeOrder, setInitiativeOrder] = useState<InitiativeOrder[]>([]);
-  const [isGetInitiative, setIsGetInitiative] = useState(false);
+  const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
 
   if(!hasClient){
     setHasClient(true);//assumes success no retry logic
@@ -37,17 +37,21 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
       //this is the websocket
 
       switch(lastMessage.data){
-        case EventType.RequestInitiative: {
-          setIsGetInitiative(true);
+        case EventType.PlayerRequestRoll: {
+          setIsGetDiceRoll(true);
+          return;
+        }
+        case EventType.PlayerReceiveOrderUpdate: {
+          getLatestInitiativeOrder();
           return;
         }
       }
     }
-  }, [lastMessage, setIsGetInitiative]);
+  }, [lastMessage, setIsGetDiceRoll]);
 
   function handleInputSubmit(e: FormEvent){
     e.preventDefault(); 
-    setIsGetInitiative(false);   
+    setIsGetDiceRoll(false);   
     addSessionInput(params.sessionid, {input: initiative, clientId: client, name: playerName})
     .then();
   }
@@ -66,21 +70,21 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
     getLatestInitiativeOrder();
   }
 
-  const getInitForm = (        <Box>
-    <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value))} />
-    <Button variant="contained" aria-label="show initiative order" onClick={handleInputSubmit}>
-      Send
-    </Button>          
-  </Box>);
+  const getRollForm = (        
+    <Box>
+      <div>The DM has requested input for a <b>20</b> sided dice for <b>Initiative</b></div>
+      <TextField size="small" label="Roll" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+      <Button variant="contained" aria-label="send dice roll" onClick={handleInputSubmit}>
+        Send
+      </Button>          
+    </Box>
+  );
 
   if(hasJoined){
     return (
       <>
-        {isGetInitiative ? getInitForm : ''}
+        {isGetDiceRoll ? getRollForm : ''}
         <Box>
-          {/* <Button variant="contained" aria-label="show initiative order" onClick={getLatestInitiativeOrder}>
-            Show Initiative Order
-          </Button> */}
           <h2>Initiative Order</h2>
           {initiativeOrder.map(order => (
             <Box key={order.id}>

@@ -27,7 +27,8 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
 
     if(!didPageInit){
       setPageInit(true);//assumes success no retry logic
-      getCharacters(sessionId).then(c => {
+      getCharacters(sessionId)
+      .then(c => {
         setCards(c);
       });
     }

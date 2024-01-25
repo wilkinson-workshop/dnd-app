@@ -1,4 +1,6 @@
 export enum EventType{
-    RequestInitiative = 'request_initiative',
-    ReceiveInitiative = 'receive_initiative'
+    PlayerRequestRoll = 'player_request_roll',
+    DmReceiveRoll = 'dm_receive_roll',
+    PlayerReceiveSecret = 'player_receive_secret',
+    PlayerReceiveOrderUpdate = 'player_receive_order_update'
 }
