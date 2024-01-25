@@ -65,7 +65,7 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
         self.resource_cls = cls
 
     def __iter__(self):
-        return iter(self.resource_map)
+        return iter(self.resource_map.values())
 
     @property
     def _capacity_delta(self):
