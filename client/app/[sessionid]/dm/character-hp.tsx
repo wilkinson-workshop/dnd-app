@@ -12,23 +12,23 @@ export interface CharacterHpProps{character: Character, updateCharacter: any}
 export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) => {
     const [edit, onEdit] = useState(false);
 
-    function updatedNpc(hp: number): Character{
+    function updatedNpc(currentHp: number): Character{
         let updatedCharacter = {...character}
-        updatedCharacter.hp = hp;
+        updatedCharacter.hp = [currentHp, updatedCharacter.hp[1]];
         return updatedCharacter;
     }
 
     if(edit){
-        return <UpdateHp id={character.id} currentHp={character.hp} onUpdateClick={(id: string, hp:number) => {
+        return <UpdateHp id={character.label} currentHp={character.hp[0]} onUpdateClick={(id: string, currentHp:number) => {
             onEdit(false);
-            updateCharacter(updatedNpc(hp));
+            updateCharacter(updatedNpc(currentHp));
         }} />
     } else {
         return (
             <>    
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', mr: 1 }}>
-                    <LinearWithValueLabel maxValue={character.maxHp} value={character.hp} />
+                    <LinearWithValueLabel value={character.hp[0]} maxValue={character.hp[1]}/>
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
                     <IconButton aria-label="edit" onClick={x => onEdit(true)}>

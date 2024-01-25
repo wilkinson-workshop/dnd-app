@@ -7,10 +7,10 @@ import pathlib
 
 # Third-party dependencies.
 from fastapi import (
-    APIRouter,
-    FastAPI,
-    HTTPException,
-    WebSocket,
+    APIRouter, 
+    FastAPI, 
+    HTTPException, 
+    WebSocket, 
     WebSocketDisconnect,
     WebSocketException
 )
@@ -19,13 +19,58 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Project level modules go here.
-from scryer.creatures import CharacterV1, Role
-from scryer.services import (
-    CombatSession,
-    ServiceStatus,
-    SessionMemoryBroker
-)
-from scryer.util import request_uuid
+from scryer.creatures import CharacterV1, CharacterV2, HitPoints, Role
+from scryer.services import ServiceStatus
+from scryer.services.sessions import CombatSession, SessionMemoryBroker
+from scryer.util import request_uuid, UUID
+
+
+class EventType(enum.StrEnum):
+    """
+    The types of events the system uses.
+    """
+    DM_RECEIVE_ROLL             = enum.auto()
+    PLAYER_RECEIVE_SECRET       = enum.auto()
+    PLAYER_REQUEST_ROLL         = enum.auto()
+    PLAYER_RECEIVE_ORDER_UPDATE = enum.auto()
+
+
+class EventMessage(BaseModel):
+    event_type: EventType
+    event_body: str
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[str, list[WebSocket]] = {"players": [], "dm": []}
+
+    async def connect(self, websocket: WebSocket, is_player: bool):
+        await websocket.accept()
+        if(is_player):
+            self.active_connections["players"].append(websocket)
+        else:
+            self.active_connections["dm"].append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        try:
+            self.active_connections["players"].remove(websocket)
+        except:
+            self.active_connections["dm"].remove(websocket)
+
+    async def send_player_session_event(self, session_id: str, message: EventMessage):        
+        for connection in self.active_connections["players"]:
+            await connection.send_text(message.event_type)
+
+    async def send_dm_session_event(self, session_id: str, message: EventMessage):
+        for connection in self.active_connections["dm"]:
+            await connection.send_text(message.event_type)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
+
+
+manager = ConnectionManager()
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -41,13 +86,35 @@ class JoinSessionRequest(BaseModel):
     role:        Role
 
 
+# this is the reqeust and response class for
+# sending dice roles from player to dm.
 class PlayerInput(BaseModel):
     input:      int
     name:       str
     clientId:   str
 
 
-# Ideally only one value should be for each client using client id in playerInput
+# This is the reqeust of the player(s) to submit a
+# dice role for use by the dm. 
+# Recipient value could be All for all players or
+# a specific client id to send the notification to
+# ony one.    
+class RequestPlayerInput(BaseModel):
+    diceType:   int
+    recipient:  str
+    reason:     str
+
+
+# this is the reqeust for sending secrets from dm
+# to player
+class PlayerSecret(BaseModel):
+    secret:     str
+    clientId:   str
+
+
+
+# Ideally only one value should be for each client
+# using client id in playerInput
 class PlayerInputService():
     __inputs:list[PlayerInput]= []
 
@@ -287,8 +354,13 @@ async def sessions_join(sock: WebSocket, session_uuid: str, event: JoinSessionRe
 
     # Probably use attach_clients
     if(event.type == "player"):
-        _, character = await APP_SERIVCES["characters"].create(id="", name=event.name, hp=500, conditions=[])
-    # If this returns the character id after adding to character list, the UI could use the standard character CRUD endpoints for hp and condition updates that show on dm dashboard.
+        kwds = dict(id="", name=event.name, hp=500, conditions=[])
+        _, character = await APP_SERIVCES["characters"].create(**kwds)
+    # If this returns the character id after
+    # adding to character list, the UI could use
+    # the standard character CRUD endpoints for hp
+    # and condition updates that show on dm
+    # dashboard.
 
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")
@@ -329,8 +401,6 @@ async def sessions_player_input_find(idn: str):
     return PlayerInputService.getAll()
 
 
-# I just created an arbirtrary endpoints. Subject
-# to change. Request body structure to change.
 @APP_ROUTERS["session"].post("/{idn}/player-input")
 async def sessions_player_input_send(idn: str, request:PlayerInput):
     """
@@ -338,19 +408,73 @@ async def sessions_player_input_send(idn: str, request:PlayerInput):
     """
 
     PlayerInputService.add(request)
-    # this should trigger DM client to call
-    # player_input_get so it refreshes live on dm
-    # dashboard
+    # this sends a websocket event to the dm
+    # connected.
+    event = EventMessage(event_type=EventType.DM_RECEIVE_ROLL, event_body="test")
+    await manager.send_dm_session_event("", event)
+
+
+@APP_ROUTERS["session"].post("/{idn}/request-player-input")
+async def sessions_player_input_request(idn: str, request:RequestPlayerInput):
+    """
+    Requests player input based on requeust parameters.
+    """
+    # this sends a websocket event to the players
+    # connected.
+
+    event_body_string = dict(diceType=request.diceType, reason=request.reason)
+
+    # request.recipient could be all or just a
+    # specific player.
+    body = event_body_string
+    if(request.recipient == "All"):
+        body = request.reason
+
+    event = EventMessage(
+        event_type=EventType.PLAYER_REQUEST_ROLL,
+        event_body=body
+    )
+    # Send the request to a single player
+    # using client id lookup. Need to
+    # implement that functionality.
+    await manager.send_player_session_event("", event)
+
+
+@APP_ROUTERS["session"].post("/{idn}/secret")
+async def sessions_player_secret(idn: str, request: PlayerSecret):
+    """
+    Send a secret to to a specific player.
+    """
+    # this sends a websocket event to a specific
+    # player based on reqeust.clientId.
+    event = EventMessage(
+        event_type=EventType.PLAYER_RECEIVE_SECRET,
+        event_body=request.secret
+    )
+    await manager.send_player_session_event("", event)
+
 
 
 @app.websocket_route("/ws")
 async def session_sock(sock: WebSocket, *args, **kwds):
     """Initiate a session `WebSocket`"""
 
-    await sock.accept()
-    while True:
-        data = await sock.receive_text()
-        await sock.send_text(f"Got {data!s} from connection.")
+    import logging
+
+    logger = logging.getLogger("uvicorn")
+    logger.info(f"Recieved connection {sock}")
+
+    await manager.connect(sock, sock.query_params["type"] == Role.PLAYER)
+
+    try:
+        while True:
+            data = await sock.receive_text()
+            # this sends a websocket event to all players. 
+            # I am triggering it for all incoming messages. 
+            # This trigger has been moved to sessions/{idn}/request-player-input
+            await manager.send_player_session_event("", EventMessage(event_type=EventType.PLAYER_REQUEST_ROLL, event_body="test"))
+    except WebSocketDisconnect: 
+        manager.disconnect(sock)
 
 
 if __name__ == "__main__":

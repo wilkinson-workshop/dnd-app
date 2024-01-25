@@ -33,7 +33,7 @@ export default function HomePage() {
   }
 
   function joinActiveSession(selectedSession:string){
-    joinSession(selectedSession, {clientId: client, name: 'DM', type: CharacterType.DuneonMaster})
+    joinSession(selectedSession, {clientId: client, name: 'DM', type: CharacterType.DungeonMaster})
     .then(_=> {
       router.push(`/${selectedSession}/dm`);
     });

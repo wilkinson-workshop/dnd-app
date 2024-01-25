@@ -1,5 +1,5 @@
 import { FC, FormEvent, useState } from "react";
-import { Character, CharacterType, ConditionOptions, ConditionType } from "../../_apis/character";
+import { Character, CharacterType, ConditionOptions, ConditionType, EmptyGuid } from "../../_apis/character";
 import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -34,11 +34,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function handleSubmit(): void {
         onEdit(false);
         onAddClick({
-            id: '', //use database for this.
+            label: EmptyGuid,
             initiative: initiative,
             name: name, 
-            hp: hp,
-            maxHp: hp,
+            hp: [hp, hp],
             conditions:conditions,
             type: CharacterType.NonPlayer
           });
