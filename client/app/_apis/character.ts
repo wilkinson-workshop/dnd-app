@@ -1,8 +1,15 @@
-export interface Npc {
-    id: string,
+export interface Character {
+    creature_id: string,
     name: string,
-    hp: number,
+    initiative: number,
+    hit_points: number[],
     conditions: ConditionType[]
+}
+
+export enum CharacterType{
+    NonPlayer = 'non_player',
+    Player = 'player',
+    DungeonMaster = 'dungeon_master'
 }
 
 export enum ConditionType {
@@ -17,6 +24,8 @@ export enum ConditionType {
     Petrified,
     Scared,
 } 
+
+export const EmptyGuid = '00000000-0000-0000-0000-000000000000';
 
 export interface ConditionTypeItem {id: number, name: string}
 

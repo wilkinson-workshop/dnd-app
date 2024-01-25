@@ -1,10 +1,10 @@
-import { Npc } from "../npc";
+import { Character } from "./character";
 
 const baseUrl = 'http://localhost:8000';
-const characterBaseUrl = `${baseUrl}/characters`;
+const apiBaseUrl = `${baseUrl}/characters`;
 
-export async function getCharacters() {
-  const res = await fetch(characterBaseUrl, {
+export async function getCharacters(sessionId: string) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     headers:{
       'Content-Type': 'application/json',
     } 
@@ -17,8 +17,22 @@ export async function getCharacters() {
   return res.json()
 } 
 
-export async function saveCharacter(character:Npc) {
-  const res = await fetch(`${characterBaseUrl}/${character.id}`, {
+export async function getInitiativeOrder(sessionId: string) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative`, {
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+} 
+
+export async function saveCharacter(sessionId: string, character:Character) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/${character.creature_id}`, {
     method: 'PATCH',
     body: JSON.stringify(character),
     headers:{
@@ -33,8 +47,8 @@ export async function saveCharacter(character:Npc) {
   return res.json()
 } 
 
-export async function addCharacter(character:Npc) {
-  const res = await fetch(characterBaseUrl, {
+export async function addCharacter(sessionId: string, character:Character) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     method: 'POST',
     body: JSON.stringify(character),
     headers:{
@@ -49,8 +63,8 @@ export async function addCharacter(character:Npc) {
   return res.json()
 } 
 
-export async function deleteCharacter(id:string) {
-  const res = await fetch(`${characterBaseUrl}/${id}`, {
+export async function deleteCharacter(sessionId: string, id:string) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/${id}`, {
     method: 'DELETE',
     headers:{
       'Content-Type': 'application/json',

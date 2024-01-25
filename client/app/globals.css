@@ -16,23 +16,27 @@
   }
 }
 
-table {
-  border-collapse: collapse;
-  text-align: left;
-  width: 100%;
+.non_player {
+  background-color:white;
 }
 
-td, th {
-  padding: 8px;
+.player {
+  background-color: #ebebeb;
+}
+
+.char-section {
+  display: inline-block;
+  margin-right: 10px;
 }
 
 .condition{
   display: inline-block;
-  border-width: 2px;
+  border-width: 1px;
+  border-style: solid;
   font-size: 10px;
   padding: 2px 5px;
   margin: 0 5px;
-  border-radius: 10px;
+  border-radius: 7px;
   text-align: center;
 }
 
@@ -51,9 +55,9 @@ td, th {
 }
 
 .stunned{  
-  background-color: rgb(3, 3, 75);
-  border-color: rgb(156, 139, 255);
-  color: rgb(156, 139, 255);
+  background-color: rgb(6 6 189);
+  border-color: rgb(186 174 255);
+  color: rgb(186 174 255);
 }
 
 .burned{
@@ -64,8 +68,8 @@ td, th {
 
 .poisoned{  
   background-color: rgb(85, 1, 85);
-  border-color: rgb(252, 2, 252);
-  color: rgb(252, 2, 252);
+  border-color: rgb(239 138 239);
+  color: rgb(239 138 239);
 }
 
 .knocked-out{
