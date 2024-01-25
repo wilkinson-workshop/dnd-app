@@ -274,7 +274,12 @@ async def characters_find(session_uuid: str):
     info.
     """
     _, session = (await _sessions_find(session_uuid))[0]
-    return {c.creature_id: c.initiative for c in session.characters}
+
+    initiatives = []
+    for c in session.characters:
+        initiatives.append({"id": c.creature_id, "name": c.name})
+
+    return initiatives      
 
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
