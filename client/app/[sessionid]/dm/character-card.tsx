@@ -109,7 +109,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
   const opacity = isDragging ? 0 : 1
   drag(drop(ref))
   return (
-    <div ref={ref} className={character.type} style={{ ...style, opacity }} data-handler-id={handlerId}>
+    <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
       <Box>
         <Grid container spacing={2}>
           <Grid item xs={1}>
@@ -126,7 +126,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
           </Grid>
           <Grid item xs={1}>
             <Item>            
-              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hp:0})}>
+              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:0})}>
                   <DeleteIcon />
               </IconButton>
             </Item> 

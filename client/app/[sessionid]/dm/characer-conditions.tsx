@@ -26,7 +26,7 @@ export const CharacterConditions: FC<CharacterConditionsProps> = ({character, up
     }
     
     if(edit){
-        return <UpdateConditions id={character.label} currentConditions={character.conditions} onUpdateConClick={(id: string, conditions: ConditionType[]) =>{
+        return <UpdateConditions id={character.creature_id} currentConditions={character.conditions} onUpdateConClick={(id: string, conditions: ConditionType[]) =>{
             onEdit(false);
             updateCharacter(updatedNpc(conditions))}
         } />
@@ -35,7 +35,7 @@ export const CharacterConditions: FC<CharacterConditionsProps> = ({character, up
             <>
                 {character.conditions.length > 0 ?
                 character.conditions.map((condition)=> (
-                    <Condition key={condition} id={character.label} condition={condition} onDeleteCondition={(id: string, condition: ConditionType) => onConditionDelete(id, condition)}  />
+                    <Condition key={condition} id={character.creature_id} condition={condition} onDeleteCondition={(id: string, condition: ConditionType) => onConditionDelete(id, condition)}  />
                 )):<Box sx={{display:"inline-block", padding: "5px"}}>No Conditions</Box>}
                 <IconButton aria-label="edit" onClick={x => onEdit(true)}>
                     <EditIcon />

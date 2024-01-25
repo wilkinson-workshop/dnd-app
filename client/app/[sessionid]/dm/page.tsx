@@ -13,6 +13,8 @@ import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { CharacterType } from '@/app/_apis/character';
 import { EventType } from '@/app/_apis/eventType';
+import { PlayerInputList } from './player-input-list';
+import { RequestPlayerInput } from './request-player-input';
 
 const baseUrl = 'http://localhost:3000/';
 
@@ -123,51 +125,9 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
       </div> 
       <DndProvider backend={HTML5Backend}>
         <Container sessionId={params.sessionid} />
-      </DndProvider>
-      {inputs.map(input => (
-        <div key={input.clientId + "" + Math.random().toPrecision(1)}>
-          Name: {input.name} - Value: {input.input}
-        </div>
-      ))}  
-      <Box sx={{m:10}}>
-      <Autocomplete
-        id="role-reason"
-        freeSolo
-        onChange={(e, v) => 
-          setReason(v!)}
-        options={rollOptions.map((option) => option)}
-        renderInput={(params) => <TextField {...params} label="Reason"  size="small" variant="outlined" />}
-      />    
-        <FormControl fullWidth>
-          <InputLabel id="recipient">Recipient</InputLabel>
-          <Select
-            labelId="recipient"
-            value={recipient}
-            label="Recipient"
-            onChange={handleChangeRecipient}
-          >
-            {recipients.map(s =>  
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-            )}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel id="diceType">Dice Type</InputLabel>
-          <Select
-            labelId="diceType"
-            value={requestDiceType}
-            label="Dice Type"
-            onChange={handleChangeDiceType}
-          >
-            {DiceTypes.map(s =>  
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-            )}
-          </Select>
-        </FormControl>
-        <Button variant="contained" aria-label="create session" onClick={handleClickRequestRoll}>
-          Request Roll
-        </Button>
-      </Box>         
+      </DndProvider>      
+      <RequestPlayerInput sessionId={params.sessionid} />
+      {inputs.length > 0 ? <PlayerInputList playerInputs={inputs}  /> : '' }      
     </div>
   )
 }

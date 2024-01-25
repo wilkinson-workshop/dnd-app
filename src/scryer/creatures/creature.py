@@ -50,28 +50,13 @@ class CreatureModel(BaseModel):
     or non-playable character.
     """
 
-
-class CreatureV1(CreatureModel, Creature, metaclass=CreatureMeta):
-    id:         str	
-    name:       str	
-    hp:         int	
-    maxHp:      int
-    conditions: list[int]
-    initiative: int
-    type:       Role
-
-    @property
-    def creature_uuid(self):
-        return request_uuid(self.id)
-
-
 class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     """
     Shortcut class to subclass from both
     `Creature` protocol and `CreatureModel` class.
     """
 
-    conditions:  list[Condition]
+    conditions:  list[int] #Change this to enum 
     creature_id: UUID
     hit_points:  HitPoints
     initiative:  int

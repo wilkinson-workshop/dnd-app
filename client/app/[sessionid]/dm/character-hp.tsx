@@ -14,12 +14,12 @@ export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) =
 
     function updatedNpc(currentHp: number): Character{
         let updatedCharacter = {...character}
-        updatedCharacter.hp = [currentHp, updatedCharacter.hp[1]];
+        updatedCharacter.hit_points = [currentHp, updatedCharacter.hit_points[1]];
         return updatedCharacter;
     }
 
     if(edit){
-        return <UpdateHp id={character.label} currentHp={character.hp[0]} onUpdateClick={(id: string, currentHp:number) => {
+        return <UpdateHp id={character.creature_id} currentHp={character.hit_points[0]} onUpdateClick={(id: string, currentHp:number) => {
             onEdit(false);
             updateCharacter(updatedNpc(currentHp));
         }} />
@@ -28,7 +28,7 @@ export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) =
             <>    
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', mr: 1 }}>
-                    <LinearWithValueLabel value={character.hp[0]} maxValue={character.hp[1]}/>
+                    <LinearWithValueLabel value={character.hit_points[0]} maxValue={character.hit_points[1]}/>
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
                     <IconButton aria-label="edit" onClick={x => onEdit(true)}>

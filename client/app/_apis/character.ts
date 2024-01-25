@@ -1,10 +1,9 @@
 export interface Character {
-    label: string,
+    creature_id: string,
     name: string,
     initiative: number,
-    hp: number[],
-    conditions: ConditionType[],
-    type: CharacterType 
+    hit_points: number[],
+    conditions: ConditionType[]
 }
 
 export enum CharacterType{

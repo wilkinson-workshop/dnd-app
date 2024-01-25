@@ -34,12 +34,11 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function handleSubmit(): void {
         onEdit(false);
         onAddClick({
-            label: EmptyGuid,
+            creature_id: EmptyGuid,
             initiative: initiative,
             name: name, 
-            hp: [hp, hp],
-            conditions:conditions,
-            type: CharacterType.NonPlayer
+            hit_points: [hp, hp],
+            conditions:conditions
           });
           setHp(1);
           setName('Character')
@@ -58,7 +57,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
 
       if(edit){ return (
         <>
-        <Box sx={{width: '100%', textAlign: 'center'}}>
+        <Box sx={{width: '100%'}}>
             <h2>Add New Character</h2>
             <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />

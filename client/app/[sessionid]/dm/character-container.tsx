@@ -50,8 +50,8 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
     }
 
     function updateCharacter(character: Character){
-      if(character.hp == 0){
-        onDelete(character.label);
+      if(character.hit_points[0] == 0 ){
+        onDelete(character.creature_id);
       } else {
         saveCharacter(sessionId, character)
         .then(_ => reloadList());
@@ -74,7 +74,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
       (card: Character, index: number) => {
         return (
           <Card
-            key={card.label}
+            key={card.creature_id}
             index={index}
             character={card}
             moveCard={moveCard}
@@ -94,13 +94,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
           )        
         }
         </div>        
-        <AddCharacter onAddClick={handleAddCharacter} />
-        <div>
-          {/* <Button variant="contained" aria-label="load" onClick={reloadList}>
-            Load Characters
-          </Button> */}
-        </div>
-         
+        <AddCharacter onAddClick={handleAddCharacter} />         
       </>
     )
   }

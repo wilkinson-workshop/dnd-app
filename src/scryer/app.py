@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Project level modules go here.
-from scryer.creatures import CharacterV1, CharacterV2, HitPoints, Role
+from scryer.creatures import CharacterV2, HitPoints, Role
 from scryer.services import ServiceStatus
 from scryer.services.sessions import CombatSession, SessionMemoryBroker
 from scryer.util import request_uuid, UUID
@@ -131,7 +131,7 @@ class PlayerInputService():
         cls.__inputs = []
 
 
-async def _character_make(session_uuid: str, character: CharacterV1):
+async def _character_make(session_uuid: str, character: CharacterV2):
     session: CombatSession
     _, session = (await _sessions_find(session_uuid))[0]
     await session.characters.modify(character.creature_uuid, character)
@@ -273,33 +273,32 @@ async def characters_find(session_uuid: str):
     field. For use by player so shows limited
     info.
     """
-
     _, session = (await _sessions_find(session_uuid))[0]
-    return {c.creature_id: c.initiative for c in session.creatures}
+    return {c.creature_id: c.initiative for c in session.characters}
 
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
-async def characters_make(session_uuid: str, character: CharacterV1):
+async def characters_make(session_uuid: str, character: CharacterV2):
     """Create a new character"""
 
-    character.id = str(request_uuid())
+    character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
-async def characters_push(session_uuid: str, character_uuid: str, character: CharacterV1):
+async def characters_push(session_uuid: str, character_uuid: UUID, character: CharacterV2):
     """Update the specified character."""
 
     await _character_make(session_uuid, character)
 
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{character_uuid}")
-async def characters_kill(session_uuid:str, character_uuid:str):
+async def characters_kill(session_uuid:str, character_uuid:UUID):
     """Delete the specified character."""
 
     session: CombatSession
     _, session = (await _sessions_find(session_uuid))[0]
-    await session.characters.delete(request_uuid(character_uuid))
+    await session.characters.delete(character_uuid)
 
 
 @APP_ROUTERS["client"].post("/")

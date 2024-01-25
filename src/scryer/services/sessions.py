@@ -3,7 +3,7 @@ import abc, asyncio, typing, uuid
 
 from fastapi import WebSocket
 
-from scryer.creatures import Creature, CharacterV1
+from scryer.creatures import CharacterV2, Creature
 from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
@@ -111,7 +111,7 @@ class CombatSession(Session):
         inst = cls()
         inst._session_uuid = request_uuid()
         inst._clients      = dict()
-        inst._characters   = CreaturesMemoryBroker(CharacterV1)
+        inst._characters   = CreaturesMemoryBroker(CharacterV2)
         return inst
 
     @property
