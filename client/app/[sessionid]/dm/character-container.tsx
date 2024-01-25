@@ -51,7 +51,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
 
     function updateCharacter(character: Character){
       if(character.hp == 0){
-        onDelete(character.id);
+        onDelete(character.label);
       } else {
         saveCharacter(sessionId, character)
         .then(_ => reloadList());
@@ -74,7 +74,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
       (card: Character, index: number) => {
         return (
           <Card
-            key={card.id}
+            key={card.label}
             index={index}
             character={card}
             moveCard={moveCard}

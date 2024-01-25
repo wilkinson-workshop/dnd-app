@@ -18,13 +18,13 @@ from fastapi import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from scryer.creatures.attrs import Role
+from scryer.creatures.attrs import HitPoints, Role
 
 # Project level modules go here.
 from scryer.creatures import CharacterV2, Role
 from scryer.services import ServiceStatus
 from scryer.services.sessions import CombatSession, SessionShelver
-from scryer.util import request_uuid
+from scryer.util import request_uuid, UUID
 
 class EventType(enum.StrEnum):
     """
@@ -80,10 +80,9 @@ SOURCE_ROOT      = APPLICATION_ROOT.parent
 
 
 class CharacterV1(BaseModel):	
-    id:         str	
+    label:      UUID	
     name:       str	
-    hp:         int	
-    maxHp:      int
+    hp:         HitPoints
     conditions: list[int]
     initiative: int
     type:       Role 
@@ -144,19 +143,19 @@ class CharacterService():
 
     @classmethod
     def add(cls, character):
-        character.id = str(request_uuid())
+        character.label = request_uuid()
         cls.__characters.append(character)
     
     @classmethod
-    def edit(cls, id: str, character: CharacterV1):
+    def edit(cls, label: UUID, character: CharacterV1):
         for index, item in enumerate(cls.__characters):
-            if item.id == id:
+            if item.label == label:
                 cls.__characters[index] = character
 
     @classmethod
-    def delete(cls, id: str):
+    def delete(cls, label: UUID):
         for index, item in enumerate(cls.__characters):
-            if item.id == id:
+            if item.lable == label:
                 cls.__characters.remove(item)
 
 
@@ -289,14 +288,14 @@ async def characters_make(session_uuid:str, character: CharacterV1):
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{idn}")
-async def characters_push(session_uuid:str, idn:str, character: CharacterV1):
+async def characters_push(session_uuid:str, idn: UUID, character: CharacterV1):
     """Update the specified character."""
 
     CharacterService.edit(idn, character)
 
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{idn}")
-async def characters_kill(session_uuid:str, idn:str):
+async def characters_kill(session_uuid:str, idn:UUID):
     """Delete the specified character."""
 
     CharacterService.delete(idn);

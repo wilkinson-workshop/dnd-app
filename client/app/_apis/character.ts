@@ -1,9 +1,8 @@
 export interface Character {
-    id: string,
+    label: string,
     name: string,
     initiative: number,
-    maxHp: number,
-    hp: number,
+    hp: number[],
     conditions: ConditionType[],
     type: CharacterType 
 }
@@ -26,6 +25,8 @@ export enum ConditionType {
     Petrified,
     Scared,
 } 
+
+export const EmptyGuid = '00000000-0000-0000-0000-000000000000';
 
 export interface ConditionTypeItem {id: number, name: string}
 

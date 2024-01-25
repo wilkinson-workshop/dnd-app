@@ -32,7 +32,7 @@ export async function getInitiativeOrder(sessionId: string) {
 } 
 
 export async function saveCharacter(sessionId: string, character:Character) {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}/${character.id}`, {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/${character.label}`, {
     method: 'PATCH',
     body: JSON.stringify(character),
     headers:{
