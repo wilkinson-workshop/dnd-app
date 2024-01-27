@@ -5,7 +5,8 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { createClient } from "../_apis/clientApi";
 import { getInitiativeOrder } from "../_apis/characterApi";
 import { CharacterType } from "../_apis/character";
-import { Box, Button, TextField } from "@mui/material";
+import { Box, Button, IconButton, TextField } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "../_apis/eventType";
 
@@ -13,12 +14,14 @@ export interface InitiativeOrder {id: string, name: string}
 
 export default function PlayerPage({ params }: { params: { sessionid: string } }) {
   const [client, setClient] = useState<string>('');
-  const [initiative, setInitiative] = useState(0);
+  const [rollValue, setRollValue] = useState(0);
   const [hasClient, setHasClient] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [initiativeOrder, setInitiativeOrder] = useState<InitiativeOrder[]>([]);
   const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
+  const [isShowSecret, setIsShowSecret] = useState(false);
+  const [secret, setSecret] = useState('');
 
   if(!hasClient){
     setHasClient(true);//assumes success no retry logic
@@ -45,14 +48,20 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
           getLatestInitiativeOrder();
           return;
         }
+        case EventType.PlayerReceiveSecret: {
+          setSecret('secret');
+          setIsShowSecret(true);
+          return;
+        }
       }
     }
   }, [lastMessage, setIsGetDiceRoll]);
 
   function handleInputSubmit(e: FormEvent){
     e.preventDefault(); 
-    setIsGetDiceRoll(false);   
-    addSessionInput(params.sessionid, {input: initiative, clientId: client, name: playerName})
+    setIsGetDiceRoll(false);  
+    setRollValue(0) 
+    addSessionInput(params.sessionid, {input: rollValue, clientId: client, name: playerName})
     .then();
   }
 
@@ -66,24 +75,33 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
     joinSession(params.sessionid, {clientId: client, name: playerName, type: CharacterType.Player})
     .then(_ => setHasJoined(true))
 
-    //this could be trigered by event from dm when turn order updates.
     getLatestInitiativeOrder();
   }
 
   const getRollForm = (        
     <Box>
       <div>The DM has requested input for a <b>20</b> sided dice for <b>Initiative</b></div>
-      <TextField size="small" label="Roll" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+      <TextField size="small" label="Roll" value={rollValue} variant="outlined" onChange={x => setRollValue(Number.parseInt(x.target.value? x.target.value : '0'))} />
       <Button variant="contained" aria-label="send dice roll" onClick={handleInputSubmit}>
         Send
       </Button>          
     </Box>
   );
 
+  const showSecretView = (
+    <Box>
+      {secret}                
+      <IconButton aria-label="delete" onClick={() =>setIsShowSecret(false)}>
+          <CloseIcon />
+      </IconButton>
+    </Box>
+  )
+
   if(hasJoined){
     return (
       <>
         {isGetDiceRoll ? getRollForm : ''}
+        {isShowSecret ? showSecretView : ''}
         <Box>
           <h2>Initiative Order</h2>
           {initiativeOrder.map(order => (

@@ -15,6 +15,7 @@ import { CharacterType } from '@/app/_apis/character';
 import { EventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
+import { SendPlayerSecret } from './send-player-secret';
 
 const baseUrl = 'http://localhost:3000/';
 
@@ -38,28 +39,15 @@ function SimpleDialog(props: SimpleDialogProps) {
   );
 }
 
-const recipients = ['All'];//This should contain individual player characters too.
-const rollOptions = ['Initiative']
-
 export default function DmDashboardPage({ params }: { params: { sessionid: string } }) {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [open, setOpen] = useState(false);
-  const [requestDiceType, setRequestDiceType] = useState(20);
-  const [recipient, setRecipient] = useState(recipients[0]);
-  const [reason, setReason] = useState('');
 
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
   const router = useRouter();
   
   const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.DungeonMaster}});
 
-  function handleClickRequestRoll() {
-    requestPlayerInput(params.sessionid, {
-      diceType: requestDiceType, 
-      recipient: recipient, 
-      reason: reason
-    }).then();
-  }
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -94,20 +82,6 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
     });
   }
 
-  function handleChangeDiceType(event: SelectChangeEvent<typeof requestDiceType>){
-    const {  
-      target: { value },  
-    } = event;
-    setRequestDiceType(Number.parseInt(value as string));
-  }
-
-  function handleChangeRecipient(event: SelectChangeEvent<typeof recipient>){
-    const {  
-      target: { value },  
-    } = event;
-    setRecipient(value);
-  }
-
   return (
     <div>
       <div>
@@ -125,9 +99,12 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
       </div> 
       <DndProvider backend={HTML5Backend}>
         <Container sessionId={params.sessionid} />
-      </DndProvider>      
-      <RequestPlayerInput sessionId={params.sessionid} />
-      {inputs.length > 0 ? <PlayerInputList playerInputs={inputs}  /> : '' }      
+      </DndProvider>
+      <Box sx={{margin: '20px 0'}}>
+        <SendPlayerSecret sessionId={params.sessionid} />
+        <RequestPlayerInput sessionId={params.sessionid} />
+        {inputs.length > 0 ? <PlayerInputList playerInputs={inputs}  /> : '' }  
+      </Box>    
     </div>
   )
 }

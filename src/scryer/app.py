@@ -101,15 +101,15 @@ class PlayerInput(BaseModel):
 # ony one.    
 class RequestPlayerInput(BaseModel):
     diceType:   int
-    recipient:  str
+    recipients:  list[str]
     reason:     str
 
 
 # this is the reqeust for sending secrets from dm
 # to player
 class PlayerSecret(BaseModel):
-    secret:     str
-    clientId:   str
+    secret:       str
+    recipients:   list[str]
 
 
 
@@ -289,6 +289,7 @@ async def characters_make(session_uuid: str, character: CharacterV2):
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
 
+    await manager.send_player_session_event("",EventMessage(event_type=EventType.PLAYER_RECEIVE_ORDER_UPDATE, event_body='update') )
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
 async def characters_push(session_uuid: str, character_uuid: UUID, character: CharacterV2):
@@ -388,7 +389,7 @@ async def sessions_make():
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}")
-async def sessions_stop(session_uuid: str):
+async def sessions_stop(session_uuid: UUID):
     """Ends an active session."""
 
     await APP_SERIVCES["sessions"].delete(session_uuid)
@@ -426,17 +427,12 @@ async def sessions_player_input_request(idn: str, request:RequestPlayerInput):
     # this sends a websocket event to the players
     # connected.
 
-    event_body_string = dict(diceType=request.diceType, reason=request.reason)
-
-    # request.recipient could be all or just a
-    # specific player.
-    body = event_body_string
-    if(request.recipient == "All"):
-        body = request.reason
+    #request contains lots of options that will need to be used. 
+    #for now just adding the reason as the event body.
 
     event = EventMessage(
         event_type=EventType.PLAYER_REQUEST_ROLL,
-        event_body=body
+        event_body=request.reason
     )
     # Send the request to a single player
     # using client id lookup. Need to

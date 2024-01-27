@@ -30,7 +30,7 @@ export const UpdateConditions:FC<UpdateConditionProps> = ({id, currentConditions
         target: { value },  
       } = event;  
       setConditions(  
-        // On autofill we get a stringified value.  
+        // On autofill we get a stringified value. Just set some default since autofill is turned off.
         typeof value === 'string' ? [ConditionType.Asleep] : value,  
       );  
     };   
@@ -38,9 +38,9 @@ export const UpdateConditions:FC<UpdateConditionProps> = ({id, currentConditions
     return (  
       <div>  
         <FormControl sx={{ m: 1, width: 300 }}>  
-          <InputLabel id="label">Conditions</InputLabel>  
+          <InputLabel id="conditions">Conditions</InputLabel>  
           <Select  
-            labelId="label"  
+            labelId="conditions"  
             id="name"  
             multiple  
             value={conditions}  
