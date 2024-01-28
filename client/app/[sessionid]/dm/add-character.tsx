@@ -1,5 +1,5 @@
 import { FC, FormEvent, useState } from "react";
-import { Character, CharacterType, ConditionOptions, ConditionType, EmptyGuid } from "../../_apis/character";
+import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID } from "../../_apis/character";
 import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -34,7 +34,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function handleSubmit(): void {
         onEdit(false);
         onAddClick({
-            creature_id: EmptyGuid,
+            creature_id: EMPTY_GUID,
             initiative: initiative,
             name: name, 
             hit_points: [hp, hp],

@@ -28,7 +28,7 @@ export default function HomePage() {
   function getAllSessions(){
     getSessions()
     .then(sessions => {
-      setSessions(sessions.map(s => s))
+      setSessions(sessions);
     });
   }
 
@@ -60,7 +60,7 @@ export default function HomePage() {
           <InputLabel id="session">Session</InputLabel>
           <Select
             labelId="session"
-            value={''}
+            value={session}
             label="Session"
             onChange={handleChangeSession}
           >
@@ -72,7 +72,6 @@ export default function HomePage() {
       <Button variant="contained" aria-label="create session" onClick={() => joinActiveSession(session)}>
         Join
       </Button>
-
       <Button variant="contained" aria-label="create session" onClick={handleCreateSession}>
         Create Session
       </Button>

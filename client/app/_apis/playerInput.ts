@@ -15,12 +15,12 @@ export interface JoinSessionRequest {
 }
 
 export interface PlayerSecret {
-    client_uuid: string,
+    recipients: string[],
     secret: string
 }
 
 export interface RequestPlayerInput {
     dice_type: number, 
-    recipient: string, 
+    recipients: string[], 
     reason: string
 }

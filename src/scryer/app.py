@@ -54,16 +54,17 @@ class PlayerInput(BaseModel):
 # a specific client id to send the notification to
 # ony one.    
 class RequestPlayerInput(BaseModel):
-    dice_type:  int
-    recipient:  str
-    reason:     str
+    dice_type:   int
+    recipients:  list[str]
+    reason:      str
 
 
 # this is the reqeust for sending secrets from dm
 # to player
 class PlayerSecret(BaseModel):
-    secret:      str
-    client_uuid: UUID
+    secret:       str
+    recipients:   list[str]
+
 
 
 # Ideally only one value should be for each client
@@ -252,6 +253,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
 
+    await manager.send_player_session_event("",EventMessage(event_type=EventType.PLAYER_RECEIVE_ORDER_UPDATE, event_body='update') )
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
 async def characters_push(
