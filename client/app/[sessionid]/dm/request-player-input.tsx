@@ -35,7 +35,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId}) => {
     function handleClickRequestRoll() {
         onEdit(false);
         requestPlayerInput(sessionId, {
-          diceType: requestDiceType, 
+          dice_type: requestDiceType, 
           recipient: recipient, 
           reason: reason
         }).then();

@@ -28,12 +28,12 @@ export default function HomePage() {
   function getAllSessions(){
     getSessions()
     .then(sessions => {
-      setSessions(sessions.map(s => s[0]))
+      setSessions(sessions.map(s => s))
     });
   }
 
   function joinActiveSession(selectedSession:string){
-    joinSession(selectedSession, {clientId: client, name: 'DM', type: CharacterType.DungeonMaster})
+    joinSession(selectedSession, {client_uuid: client, name: 'DM', role: CharacterType.DungeonMaster})
     .then(_=> {
       router.push(`/${selectedSession}/dm`);
     });

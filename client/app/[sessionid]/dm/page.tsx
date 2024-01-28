@@ -51,11 +51,11 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
   const router = useRouter();
   
-  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.DungeonMaster}});
+  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket(`ws://localhost:8000/sessions/${params.sessionid}/ws`, {queryParams: {role: CharacterType.DungeonMaster}});
 
   function handleClickRequestRoll() {
     requestPlayerInput(params.sessionid, {
-      diceType: requestDiceType, 
+      dice_type: requestDiceType, 
       recipient: recipient, 
       reason: reason
     }).then();

@@ -56,11 +56,11 @@ class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     `Creature` protocol and `CreatureModel` class.
     """
 
-    conditions:  list[int] #Change this to enum 
+    conditions:  list[int] # Change this to enum. 
     creature_id: UUID
     hit_points:  HitPoints
     initiative:  int
-    name:        str | None
+    name:        str | None = None
 
     @property
     def creature_uuid(self):

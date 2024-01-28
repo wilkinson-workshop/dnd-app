@@ -28,7 +28,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
     });    
   }
 
-  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.Player}});
+  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket(`ws://localhost:8000/sessions/${params.sessionid}/ws`, {queryParams: {role: CharacterType.Player}});
 
   //const handleClickSendMessage = useCallback(() => sendJsonMessage({event_type: 'testEvent', event_body: {name: 'test', value: 10}}), []);
 
@@ -52,7 +52,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
   function handleInputSubmit(e: FormEvent){
     e.preventDefault(); 
     setIsGetDiceRoll(false);   
-    addSessionInput(params.sessionid, {input: initiative, clientId: client, name: playerName})
+    addSessionInput(params.sessionid, {input: initiative, client_uuid: client, name: playerName})
     .then();
   }
 
@@ -63,7 +63,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 
   function handleJoinSubmit(e: FormEvent){
     e.preventDefault();    
-    joinSession(params.sessionid, {clientId: client, name: playerName, type: CharacterType.Player})
+    joinSession(params.sessionid, {client_uuid: client, name: playerName, role: CharacterType.Player})
     .then(_ => setHasJoined(true))
 
     //this could be trigered by event from dm when turn order updates.

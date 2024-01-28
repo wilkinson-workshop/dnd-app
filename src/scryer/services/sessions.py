@@ -1,14 +1,15 @@
 
-import abc, asyncio, typing, uuid
+import abc, asyncio, functools, typing, uuid
 
 from fastapi import WebSocket
+from fastapi.websockets import WebSocketState
 
-from scryer.creatures import CharacterV2, Creature
+from scryer.creatures import CharacterV2, Creature, Role
+from scryer.events import Entity, Event
 from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import UUID, request_uuid
-from scryer.util.asyncit import _aiter
 
 # Special types used only in `Session` specific
 # implementations.
@@ -24,6 +25,100 @@ type Action[C, **P] = typing.Callable[typing.Concatenate[C, P], ActionAwaitable]
 An invokable action which modifies a client
 connection.
 """
+
+
+class SessionSocketParams(typing.TypedDict):
+    """
+    Represents query parameters from a socket
+    connection.
+    """
+
+    client_uuid: UUID
+    role:        Role
+
+
+class SessionSocket(WebSocket):
+    """
+    Purely representative type. Used to override
+    properties of `WebSocket` to more clearly
+    define what we should expecte from the object.
+    """
+
+    @property
+    def query_params(self) -> SessionSocketParams:
+        return super().query_params
+
+
+def entity_from_client[C: SessionSocket,](sock: C) -> Entity:
+    """
+    Extrapolate the entity from a client
+    connection.
+    """
+
+    params = sock.query_params
+    return (params['role'], params['client_uuid'])
+
+
+def dungeon_master_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
+    """
+    Wrap or decorate an action to only run when
+    the client is considered an admin or
+    'dungeon master'.
+    """
+
+    @functools.wraps(action)
+    async def inner(client: C, *args, **kwds):
+        if client.query_params['role'] != Role.DUNGEON_MASTER:
+            return client, 0
+        return await action(client, *args, **kwds)
+    
+    return inner
+
+
+def player_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
+    """
+    Wrap or decorate an action to only run when
+    the client is considered a 'player'.
+    """
+
+    @functools.wraps(action)
+    async def inner(client: C, *args, **kwds):
+        if client.query_params['role'] != Role.PLAYER:
+            return client, 0
+        return await action(client, *args, **kwds)
+
+    return inner
+
+
+async def send_event_action[B, C: SessionSocket](sock: C, event: Event[B]):
+    """
+    Generic action which sends an event to a
+    client connection
+    """
+
+    dump = event.model_dump_json()
+    await sock.send_json(dump)
+    return sock, len(dump)
+
+
+@dungeon_master_action
+async def dungeon_master_send_event[B, C: SessionSocket](
+        sock: C,
+        event: Event[B]):
+    """
+    Send an event action to the dungeon master.
+    """
+
+    return (await send_event_action(sock, event))
+
+
+@player_action
+async def player_send_event[B, C: SessionSocket](sock: C, event: Event[B]):
+    """
+    Send an event action to the dungeon master.
+    """
+
+    return (await send_event_action(sock, event))
 
 
 class Session[C: WebSocket](Service):
@@ -60,20 +155,20 @@ class Session[C: WebSocket](Service):
         self.clients[client_uuid] = client
         return client_uuid
 
-    async def broadcast_action[**P](self, action: Action[C, P]) -> typing.Sequence[ActionResult]:
+    async def broadcast_action[**P](
+            self,
+            action: Action[C, P], **kwds) -> typing.Sequence[ActionResult]:
         """
         Do an action against all connections.
         Returns the number of bytes sent to each
         client.
         """
 
-        actions = asyncio.Queue()
-        async for client in _aiter(self.clients):
-            await actions.put(await self.do_action(client, action))
-
-        results = []
-        while actions.qsize():
-            results.append(actions.get_nowait())
+        async with asyncio.TaskGroup() as tg:
+            results = [
+                tg.create_task(self.do_action(c, action, **kwds))
+                for c in self.clients.values()
+            ]
 
         return tuple(results)
 
@@ -83,28 +178,42 @@ class Session[C: WebSocket](Service):
         required cleanup.
         """
 
-        async for client in _aiter(self.clients.values()):
-            await self.detach_client(client)
+        async with asyncio.TaskGroup() as tg:
+            [
+                tg.create_task(self.detach_client(c))
+                for c in self.clients.values()
+            ]
         self.clients.clear()
 
-    async def detach_client(self, client_uuid: UUID):
+    async def detach_client(self, client: C):
         """Disconnect a client."""
+
+        client_uuid = [ # This will throw an index
+                        # error if the client
+                        # doesn't exist.
+            cuid for cuid, c in self.clients.items() if c is client][0]
 
         client = self.clients.pop(client_uuid)
         await client.close()
 
-    async def do_action[**P](self, client: C, action: Action[C, P], **kwds) -> ActionResult:
+    async def do_action[**P](
+            self,
+            client: C,
+            action: Action[C, P], **kwds) -> ActionResult:
         """
         Serve an action to the target client
         connection.
         """
 
+        if client.client_state is WebSocketState.DISCONNECTED:
+            await self.detach_client(client)
+            return client, 0
         return (await action(client, **kwds)) #type: ignore
 
 
 class CombatSession(Session):
     _session_uuid: UUID
-    _characters:    Broker[UUID, Creature]
+    _characters:   Broker[UUID, Creature]
 
     @classmethod
     def new_instance(cls) -> typing.Self:
@@ -124,7 +233,15 @@ class CombatSession(Session):
     
     @property
     def status(self) -> ServiceStatus:
-        return ServiceStatus.ACTIVE
+        stats       = [st.status for st in (self.characters,)]
+        valid_stats = (ServiceStatus.ACTIVE, ServiceStatus.ONLINE)
+        validator   = lambda fn: fn((stat in valid_stats for stat in stats))
+        
+        if validator(all):
+            return ServiceStatus.ONLINE
+        if validator(any):
+            return ServiceStatus.FAILING
+        return ServiceStatus.OFFLINE
 
 
 class SessionMemoryBroker(MemoryBroker[UUID, Session]):

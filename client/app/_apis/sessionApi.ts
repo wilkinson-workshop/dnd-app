@@ -53,7 +53,7 @@ export async function joinSession(id: string, request: JoinSessionRequest) {
 
 export async function endSession(sessionId: string) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
-    method: 'POST',
+    method: 'DELETE',
     headers:{
       'Content-Type': 'application/json',
     } 
@@ -106,7 +106,7 @@ export async function requestPlayerInput(sessionId: string, input: RequestPlayer
   });
   
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error(`Failed to fetch data: ${await res.text()}`)
   }
   
   return res.json()

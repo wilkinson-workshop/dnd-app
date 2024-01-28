@@ -62,6 +62,11 @@ class Role(enum.StrEnum):
     The role assigned to a player per session.
     """
 
+    # Reserved for internal usage of our
+    # application.
+    ADMINISTRATOR  = enum.auto()
+    SESSION        = enum.auto()
+
     NON_PLAYER     = enum.auto()
     PLAYER         = enum.auto()
     DUNGEON_MASTER = enum.auto()
