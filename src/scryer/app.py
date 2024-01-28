@@ -253,7 +253,11 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
 
-    await manager.send_player_session_event("",EventMessage(event_type=EventType.PLAYER_RECEIVE_ORDER_UPDATE, event_body='update') )
+    await (await _sessions_find(session_uuid))[0][1].broadcast_action(
+        sessions.dungeon_master_send_event,
+        event=events.ReceiveOrderUpdate(event_body="update")
+    )
+
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
 async def characters_push(
