@@ -66,7 +66,6 @@ class PlayerSecret(BaseModel):
     recipients:   list[str]
 
 
-
 # Ideally only one value should be for each client
 # using client id in playerInput
 class PlayerInputService():
@@ -83,6 +82,29 @@ class PlayerInputService():
     @classmethod
     def clear(cls):
         cls.__inputs = []
+
+
+async def _broadcase_dm_event(
+        session_uuid: UUID,
+        cls: type[events.Event],
+        **kwds):
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    event = cls(**kwds)
+
+    return await session.broadcast_action(
+        sessions.dungeon_master_send_event,
+        event=event)
+
+
+async def _broadcast_pc_event(
+        session_uuid: UUID,
+        cls: type[events.Event],
+        **kwds):
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    event = cls(**kwds)
+    return await session.broadcast_action(sessions.player_send_event, event=event)
 
 
 async def _character_make(
@@ -252,11 +274,10 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
 
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
-
-    await (await _sessions_find(session_uuid))[0][1].broadcast_action(
-        sessions.dungeon_master_send_event,
-        event=events.ReceiveOrderUpdate(event_body="update")
-    )
+    await _broadcase_dm_event(
+        session_uuid,
+        events.ReceiveOrderUpdate,
+        event_body="update")
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
@@ -383,11 +404,7 @@ async def sessions_player_input_send(session_uuid: UUID, body: PlayerInput):
     """
 
     PlayerInputService.add(body)
-
-    await (await _sessions_find(session_uuid))[0][1].broadcast_action(
-        sessions.dungeon_master_send_event,
-        event=events.ReceiveRoll()
-    )
+    await _broadcase_dm_event(session_uuid, events.ReceiveRoll)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")
@@ -398,10 +415,10 @@ async def sessions_player_input_request(
     Requests player input based on request parameters.
     """
 
-    await (await _sessions_find(session_uuid))[0][1].broadcast_action(
-        sessions.player_send_event,
-        event=events.RequestRoll(event_body=body)
-    )
+    await _broadcast_pc_event(
+        session_uuid,
+        events.RequestRoll,
+        event_body=body)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/secret")
@@ -410,10 +427,10 @@ async def sessions_player_secret(session_uuid: UUID, body: PlayerSecret):
     Send a secret to to a specific player.
     """
 
-    await (await _sessions_find(session_uuid))[0][1].broadcast_action(
-        sessions.player_send_event,
-        event=events.ReceiveSecret(event_body=body.secret)
-    )
+    await _broadcast_pc_event(
+        session_uuid,
+        events.ReceiveSecret,
+        event_body=body.secret)
 
 
 if __name__ == "__main__":
