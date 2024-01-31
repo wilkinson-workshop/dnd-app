@@ -1,47 +1,38 @@
 'use client'
 
-import { createSession, getSessions, joinSession } from "./_apis/sessionApi";
-import { useState } from "react";
-import { createClient } from "./_apis/clientApi";
+import { createSession, getSessions } from "./_apis/sessionApi";
+import { useEffect, useState } from "react";
 import { Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
-import { CharacterType } from "./_apis/character";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const [session, setSession] = useState<string>('');
-  const [sessions, setSessions] = useState<string[]>([]);
-  const [client, setClient] = useState<string>('');  
-  const [hasClient, setHasClient] = useState(false);
+  const [sessionOptions, setSessionOptions] = useState<string[]>([]);
 
   const router = useRouter();
 
-  if(!hasClient){
-    setHasClient(true);//assumes success no retry logic
-    createClient()
-    .then(c => {
-      setClient(c);
-    });
+  useEffect(() => {
     getAllSessions();
-
-  }
+  }, []);    
 
   function getAllSessions(){
     getSessions()
     .then(sessions => {
-      setSessions(sessions);
+      setSessionOptions(sessions);
     });
   }
 
   function joinActiveSession(selectedSession:string){
-    joinSession(selectedSession, {client_uuid: client, name: 'DM', role: CharacterType.DungeonMaster})
-    .then(_=> {
-      router.push(`/${selectedSession}/dm`);
-    });
+    router.push(`/${selectedSession}/dm`);
   }
 
   function handleCreateSession(){
     createSession()
-    .then(session => {     
+    .then(session => {
+      let newSessionOtions = sessionOptions.slice();
+      newSessionOtions.push(session);
+
+      setSessionOptions(newSessionOtions);
       joinActiveSession(session);
       setSession(session);
     });
@@ -64,7 +55,7 @@ export default function HomePage() {
             label="Session"
             onChange={handleChangeSession}
           >
-            {sessions.map(s =>  
+            {sessionOptions.map(s =>  
             <MenuItem key={s} value={s}>{s}</MenuItem>
             )}
           </Select>

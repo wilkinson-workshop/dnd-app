@@ -97,7 +97,7 @@ async def send_event_action[B, C: SessionSocket](sock: C, event: Event[B]):
     """
 
     dump = event.model_dump_json()
-    await sock.send_json(dump)
+    await sock.send_text(dump)
     return sock, len(dump)
 
 

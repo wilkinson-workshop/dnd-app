@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import QRCode from "react-qr-code";
-import { endSession, getAllSessionInput, requestPlayerInput } from "@/app/_apis/sessionApi";
-import { DiceTypes, PlayerInput } from "@/app/_apis/playerInput";
+import { endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
+import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
-import { Autocomplete, Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import Dialog from '@mui/material/Dialog';
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
@@ -39,26 +39,30 @@ function SimpleDialog(props: SimpleDialogProps) {
   );
 }
 
-export default function DmDashboardPage({ params }: { params: { sessionid: string } }) {
+const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [open, setOpen] = useState(false);
 
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
   const router = useRouter();
-  
-  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket(`ws://localhost:8000/sessions/${params.sessionid}/ws`, {queryParams: {role: CharacterType.DungeonMaster}});
+
+  const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
+  useWebSocket<{event_type: EventType, event_body: string}>(`ws://localhost:8000/sessions/${params.sessionid}/ws`, 
+  {queryParams: {
+    role: CharacterType.DungeonMaster,
+    name: 'DM'
+  }});
 
   useEffect(() => {
-    if (lastMessage !== null) {
-      //this is the websocket
-      switch(lastMessage.data){
-        case EventType.DmReceiveRoll: {
+    if (lastJsonMessage !== null) {
+      switch(lastJsonMessage.event_type){
+        case EventType.ReceiveRoll: {
           handleGetPlayerInput();
+          return;
         }
       }
     }
-  }, [lastMessage]);
-
+  }, [lastJsonMessage]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -70,7 +74,8 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
 
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
-    .then(pi => setInputs(pi))
+    .then(pi => 
+      setInputs(pi))
   }
 
   function handleEndSession(){
@@ -107,3 +112,5 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
     </div>
   )
 }
+
+export default DmDashboardPage;

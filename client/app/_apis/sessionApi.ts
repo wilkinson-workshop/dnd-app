@@ -32,25 +32,6 @@ export async function createSession() {
   return res.json()
 }
 
-export async function joinSession(id: string, request: JoinSessionRequest) {
-  return Promise.resolve()
-
-  //was resplaces with websocket
-  const res = await fetch(`${apiBaseUrl}/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(request),
-    headers:{
-      'Content-Type': 'application/json',
-    } 
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
-  }
-  
-  return res.json()
-} 
-
 export async function endSession(sessionId: string) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     method: 'DELETE',

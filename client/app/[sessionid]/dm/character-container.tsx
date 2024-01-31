@@ -22,11 +22,9 @@ export interface ContainerProps{sessionId: string}
 
 export const Container: FC<ContainerProps> = ({sessionId}) => {
   {
-    const [cards, setCards] = useState<Character[]>([]);
-    const [didPageInit, setPageInit] = useState(false);
+    const [cards, setCards] = useState<Character[] | null>(null);
 
-    if(!didPageInit){
-      setPageInit(true);//assumes success no retry logic
+    if(cards == null){
       getCharacters(sessionId)
       .then(c => {
         setCards(c);
@@ -34,11 +32,11 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
     }
 
     const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
-      setCards((prevCards: Character[]) =>
+      setCards((prevCards: Character[] | null) =>
         update(prevCards, {
           $splice: [
             [dragIndex, 1],
-            [hoverIndex, 0, prevCards[dragIndex] as Character],
+            [hoverIndex, 0, prevCards![dragIndex] as Character],
           ],
         }),
       )
@@ -87,7 +85,7 @@ export const Container: FC<ContainerProps> = ({sessionId}) => {
 
     return (
       <>
-        <div style={style}>{cards.length > 0 ?
+        <div style={style}>{cards && cards.length > 0 ?
           cards.map((card, i) => renderCard(card, i)):
           (
             <div style={{display:"inline-block", padding: "5px"}}>Please add Characters</div>

@@ -13,6 +13,8 @@ from fastapi import (
     Path,
     Query,
     WebSocket, 
+    WebSocketDisconnect,
+    
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,18 +36,11 @@ APPLICATION_ROOT = pathlib.Path(__file__).parent
 SOURCE_ROOT      = APPLICATION_ROOT.parent
 
 
-class JoinSessionRequest(BaseModel):
-    client_uuid: UUID
-    name:        str
-    role:        Role
-
-
-# this is the reqeust and response class for
+# this is the request and response class for
 # sending dice roles from player to dm.
 class PlayerInput(BaseModel):
     value:       int
     name:        str
-    client_uuid: str
 
 
 # This is the reqeust of the player(s) to submit a
@@ -55,7 +50,7 @@ class PlayerInput(BaseModel):
 # ony one.    
 class RequestPlayerInput(BaseModel):
     dice_type:   int
-    recipients:  list[str]
+    recipients:  list[UUID]
     reason:      str
 
 
@@ -63,11 +58,9 @@ class RequestPlayerInput(BaseModel):
 # to player
 class PlayerSecret(BaseModel):
     secret:       str
-    recipients:   list[str]
+    recipients:   list[UUID]
 
-
-# Ideally only one value should be for each client
-# using client id in playerInput
+# Ideally only one value per player possible
 class PlayerInputService():
     __inputs:list[PlayerInput]= []
 
@@ -84,7 +77,7 @@ class PlayerInputService():
         cls.__inputs = []
 
 
-async def _broadcase_dm_event(
+async def _broadcast_dm_event(
         session_uuid: UUID,
         cls: type[events.Event],
         **kwds):
@@ -237,7 +230,7 @@ ASGI_APP_MOUNTS = (
 
 
 @APP_ROUTERS["character"].get("/")
-@APP_ROUTERS["character"].get("/{session_uuid}")
+@APP_ROUTERS["character"].get("/{session_uuid}") # I am going to need something like this that returns a list of player characters only to be used in dropdowns when choosing who to send events to. Response should have at least client_uuid and name
 async def characters_find(session_uuid: UUID | None = None):
     """List current characters on the field."""
 
@@ -274,7 +267,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
 
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
-    await _broadcase_dm_event(
+    await _broadcast_pc_event(
         session_uuid,
         events.ReceiveOrderUpdate,
         event_body="update")
@@ -338,7 +331,6 @@ async def healthcheck(service_name: str | None = None):
 async def sessions_join(
         sock: WebSocket,
         session_uuid: typing.Annotated[str, Path()],
-        client_uuid: typing.Annotated[UUID | None, Query()] = None,
         name: typing.Annotated[str | None, Query()] = None,
         role: typing.Annotated[Role | None, Query()] = None):
     """
@@ -352,11 +344,17 @@ async def sessions_join(
     if(role is Role.PLAYER):
         ch = CharacterV2(
             conditions=[],
-            hit_points=HitPoints(0),
+            hit_points=HitPoints(500, 500), # This will be passed in like name with the websocket in the future.
             creature_id=client_uuid,
             initiative=-1,
             name=name)
         await _character_make(session_uuid, ch)
+
+    try:
+        while True:
+            data = await sock.receive_text()
+    except WebSocketDisconnect: 
+        print(sock)
 
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")
@@ -386,8 +384,6 @@ async def sessions_stop(session_uuid: UUID):
     await APP_SERIVCES["sessions"].delete(session_uuid)
 
 
-# I just created an arbirtrary endpoints. Subject
-# to change. Request body structure to change.
 @APP_ROUTERS["session"].get("/{session_uuid}/player-input")
 async def sessions_player_input_find(session_uuid: UUID):
     """
@@ -404,7 +400,7 @@ async def sessions_player_input_send(session_uuid: UUID, body: PlayerInput):
     """
 
     PlayerInputService.add(body)
-    await _broadcase_dm_event(session_uuid, events.ReceiveRoll)
+    await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")
@@ -414,6 +410,8 @@ async def sessions_player_input_request(
     """
     Requests player input based on request parameters.
     """
+
+    # the incoming body contains a recipients array of client ids. This should be used to choose what clients to send the event to 
 
     await _broadcast_pc_event(
         session_uuid,
@@ -426,6 +424,8 @@ async def sessions_player_secret(session_uuid: UUID, body: PlayerSecret):
     """
     Send a secret to to a specific player.
     """
+
+    # the incoming body contains a recipients array of client ids. This should be used to choose what clients to send the event to 
 
     await _broadcast_pc_event(
         session_uuid,

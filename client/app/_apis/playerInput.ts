@@ -1,8 +1,7 @@
 import { CharacterType } from "./character"
 
 export interface PlayerInput {
-    input: number,
-    client_uuid: string,
+    value: number,
     name: string
 }
 
