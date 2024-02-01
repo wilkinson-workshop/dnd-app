@@ -33,7 +33,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId}) => {
         onEdit(false);
         sharePlayerSecret(sessionId, {
             secret: secretMsg,
-            recipients: recipients
+            client_uuids: recipients
         }).then();
     }
 

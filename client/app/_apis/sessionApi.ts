@@ -77,6 +77,21 @@ export async function addSessionInput(sessionId: string, input: PlayerInput) {
   return res.json()
 }
 
+export async function clearSessionInput(sessionId: string): Promise<any> {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/player-input`, {
+    method: 'DELETE',
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+}
+
 export async function requestPlayerInput(sessionId: string, input: RequestPlayerInput) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/request-player-input`, {
     method: 'POST',

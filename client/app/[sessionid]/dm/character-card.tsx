@@ -8,6 +8,7 @@ import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './characer-conditions'
 import { Box, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
+import { CharacterInitiative } from './character-initiative'
 
 const style = {
   border: '1px solid lightgray',
@@ -113,7 +114,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
       <Box>
         <Grid container spacing={2}>
           <Grid item xs={1}>
-            <Item>{character.initiative }</Item>
+            <Item><CharacterInitiative character={character} updateCharacter={updateCharacter} /></Item>
           </Grid>
           <Grid item xs={2}>
             <Item>{character.name}</Item>
@@ -126,7 +127,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
           </Grid>
           <Grid item xs={1}>
             <Item>            
-              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:0})}>
+              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:[0, character.hit_points[1]]})}>
                   <DeleteIcon />
               </IconButton>
             </Item> 

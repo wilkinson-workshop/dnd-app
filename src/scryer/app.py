@@ -261,7 +261,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
     await _broadcast_pc_event(
         session_uuid,
         events.ReceiveOrderUpdate,
-        event_body="update")
+        body=events.EventBody())
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")
@@ -400,6 +400,15 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
 
     PlayerInputService.add(body)
     await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
+
+
+@APP_ROUTERS["session"].delete("/{session_uuid}/player-input")
+async def sessions_player_input_find(session_uuid: UUID):
+    """
+    Get all player inputs.
+    """
+
+    return PlayerInputService.clear()
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")

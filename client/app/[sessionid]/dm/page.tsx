@@ -60,6 +60,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           handleGetPlayerInput();
           return;
         }
+        case EventType.ReceiveOrderUpdate: {
+          //reload characters
+          return;
+        }
       }
     }
   }, [lastJsonMessage]);
@@ -100,6 +104,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         <Button variant="contained" aria-label="end session" onClick={handleEndSession}>
           End Session
         </Button>
+        <a href={playerJoinUrl} target='_blank'>
+          Player Join
+        </a>
       </div> 
       <DndProvider backend={HTML5Backend}>
         <Container sessionId={params.sessionid} />

@@ -36,7 +36,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId}) => {
         onEdit(false);
         requestPlayerInput(sessionId, {
           dice_type: requestDiceType, 
-          recipients: recipients, 
+          client_uuids: recipients, 
           reason: reason
         }).then();
       }
