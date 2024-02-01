@@ -1,46 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import QRCode from "react-qr-code";
-import { endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
+import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
 import { Box, Button } from "@mui/material";
-import Dialog from '@mui/material/Dialog';
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { CharacterType } from '@/app/_apis/character';
+import { Character, CharacterType, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
 import { EventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
+import { getCharacters } from '@/app/_apis/characterApi';
+import { SessionQrDialog } from './session-qr-dialog'
 
 const baseUrl = 'http://localhost:3000/';
 
-export interface SimpleDialogProps {
-  open: boolean;
-  url: string;
-  onClose: () => void;
-}
-
-function SimpleDialog(props: SimpleDialogProps) {
-  const { onClose, url, open } = props;
-
-  const handleClose = () => {
-    onClose();
-  };
-
-  return (
-    <Dialog onClose={handleClose} open={open}>
-      <QRCode value={url}/>
-    </Dialog>
-  );
-}
-
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
+  const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [open, setOpen] = useState(false);
 
   const playerJoinUrl = `${baseUrl}${params.sessionid}`;
@@ -54,6 +35,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   }});
 
   useEffect(() => {
+    loadPlayerOptions();
+  }, []);
+
+  useEffect(() => {
     if (lastJsonMessage !== null) {
       switch(lastJsonMessage.event_type){
         case EventType.ReceiveRoll: {
@@ -62,11 +47,19 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         }
         case EventType.ReceiveOrderUpdate: {
           //reload characters
+          loadPlayerOptions();
           return;
         }
       }
     }
   }, [lastJsonMessage]);
+
+  function loadPlayerOptions(){
+    getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
+    .then(c => {
+      setPlayerOptions(c);
+    });
+  }
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -82,6 +75,12 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
       setInputs(pi))
   }
 
+  function handleClearPlayerInput(){
+    clearSessionInput(params.sessionid)
+    .then(_ => 
+      setInputs([]))
+  }
+
   function handleEndSession(){
     endSession(params.sessionid)
     .then(_ => {
@@ -93,7 +92,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   return (
     <div>
       <div>
-        <SimpleDialog
+        <SessionQrDialog
           open={open}
           url={playerJoinUrl}
           onClose={handleClose}
@@ -112,9 +111,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         <Container sessionId={params.sessionid} />
       </DndProvider>
       <Box sx={{margin: '20px 0'}}>
-        <SendPlayerSecret sessionId={params.sessionid} />
-        <RequestPlayerInput sessionId={params.sessionid} />
-        {inputs.length > 0 ? <PlayerInputList playerInputs={inputs}  /> : '' }  
+        <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+        <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
+        {inputs.length > 0 ? <PlayerInputList playerInputs={inputs} handleClickClearResults={handleClearPlayerInput} /> : '' }  
       </Box>    
     </div>
   )

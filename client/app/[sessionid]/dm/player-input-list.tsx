@@ -2,18 +2,13 @@ import { PlayerInput } from "@/app/_apis/playerInput"
 import { Button } from "@mui/material"
 import { FC } from "react"
 
-export interface PlayerInputListProps{playerInputs: PlayerInput[]}
+export interface PlayerInputListProps{playerInputs: PlayerInput[], handleClickClearResults: () => void}
 
-export const PlayerInputList: FC<PlayerInputListProps> = ({playerInputs}) => {
-
-    function handleClickClearResults(){
-        //do something on the parent to clear results...
-    }
-
+export const PlayerInputList: FC<PlayerInputListProps> = ({playerInputs, handleClickClearResults}) => {
     return (
         <div>
         {playerInputs.map(input => (
-            <div key={input.name }>
+            <div key={input.name + "" + input.value }>
                 Name: {input.name} - Value: {input.value}
             </div>
             ))} 

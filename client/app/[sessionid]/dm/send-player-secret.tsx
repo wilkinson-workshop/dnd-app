@@ -1,11 +1,11 @@
 import { FC, useState } from "react";
-import { Autocomplete, Box, Button, Checkbox, ListItemText, OutlinedInput, TextField } from "@mui/material";
+import { Box, Button, Checkbox, ListItemText, TextField } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { sharePlayerSecret } from "@/app/_apis/sessionApi";
-import { EMPTY_GUID } from "@/app/_apis/character";
+import { Character, EMPTY_GUID } from "@/app/_apis/character";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -18,13 +18,12 @@ const MenuProps = {
   },
 };
 
-const recipientOptions = [EMPTY_GUID, "Another"];//This should contain individual player characters too.
-
 export interface SendPlayerSecretProps{
-    sessionId: string
+    sessionId: string,
+    recipientOptions: Character[]
 }
 
-export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId}) => {
+export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipientOptions}) => {
     const [edit, onEdit] = useState(false);
     const [recipients, setRecipient] = useState<string[]>([]);
     const [secretMsg, setSecretMsg] = useState('');
@@ -35,6 +34,8 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId}) => {
             secret: secretMsg,
             client_uuids: recipients
         }).then();
+        setRecipient([]);
+        setSecretMsg('');
     }
 
     function handleChangeRecipient(event: SelectChangeEvent<typeof recipients>){
@@ -64,9 +65,9 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId}) => {
                             MenuProps={MenuProps}
                         >
                             {recipientOptions.map(s =>  
-                            <MenuItem key={s} value={s}>
-                                <Checkbox checked={recipients.indexOf(s) > -1} />
-                                <ListItemText primary={s} />
+                            <MenuItem key={s.creature_id} value={s.creature_id}>
+                                <Checkbox checked={recipients.indexOf(s.creature_id) > -1} />
+                                <ListItemText primary={s.name} />
                             </MenuItem>
                             )}
                         </Select>

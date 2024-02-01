@@ -44,7 +44,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           return;
         }
         case EventType.ReceiveSecret: {
-          setSecret(lastJsonMessage.event_body);
+          setSecret(lastJsonMessage.event_body.secret);
           setIsShowSecret(true);
           return;
         }

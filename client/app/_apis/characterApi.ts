@@ -1,13 +1,13 @@
-import { Character } from "./character";
+import { Character, RootFilter } from "./character";
 
 const baseUrl = 'http://localhost:8000';
 const apiBaseUrl = `${baseUrl}/characters`;
 
-export async function getCharacters(sessionId: string) {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
+export async function getCharacters(sessionId: string, query: RootFilter): Promise<Character[]> {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}?query=${JSON.stringify(query)}`, {
     headers:{
       'Content-Type': 'application/json',
-    } 
+    }
   });
   
   if (!res.ok) {

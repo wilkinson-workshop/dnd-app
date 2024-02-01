@@ -6,7 +6,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { DiceTypes } from "@/app/_apis/playerInput";
 import { requestPlayerInput } from "@/app/_apis/sessionApi";
-import { EMPTY_GUID } from "@/app/_apis/character";
+import { Character, EMPTY_GUID } from "@/app/_apis/character";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -19,14 +19,14 @@ const MenuProps = {
   },
 };
 
-const recipientOptions = [EMPTY_GUID, 'All'];//This should contain individual player characters too.
 const rollOptions = ['Initiative']
 
 export interface RequestPlayerInputProps{
-    sessionId: string
+    sessionId: string,
+    recipientOptions: Character[]
 }
 
-export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId}) => {
+export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recipientOptions}) => {
     const [edit, onEdit] = useState(false);
     const [requestDiceType, setRequestDiceType] = useState(20);
     const [recipients, setRecipient] = useState<string[]>([]);
@@ -39,6 +39,9 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId}) => {
           client_uuids: recipients, 
           reason: reason
         }).then();
+        setRecipient([]);
+        setRequestDiceType(20);
+        setReason('');
       }
 
     function handleChangeDiceType(event: SelectChangeEvent<typeof requestDiceType>){
@@ -82,9 +85,9 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId}) => {
                                 MenuProps={MenuProps}
                             >
                                 {recipientOptions.map(s =>  
-                                <MenuItem key={s} value={s}>
-                                    <Checkbox checked={recipients.indexOf(s) > -1} />
-                                    <ListItemText primary={s} />
+                                <MenuItem key={s.creature_id} value={s.creature_id}>
+                                    <Checkbox checked={recipients.indexOf(s.creature_id) > -1} />
+                                    <ListItemText primary={s.name} />
                                 </MenuItem>
                                 )}
                             </Select>
