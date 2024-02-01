@@ -1,5 +1,5 @@
 
-import abc, asyncio, functools, typing, uuid
+import abc, asyncio, functools, json, typing, uuid
 
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
@@ -86,8 +86,18 @@ async def send_event_action[C: SessionSocket](sock: C, event: Event):
     client connection
     """
 
-    dump = event.model_dump_json()
-    await sock.send_text(dump)
+    dump = event.model_dump()
+    if "event_body" in dump and not dump["event_body"]:
+        # Event body was empty. Most likely due to
+        # an issue with model inheritence.
+        event_body = event.event_body.model_dump()
+        if isinstance(event_body, dict) and "client_uuids" in event_body:
+            event_body["client_uuids"] = [
+                str(u) for u in event_body["client_uuids"]
+            ]
+        dump["event_body"] = event_body
+
+    await sock.send_text(json.dumps(dump))
     return sock, len(dump)
 
 
@@ -186,6 +196,8 @@ class Session[C: WebSocket](Service):
             cuid for cuid, c in self.clients.items() if c is client][0]
 
         client = self.clients.pop(client_uuid)
+        if client.client_state is WebSocketState.DISCONNECTED:
+            return
         await client.close()
 
     async def do_action[**P](

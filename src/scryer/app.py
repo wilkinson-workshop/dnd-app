@@ -330,6 +330,8 @@ async def sessions_join(
     arbitrary `client_uuid`.
     """
 
+    session: CombatSession
+
     await sock.accept()
     _, session  = (await _sessions_find(session_uuid))[0]
     client_uuid = await session.attach_client(sock)
@@ -350,9 +352,11 @@ async def sessions_join(
             # TODO: need to accept messages from
             # clients via this event loop.
             data = await sock.receive_text()
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, RuntimeError):
         # Must ensure invalid/disconnected
         # clients are removed.
+        if role is Role.PLAYER:
+            await session.characters.delete(client_uuid)
         await session.detach_client(sock)
 
 
