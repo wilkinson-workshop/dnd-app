@@ -5,7 +5,7 @@ from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 
 from scryer.creatures import CharacterV2, Creature, Role
-from scryer.events import Entity, Event
+from scryer.events import Event
 from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
@@ -49,16 +49,6 @@ class SessionSocket(WebSocket):
         return super().query_params
 
 
-def entity_from_client[C: SessionSocket,](sock: C) -> Entity:
-    """
-    Extrapolate the entity from a client
-    connection.
-    """
-
-    params = sock.query_params
-    return (params['role'], params['client_uuid'])
-
-
 def dungeon_master_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
     """
     Wrap or decorate an action to only run when
@@ -90,7 +80,7 @@ def player_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
     return inner
 
 
-async def send_event_action[B, C: SessionSocket](sock: C, event: Event[B]):
+async def send_event_action[C: SessionSocket](sock: C, event: Event):
     """
     Generic action which sends an event to a
     client connection
@@ -102,9 +92,9 @@ async def send_event_action[B, C: SessionSocket](sock: C, event: Event[B]):
 
 
 @dungeon_master_action
-async def dungeon_master_send_event[B, C: SessionSocket](
+async def dungeon_master_send_event[C: SessionSocket](
         sock: C,
-        event: Event[B]):
+        event: Event):
     """
     Send an event action to the dungeon master.
     """
@@ -113,7 +103,7 @@ async def dungeon_master_send_event[B, C: SessionSocket](
 
 
 @player_action
-async def player_send_event[B, C: SessionSocket](sock: C, event: Event[B]):
+async def player_send_event[C: SessionSocket](sock: C, event: Event):
     """
     Send an event action to the dungeon master.
     """
@@ -155,6 +145,8 @@ class Session[C: WebSocket](Service):
         self.clients[client_uuid] = client
         return client_uuid
 
+    # TODO: Find different verboge for filtered
+    # action sending.
     async def broadcast_action[**P](
             self,
             action: Action[C, P], **kwds) -> typing.Sequence[ActionResult]:

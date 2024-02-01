@@ -13,8 +13,7 @@ from fastapi import (
     Path,
     Query,
     WebSocket, 
-    WebSocketDisconnect,
-    
+    WebSocketDisconnect
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +26,6 @@ from scryer.services import ServiceStatus, sessions
 from scryer.services.sessions import CombatSession, SessionMemoryBroker
 from scryer.util import request_uuid, UUID
 
-
 # Root directory appliction is being executed
 # from. Will be used for creating and
 # fetching assets related to the application.
@@ -36,33 +34,16 @@ APPLICATION_ROOT = pathlib.Path(__file__).parent
 SOURCE_ROOT      = APPLICATION_ROOT.parent
 
 
-# this is the request and response class for
-# sending dice roles from player to dm.
-class PlayerInput(BaseModel):
-    value:       int
-    name:        str
+class CreaturesFilter(typing.TypedDict):
+    hit_points: int
+    role:       typing.Sequence[Role]
+    condition:  typing.Sequence[Role]
 
 
-# This is the reqeust of the player(s) to submit a
-# dice role for use by the dm. 
-# Recipient value could be All for all players or
-# a specific client id to send the notification to
-# ony one.    
-class RequestPlayerInput(BaseModel):
-    dice_type:   int
-    recipients:  list[UUID]
-    reason:      str
-
-
-# this is the reqeust for sending secrets from dm
-# to player
-class PlayerSecret(BaseModel):
-    secret:       str
-    recipients:   list[UUID]
-
+# TODO: move elsewhere.
 # Ideally only one value per player possible
 class PlayerInputService():
-    __inputs:list[PlayerInput]= []
+    __inputs:list[events.PlayerInput]= []
 
     @classmethod
     def getAll(cls):
@@ -79,11 +60,10 @@ class PlayerInputService():
 
 async def _broadcast_dm_event(
         session_uuid: UUID,
-        cls: type[events.Event],
-        **kwds):
+        cls: type[events.Event]):
 
     _, session = (await _sessions_find(session_uuid))[0]
-    event = cls(**kwds)
+    event = cls(events.EventBody())
 
     return await session.broadcast_action(
         sessions.dungeon_master_send_event,
@@ -93,10 +73,10 @@ async def _broadcast_dm_event(
 async def _broadcast_pc_event(
         session_uuid: UUID,
         cls: type[events.Event],
-        **kwds):
+        body: events.EventBody):
 
     _, session = (await _sessions_find(session_uuid))[0]
-    event = cls(**kwds)
+    event = cls(body)
     return await session.broadcast_action(sessions.player_send_event, event=event)
 
 
@@ -230,9 +210,20 @@ ASGI_APP_MOUNTS = (
 
 
 @APP_ROUTERS["character"].get("/")
-@APP_ROUTERS["character"].get("/{session_uuid}") # I am going to need something like this that returns a list of player characters only to be used in dropdowns when choosing who to send events to. Response should have at least client_uuid and name
-async def characters_find(session_uuid: UUID | None = None):
+@APP_ROUTERS["character"].get("/{session_uuid}")
+async def characters_find(session_uuid: UUID | None = None,  query: str = Query('')):
     """List current characters on the field."""
+
+    # TODO: implement 'filters' query parameter.
+    # - hit_points lt/gt/lte/gte/eq value
+    # - role in/not-in values
+    # - conditions contains/not-contains value(s)
+    # -------------------------------------------
+    # I am going to need something like this that
+    # returns a list of player characters only to
+    # be used in dropdowns when choosing who to
+    # send events to. Response should have at
+    # least client_uuid and name.
 
     found = await _sessions_find(session_uuid)
     data  = {
@@ -332,6 +323,7 @@ async def sessions_join(
         sock: WebSocket,
         session_uuid: typing.Annotated[str, Path()],
         name: typing.Annotated[str | None, Query()] = None,
+        hit_points: typing.Annotated[HitPoints | None, Query()] = None,
         role: typing.Annotated[Role | None, Query()] = None):
     """
     Join an active session. Passes in some
@@ -341,20 +333,27 @@ async def sessions_join(
     await sock.accept()
     _, session  = (await _sessions_find(session_uuid))[0]
     client_uuid = await session.attach_client(sock)
-    if(role is Role.PLAYER):
+    if role is Role.PLAYER:
         ch = CharacterV2(
             conditions=[],
-            hit_points=HitPoints(500, 500), # This will be passed in like name with the websocket in the future.
+            hit_points=hit_points or HitPoints(500, 500),
             creature_id=client_uuid,
             initiative=-1,
             name=name)
         await _character_make(session_uuid, ch)
+        await _broadcast_dm_event(
+            session_uuid,
+            events.ReceiveOrderUpdate)
 
     try:
         while True:
+            # TODO: need to accept messages from
+            # clients via this event loop.
             data = await sock.receive_text()
-    except WebSocketDisconnect: 
-        print(sock)
+    except WebSocketDisconnect:
+        # Must ensure invalid/disconnected
+        # clients are removed.
+        await session.detach_client(sock)
 
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")
@@ -394,7 +393,7 @@ async def sessions_player_input_find(session_uuid: UUID):
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/player-input")
-async def sessions_player_input_send(session_uuid: UUID, body: PlayerInput):
+async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInput):
     """
     Send a player input to session.
     """
@@ -406,31 +405,29 @@ async def sessions_player_input_send(session_uuid: UUID, body: PlayerInput):
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")
 async def sessions_player_input_request(
         session_uuid: UUID,
-        body: RequestPlayerInput):
+        body: events.RequestPlayerInput):
     """
     Requests player input based on request parameters.
     """
 
-    # the incoming body contains a recipients array of client ids. This should be used to choose what clients to send the event to 
-
     await _broadcast_pc_event(
         session_uuid,
         events.RequestRoll,
-        event_body=body)
+        body)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/secret")
-async def sessions_player_secret(session_uuid: UUID, body: PlayerSecret):
+async def sessions_player_secret(
+    session_uuid: UUID,
+    body: events.PlayerSecret):
     """
     Send a secret to to a specific player.
     """
 
-    # the incoming body contains a recipients array of client ids. This should be used to choose what clients to send the event to 
-
     await _broadcast_pc_event(
         session_uuid,
         events.ReceiveSecret,
-        event_body=body.secret)
+        body)
 
 
 if __name__ == "__main__":
