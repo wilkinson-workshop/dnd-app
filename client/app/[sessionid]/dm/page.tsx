@@ -21,6 +21,7 @@ const baseUrl = 'http://localhost:3000/';
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
+  const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -46,7 +47,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           return;
         }
         case EventType.ReceiveOrderUpdate: {
-          //reload characters
+          setIsLoadCharacter(true);
           loadPlayerOptions();
           return;
         }
@@ -108,7 +109,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         </a>
       </div> 
       <DndProvider backend={HTML5Backend}>
-        <Container sessionId={params.sessionid} />
+        <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
       </DndProvider>
       <Box sx={{margin: '20px 0'}}>
         <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
