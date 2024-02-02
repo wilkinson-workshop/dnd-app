@@ -2,6 +2,7 @@ import abc, math, typing
 
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import shelves
+from scryer.util.filters import FilterStatement, FilterValidator, compose_validator
 
 type LocatedPair[K, R] = tuple[K, R]
 type Located[K, R] = typing.Sequence[LocatedPair[K, R]]
@@ -24,7 +25,10 @@ class Broker[K, R](Service):
         Delete a resource related to the key.
         """
     @abc.abstractmethod
-    def locate(self, *keys: K) -> Located[K, R]:
+    def locate(
+            self,
+            *keys: K,
+            statement: FilterStatement | None) -> Located[K, R]:
         """
         Attempt to find resources that are related
         to the given keys.
@@ -37,14 +41,14 @@ class Broker[K, R](Service):
     # implementend by lower objects.
     @typing.overload
     @abc.abstractmethod
-    def modify(self, key: R, **kwds) -> None:
+    def modify(self, key: K, **kwds) -> None:
         pass
     @typing.overload
     @abc.abstractmethod
-    def modify(self, key: R, resource: R) -> None:
+    def modify(self, key: K, resource: R) -> None:
         pass
     @abc.abstractmethod
-    def modify(self, key: R, *args, **kwds) -> None:
+    def modify(self, key: K, *args, **kwds) -> None:
         """
         Push changes to an existing resource.
         """
@@ -81,9 +85,13 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
     async def delete(self, key: K):
         self.resource_map.pop(key)
 
-    async def locate(self, *keys: K) -> Located[K, R]:
+    async def locate(
+            self,
+            *keys: K,
+            statement: FilterStatement | None = None) -> Located[K, R]:
+
         locator = lambda key: self.resource_map.get(key, None)
-        return _locate_any(locator, keys or self.resource_map.keys())
+        return _locate_any(locator, keys or self.resource_map.keys(), statement)
 
 
 class ShelfBroker[R](Broker[str, R]):
@@ -123,19 +131,25 @@ class ShelfBroker[R](Broker[str, R]):
         with self as opened:
             opened.shelf.pop(key, None)
 
-    async def locate(self, *keys: str) -> Located[str, R]:
-        locator = lambda key: self.shelf.get(str(key), None)
+    async def locate(
+        self,
+        *keys: str,
+        statement: FilterStatement | None = None) -> Located[str, R]:
+
+        locator = lambda key: self.resource_map.get(str(key), None)
         with self as _:
-            return _locate_any(locator, keys or self.shelf.keys())
+            return _locate_any(locator, keys or self.shelf.keys(), statement)
 
 
 def _locate_any[K: typing.Hashable, R](
         locator: Locator[K, R],
-        keys: typing.Sequence[K]) -> Located[K, R]:
+        keys: typing.Sequence[K],
+        statement: FilterStatement | None) -> Located[K, R]:
     """
     Return all resources that match the given
     key(s).
     """
 
-    pred = lambda found: found[1] is not None
+    isvalid = compose_validator(statement) if statement else (lambda _: True)
+    pred    = lambda found: found[1] is not None and isvalid(found[1])
     return tuple(filter(pred, ((k, locator(k)) for k in keys)))

@@ -1,6 +1,6 @@
 import { JoinSessionRequest, PlayerInput, RequestPlayerInput, PlayerSecret } from "./playerInput";
 
-const baseUrl = 'http://localhost:8000';
+const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/sessions`;
 
 export async function getSessions(): Promise<any[]> {
@@ -32,28 +32,9 @@ export async function createSession() {
   return res.json()
 }
 
-export async function joinSession(id: string, request: JoinSessionRequest) {
-  return Promise.resolve()
-
-  //was resplaces with websocket
-  const res = await fetch(`${apiBaseUrl}/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(request),
-    headers:{
-      'Content-Type': 'application/json',
-    } 
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
-  }
-  
-  return res.json()
-} 
-
 export async function endSession(sessionId: string) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
-    method: 'POST',
+    method: 'DELETE',
     headers:{
       'Content-Type': 'application/json',
     } 
@@ -96,6 +77,21 @@ export async function addSessionInput(sessionId: string, input: PlayerInput) {
   return res.json()
 }
 
+export async function clearSessionInput(sessionId: string): Promise<any> {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/player-input`, {
+    method: 'DELETE',
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+}
+
 export async function requestPlayerInput(sessionId: string, input: RequestPlayerInput) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/request-player-input`, {
     method: 'POST',
@@ -106,7 +102,7 @@ export async function requestPlayerInput(sessionId: string, input: RequestPlayer
   });
   
   if (!res.ok) {
-    throw new Error('Failed to fetch data')
+    throw new Error(`Failed to fetch data: ${await res.text()}`)
   }
   
   return res.json()

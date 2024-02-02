@@ -1,5 +1,5 @@
 
-const baseUrl = 'http://localhost:8000';
+const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/clients`;
 
 export async function createClient(): Promise<string>{

@@ -3,6 +3,7 @@ export interface Character {
     name: string,
     initiative: number,
     hit_points: number[],
+    role: CharacterType,
     conditions: ConditionType[]
 }
 
@@ -25,7 +26,7 @@ export enum ConditionType {
     Scared,
 } 
 
-export const EmptyGuid = '00000000-0000-0000-0000-000000000000';
+export const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
 export interface ConditionTypeItem {id: number, name: string}
 
@@ -41,3 +42,40 @@ export const ConditionOptions: ConditionTypeItem[] = [
     {id: 8, name: "Petrified"},
     {id: 9, name: "Scared"}
 ];
+
+export interface RootFilter {
+    filters: Filter[],
+    logic: LogicType
+}
+
+export interface Filter {
+    field: FieldType,
+    operator: OperatorType,
+    value: any,
+}
+
+export enum LogicType {
+    And = 'and',
+    Or = 'or'
+}
+
+export enum FieldType {
+    Initiative = 'initiative',
+    Name = 'name',
+    Role = "role",
+    HP = "hit_points",
+    Conditions = "conditions"
+}
+
+export enum OperatorType {
+    Equals = 'eq',
+    NotEquals = 'neq',
+    LessThen = 'lt',
+    LessThenOrEquals = 'lte',
+    GreaterThen = 'gt',
+    GreaterThenOrEqual = 'gte',
+    Contains = 'contains',
+    DoesNotContain = 'not_contains',
+    StartsWith = 'startswith'
+}
+

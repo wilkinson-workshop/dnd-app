@@ -30,6 +30,3 @@ class CharacterV2(CreatureV2):
     @property
     def is_player(self):
         raise NotImplemented("TODO: impelment `is_player`")
-
-    def role(self, session: Session):
-        raise NotImplemented("TODO: implement `role`")

@@ -1,77 +1,68 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react';
-import QRCode from "react-qr-code";
-import { endSession, getAllSessionInput, requestPlayerInput } from "@/app/_apis/sessionApi";
-import { DiceTypes, PlayerInput } from "@/app/_apis/playerInput";
+import { useEffect, useState } from 'react';
+import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
+import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
-import { Autocomplete, Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
-import Dialog from '@mui/material/Dialog';
+import { Box, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { CharacterType } from '@/app/_apis/character';
+import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
 import { EventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
+import { SendPlayerSecret } from './send-player-secret';
+import { getCharacters } from '@/app/_apis/characterApi';
+import { SessionQrDialog } from './session-qr-dialog'
 
-const baseUrl = 'http://localhost:3000/';
+const baseUrl = process.env.NEXT_PUBLIC_BASEURL;
 
-export interface SimpleDialogProps {
-  open: boolean;
-  url: string;
-  onClose: () => void;
-}
-
-function SimpleDialog(props: SimpleDialogProps) {
-  const { onClose, url, open } = props;
-
-  const handleClose = () => {
-    onClose();
-  };
-
-  return (
-    <Dialog onClose={handleClose} open={open}>
-      <QRCode value={url}/>
-    </Dialog>
-  );
-}
-
-const recipients = ['All'];//This should contain individual player characters too.
-const rollOptions = ['Initiative']
-
-export default function DmDashboardPage({ params }: { params: { sessionid: string } }) {
+const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
+  const [isLoadCharacter, setIsLoadCharacter] = useState(false);
+  const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [open, setOpen] = useState(false);
-  const [requestDiceType, setRequestDiceType] = useState(20);
-  const [recipient, setRecipient] = useState(recipients[0]);
-  const [reason, setReason] = useState('');
 
-  const playerJoinUrl = `${baseUrl}${params.sessionid}`;
+  const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
-  
-  const { sendMessage, sendJsonMessage, readyState, lastMessage } = useWebSocket('ws://localhost:8000/ws', {queryParams: {type: CharacterType.DungeonMaster}});
 
-  function handleClickRequestRoll() {
-    requestPlayerInput(params.sessionid, {
-      diceType: requestDiceType, 
-      recipient: recipient, 
-      reason: reason
-    }).then();
-  }
+  const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
+  useWebSocket<{event_type: EventType, event_body: string}>(`ws://localhost:8000/sessions/${params.sessionid}/ws`, 
+  {queryParams: {
+    role: CharacterType.DungeonMaster,
+    name: 'DM'
+  }});
 
   useEffect(() => {
-    if (lastMessage !== null) {
-      //this is the websocket
-      switch(lastMessage.data){
-        case EventType.DmReceiveRoll: {
+    loadPlayerOptions();
+  }, []);
+
+  useEffect(() => {
+    if (lastJsonMessage !== null) {
+      switch(lastJsonMessage.event_type){
+        case EventType.ReceiveRoll: {
           handleGetPlayerInput();
+          return;
+        }
+        case EventType.ReceiveOrderUpdate: {
+          setIsLoadCharacter(true);
+          loadPlayerOptions();
+          return;
         }
       }
     }
-  }, [lastMessage]);
+  }, [lastJsonMessage]);
 
+  function loadPlayerOptions(){
+    getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
+    .then(c => {
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: []}];
+      withAll.push(...c)
+      setPlayerOptions(withAll);
+    });
+  }
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -83,35 +74,28 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
 
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
-    .then(pi => setInputs(pi))
+    .then(pi => 
+      setInputs(pi))
+  }
+
+  function handleClearPlayerInput(){
+    clearSessionInput(params.sessionid)
+    .then(_ => 
+      setInputs([]))
   }
 
   function handleEndSession(){
     endSession(params.sessionid)
     .then(_ => {
       endSession('');;
-      router.push(baseUrl);
+      router.push(baseUrl!);
     });
-  }
-
-  function handleChangeDiceType(event: SelectChangeEvent<typeof requestDiceType>){
-    const {  
-      target: { value },  
-    } = event;
-    setRequestDiceType(Number.parseInt(value as string));
-  }
-
-  function handleChangeRecipient(event: SelectChangeEvent<typeof recipient>){
-    const {  
-      target: { value },  
-    } = event;
-    setRecipient(value);
   }
 
   return (
     <div>
       <div>
-        <SimpleDialog
+        <SessionQrDialog
           open={open}
           url={playerJoinUrl}
           onClose={handleClose}
@@ -122,12 +106,20 @@ export default function DmDashboardPage({ params }: { params: { sessionid: strin
         <Button variant="contained" aria-label="end session" onClick={handleEndSession}>
           End Session
         </Button>
+        <a href={playerJoinUrl} target='_blank'>
+          Player Join
+        </a>
       </div> 
       <DndProvider backend={HTML5Backend}>
-        <Container sessionId={params.sessionid} />
-      </DndProvider>      
-      <RequestPlayerInput sessionId={params.sessionid} />
-      {inputs.length > 0 ? <PlayerInputList playerInputs={inputs}  /> : '' }      
+        <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
+      </DndProvider>
+      <Box sx={{margin: '20px 0'}}>
+        <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+        <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
+        {inputs.length > 0 ? <PlayerInputList playerInputs={inputs} handleClickClearResults={handleClearPlayerInput} /> : '' }  
+      </Box>    
     </div>
   )
 }
+
+export default DmDashboardPage;

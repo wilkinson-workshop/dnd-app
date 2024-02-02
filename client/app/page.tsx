@@ -1,47 +1,38 @@
 'use client'
 
-import { createSession, getSessions, joinSession } from "./_apis/sessionApi";
-import { useState } from "react";
-import { createClient } from "./_apis/clientApi";
+import { createSession, getSessions } from "./_apis/sessionApi";
+import { useEffect, useState } from "react";
 import { Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
-import { CharacterType } from "./_apis/character";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const [session, setSession] = useState<string>('');
-  const [sessions, setSessions] = useState<string[]>([]);
-  const [client, setClient] = useState<string>('');  
-  const [hasClient, setHasClient] = useState(false);
+  const [sessionOptions, setSessionOptions] = useState<string[]>([]);
 
   const router = useRouter();
 
-  if(!hasClient){
-    setHasClient(true);//assumes success no retry logic
-    createClient()
-    .then(c => {
-      setClient(c);
-    });
+  useEffect(() => {
     getAllSessions();
-
-  }
+  }, []);    
 
   function getAllSessions(){
     getSessions()
     .then(sessions => {
-      setSessions(sessions.map(s => s[0]))
+      setSessionOptions(sessions);
     });
   }
 
   function joinActiveSession(selectedSession:string){
-    joinSession(selectedSession, {clientId: client, name: 'DM', type: CharacterType.DungeonMaster})
-    .then(_=> {
-      router.push(`/${selectedSession}/dm`);
-    });
+    router.push(`/${selectedSession}/dm`);
   }
 
   function handleCreateSession(){
     createSession()
-    .then(session => {     
+    .then(session => {
+      let newSessionOtions = sessionOptions.slice();
+      newSessionOtions.push(session);
+
+      setSessionOptions(newSessionOtions);
       joinActiveSession(session);
       setSession(session);
     });
@@ -60,11 +51,11 @@ export default function HomePage() {
           <InputLabel id="session">Session</InputLabel>
           <Select
             labelId="session"
-            value={''}
+            value={session}
             label="Session"
             onChange={handleChangeSession}
           >
-            {sessions.map(s =>  
+            {sessionOptions.map(s =>  
             <MenuItem key={s} value={s}>{s}</MenuItem>
             )}
           </Select>
@@ -72,7 +63,6 @@ export default function HomePage() {
       <Button variant="contained" aria-label="create session" onClick={() => joinActiveSession(session)}>
         Join
       </Button>
-
       <Button variant="contained" aria-label="create session" onClick={handleCreateSession}>
         Create Session
       </Button>
