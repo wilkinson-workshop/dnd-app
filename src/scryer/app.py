@@ -237,7 +237,8 @@ async def characters_find(
 
     if session_uuid:
         data = data[session_uuid]
-    return data
+
+    return sorted(data, key=lambda e: e.initiative)
 
 
 @APP_ROUTERS["character"].get("/{session_uuid}/initiative")
@@ -250,8 +251,8 @@ async def characters_find(session_uuid: UUID):
     _, session = (await _sessions_find(session_uuid))[0]
 
     initiatives = []
-    for c in session.characters:
-        initiatives.append({"id": c.creature_id, "name": c.name})
+    for c in sorted(session.characters, key=lambda c: c.initiative):
+        initiatives.append({"id": c.creature_id, "name": c.name,})
 
     return initiatives      
 
@@ -276,6 +277,10 @@ async def characters_push(
     """Update the specified character."""
 
     await _character_make(session_uuid, character, character_uuid)
+    await _broadcast_pc_event(
+        session_uuid,
+        events.ReceiveOrderUpdate,
+        body=events.EventBody())
 
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{character_uuid}")
@@ -285,6 +290,10 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
     session: CombatSession
     _, session = (await _sessions_find(session_uuid))[0]
     await session.characters.delete(character_uuid)
+    await _broadcast_pc_event(
+        session_uuid,
+        events.ReceiveOrderUpdate,
+        body=events.EventBody())
 
 
 @APP_ROUTERS["client"].post("/")
@@ -351,6 +360,10 @@ async def sessions_join(
         await _broadcast_dm_event(
             session_uuid,
             events.ReceiveOrderUpdate)
+        await _broadcast_pc_event(
+            session_uuid,
+            events.ReceiveOrderUpdate,
+            body=events.EventBody())
 
     try:
         while True:

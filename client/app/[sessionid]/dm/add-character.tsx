@@ -38,7 +38,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             initiative: initiative,
             name: name, 
             hit_points: [hp, hp],
-            conditions:conditions
+            conditions:conditions,
+            role: CharacterType.NonPlayer
           });
           setHp(1);
           setName('Character')

@@ -3,6 +3,7 @@ export interface Character {
     name: string,
     initiative: number,
     hit_points: number[],
+    role: CharacterType,
     conditions: ConditionType[]
 }
 
