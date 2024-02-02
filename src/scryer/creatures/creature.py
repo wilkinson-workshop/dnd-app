@@ -39,10 +39,6 @@ class Creature(typing.Protocol):
         Non-Player Character.
         """
 
-    @abc.abstractmethod
-    def role(self, session: Session) -> Role:
-        """The role assigned to this creature."""
-
 
 class CreatureModel(BaseModel):
     """
@@ -61,6 +57,7 @@ class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     hit_points:  HitPoints
     initiative:  int
     name:        str | None = None
+    role:        Role = Role.NON_PLAYER
 
     @property
     def creature_uuid(self):

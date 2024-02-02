@@ -2,6 +2,7 @@
 The HTTP server core implementation.
 """
 
+import json
 import pathlib
 import typing
 
@@ -17,14 +18,12 @@ from fastapi import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 # Project level modules go here.
-from scryer import events
-from scryer.creatures import CharacterV2, Role, HitPoints
+from scryer.creatures import CharacterV2, Condition, Role, HitPoints
 from scryer.services import ServiceStatus, sessions
-from scryer.services.sessions import CombatSession, SessionMemoryBroker
-from scryer.util import request_uuid, UUID
+from scryer.services.sessions import Action, CombatSession, SessionMemoryBroker
+from scryer.util import events, request_uuid, UUID
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -37,7 +36,7 @@ SOURCE_ROOT      = APPLICATION_ROOT.parent
 class CreaturesFilter(typing.TypedDict):
     hit_points: int
     role:       typing.Sequence[Role]
-    condition:  typing.Sequence[Role]
+    condition:  typing.Sequence[Condition]
 
 
 # TODO: move elsewhere.
@@ -58,16 +57,26 @@ class PlayerInputService():
         cls.__inputs = []
 
 
+async def _broadcast_client_event(
+        session_uuid: UUID,
+        action: Action,
+        cls: type[events.Event],
+        body: events.EventBody,
+        **kwds):
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    return await session.broadcast_action(action, event=cls(body, **kwds))
+
+
 async def _broadcast_dm_event(
         session_uuid: UUID,
         cls: type[events.Event]):
 
-    _, session = (await _sessions_find(session_uuid))[0]
-    event = cls(events.EventBody())
-
-    return await session.broadcast_action(
-        sessions.dungeon_master_send_event,
-        event=event)
+    return await _broadcast_client_event(
+        session_uuid,
+        sessions.dm_send_event_action,
+        cls,
+        events.EventBody())
 
 
 async def _broadcast_pc_event(
@@ -75,9 +84,11 @@ async def _broadcast_pc_event(
         cls: type[events.Event],
         body: events.EventBody):
 
-    _, session = (await _sessions_find(session_uuid))[0]
-    event = cls(body)
-    return await session.broadcast_action(sessions.player_send_event, event=event)
+    return await _broadcast_client_event(
+        session_uuid,
+        sessions.pc_send_event_action,
+        cls,
+        body)
 
 
 async def _character_make(
@@ -211,23 +222,16 @@ ASGI_APP_MOUNTS = (
 
 @APP_ROUTERS["character"].get("/")
 @APP_ROUTERS["character"].get("/{session_uuid}")
-async def characters_find(session_uuid: UUID | None = None,  query: str = Query('')):
+async def characters_find(
+        session_uuid: UUID | None = None, 
+        query: str = Query("")):
     """List current characters on the field."""
 
-    # TODO: implement 'filters' query parameter.
-    # - hit_points lt/gt/lte/gte/eq value
-    # - role in/not-in values
-    # - conditions contains/not-contains value(s)
-    # -------------------------------------------
-    # I am going to need something like this that
-    # returns a list of player characters only to
-    # be used in dropdowns when choosing who to
-    # send events to. Response should have at
-    # least client_uuid and name.
-
+    query = json.loads(query) if query else None
     found = await _sessions_find(session_uuid)
     data  = {
-        f[1].session_uuid: [c[1] for c in await f[1].characters.locate()]
+        f[1].session_uuid: [
+            c[1] for c in await f[1].characters.locate(statement=query)]
         for f in found
     }
 
@@ -341,6 +345,7 @@ async def sessions_join(
             hit_points=hit_points or HitPoints(500, 500),
             creature_id=client_uuid,
             initiative=-1,
+            role=role,
             name=name)
         await _character_make(session_uuid, ch)
         await _broadcast_dm_event(
@@ -437,6 +442,7 @@ async def sessions_player_secret(
     Send a secret to to a specific player.
     """
 
+    print(body)
     await _broadcast_pc_event(
         session_uuid,
         events.ReceiveSecret,

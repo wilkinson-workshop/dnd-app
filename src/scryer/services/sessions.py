@@ -3,13 +3,14 @@ import abc, asyncio, functools, json, typing, uuid
 
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
+from starlette.datastructures import QueryParams
 
 from scryer.creatures import CharacterV2, Creature, Role
-from scryer.events import Event
 from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import UUID, request_uuid
+from scryer.util.events import Event
 
 # Special types used only in `Session` specific
 # implementations.
@@ -49,35 +50,47 @@ class SessionSocket(WebSocket):
         return super().query_params
 
 
-def dungeon_master_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
+def event_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
     """
-    Wrap or decorate an action to only run when
-    the client is considered an admin or
-    'dungeon master'.
-    """
-
-    @functools.wraps(action)
-    async def inner(client: C, *args, **kwds):
-        if client.query_params['role'] != Role.DUNGEON_MASTER:
-            return client, 0
-        return await action(client, *args, **kwds)
-    
-    return inner
-
-
-def player_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
-    """
-    Wrap or decorate an action to only run when
-    the client is considered a 'player'.
+    Wrap or decorate an action to only run if the
+    action is event based.
     """
 
     @functools.wraps(action)
-    async def inner(client: C, *args, **kwds):
-        if client.query_params['role'] != Role.PLAYER:
+    async def inner(client: C, event: Event, *args, **kwds):
+        # Only filters if 'send_to' is a truthy
+        # collection of UUIDs.
+        send_to     = event.send_to
+        client_uuid = request_uuid(client.query_params["client_uuid"])
+        if send_to and client_uuid not in send_to:
             return client, 0
-        return await action(client, *args, **kwds)
+        return (await action(client, event, *args, **kwds))
 
     return inner
+
+
+def roled_action[C: SessionSocket, **P](
+        action: Action[C, P] | None = None,
+        *,
+        roles: typing.Sequence[Role]) -> Action[C, P]:
+    """
+    Wrap or decorate an action to only run if the
+    client `Role` matches the declared role(s).
+    """
+
+    def wrapper(inner_action: Action[C, P]):
+
+        @functools.wraps(inner_action)
+        async def inner(client: C, *args, **kwds):
+            if client.query_params['role'] not in roles:
+                return client, 0
+            return (await inner_action(client, *args, **kwds))
+
+        return inner
+
+    if action:
+        return wrapper(action)
+    return wrapper
 
 
 async def send_event_action[C: SessionSocket](sock: C, event: Event):
@@ -101,8 +114,9 @@ async def send_event_action[C: SessionSocket](sock: C, event: Event):
     return sock, len(dump)
 
 
-@dungeon_master_action
-async def dungeon_master_send_event[C: SessionSocket](
+@event_action
+@roled_action(roles=[Role.DUNGEON_MASTER])
+async def dm_send_event_action[C: SessionSocket](
         sock: C,
         event: Event):
     """
@@ -112,8 +126,9 @@ async def dungeon_master_send_event[C: SessionSocket](
     return (await send_event_action(sock, event))
 
 
-@player_action
-async def player_send_event[C: SessionSocket](sock: C, event: Event):
+@event_action
+@roled_action(roles=[Role.PLAYER])
+async def pc_send_event_action[C: SessionSocket](sock: C, event: Event):
     """
     Send an event action to the dungeon master.
     """
@@ -151,9 +166,21 @@ class Session[C: WebSocket](Service):
     async def attach_client(self, client: C) -> UUID:
         """Process a `connect` request."""
 
-        client_uuid = request_uuid()
-        self.clients[client_uuid] = client
-        return client_uuid
+        query_params = dict()
+        query_params["client_uuid"] = request_uuid()
+        # QueryParams objects are immutable and
+        # not cloneable. For whatever reason,
+        # WebSockets tries to enforce this while
+        # hiding behind a property attr.
+        #
+        # This is barbaric, and not best practice,
+        # but it's what we are going with for now.
+        for key, value in client.query_params.items():
+            query_params[key] = value
+
+        client._query_params = QueryParams(query_params)
+        self.clients[query_params["client_uuid"]] = client
+        return query_params["client_uuid"]
 
     # TODO: Find different verboge for filtered
     # action sending.
@@ -215,7 +242,7 @@ class Session[C: WebSocket](Service):
         return (await action(client, **kwds)) #type: ignore
 
 
-class CombatSession(Session):
+class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid: UUID
     _characters:   Broker[UUID, Creature]
 

@@ -1,9 +1,8 @@
-import enum, typing, uuid
+import enum, typing
 
 from pydantic import BaseModel
 
-from scryer.creatures import Role
-from scryer.util import UUID, request_uuid
+from scryer.util import UUID
 
 type PartialEvent[B, **P] = typing.Callable[typing.Concatenate[B, P], Event]
 """
@@ -41,6 +40,15 @@ class Event(BaseEvent):
 
     event_body: EventBody | None = None
     event_type: EventType | None = None
+
+    @property
+    def send_to(self) -> typing.Sequence[UUID]:
+        """
+        The intended recipients for this event.
+        """
+
+        clients = getattr(self.event_body, "client_uuids", None)
+        return clients or ()
 
 
 class PlayerInput(EventBody):
