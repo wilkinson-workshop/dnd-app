@@ -129,7 +129,12 @@ APP_SERIVCES = {
 # -----------------------------------------------
 # Initialize the application config in static
 # space.
-app = FastAPI(root_path="/api/")
+app = FastAPI(
+    root_path="/api/",
+    title="Scryer",
+    version="1.0.0",
+    description="Interactive D&D combat companion REST API."
+)
 
 
 def check_application():

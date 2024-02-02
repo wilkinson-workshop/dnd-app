@@ -1,4 +1,5 @@
 # dnd-app
+An interactive D&D combat companion.
 
 Applicattion architure will be Python as the backend using FastAPI with React for the frontend.
 We will be using Redis for quick storeage and retrival.
