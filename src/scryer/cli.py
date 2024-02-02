@@ -4,11 +4,17 @@ our application as configured per our
 preferrences.
 """
 
+import pathlib
 import subprocess
 import sys
 
 import click
 import uvicorn
+
+# The current working directory of which the CLI
+# is being executed from.
+EXECUTION_ROOT  = pathlib.Path.cwd()
+LOG_CONFIG_NAME = "logger.yaml"
 
 
 def application_path():
@@ -59,6 +65,9 @@ def scryer_start_api(hostname: str, port: int, workers: int):
         # disable reload in this context.
         kwds["workers"] = workers
         kwds["reload"]  = False
+
+    if (log_config := EXECUTION_ROOT.joinpath(LOG_CONFIG_NAME)).exists():
+        kwds["log_config"] = str(log_config)
 
     uvicorn.run(application_path(), **kwds) #type: ignore[arg-type]
 

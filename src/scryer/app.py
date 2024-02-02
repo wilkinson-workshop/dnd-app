@@ -129,7 +129,7 @@ APP_SERIVCES = {
 # -----------------------------------------------
 # Initialize the application config in static
 # space.
-app = FastAPI(debug=True)
+app = FastAPI(root_path="/api/")
 
 
 def check_application():
@@ -216,7 +216,7 @@ APP_ROUTERS = {
 # the root application later. Will be used for
 # serving additional materials to the front-end.
 ASGI_APP_MOUNTS = (
-    ("/static", StaticFiles(directory=SOURCE_ROOT / "static", html=True)),
+    ("/static", StaticFiles(directory=APPLICATION_ROOT / "static", html=True)),
 )
 
 
