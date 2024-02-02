@@ -17,7 +17,7 @@ import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
 import { SessionQrDialog } from './session-qr-dialog'
 
-const baseUrl = 'http://localhost:3000/';
+const baseUrl = process.env.NEXT_PUBLIC_BASEURL;
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
@@ -25,7 +25,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [open, setOpen] = useState(false);
 
-  const playerJoinUrl = `${baseUrl}${params.sessionid}`;
+  const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
 
   const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
@@ -88,7 +88,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     endSession(params.sessionid)
     .then(_ => {
       endSession('');;
-      router.push(baseUrl);
+      router.push(baseUrl!);
     });
   }
 
