@@ -1,9 +1,9 @@
 # dnd-app
 An interactive D&D combat companion.
 
-Applicattion architure will be Python as the backend using FastAPI with React for the frontend.
-We will be using Redis for quick storeage and retrival.
-we will be using websockets for event driven workflows
+Application architecture will be Python as the backend using FastAPI with React for the frontend.
+We will be using Redis for quick storage and retrieval.
+We will be using websockets for event driven workflows
 
 # Development #
 
@@ -63,7 +63,7 @@ For first-time set-up of the application you will need to first ensure you have 
 ```
   node -v
 ```
-If you dont yuo can download it from https://nodejs.org/en
+If you dont you can download it from https://nodejs.org/en
 
 The next step is to install dependencies.
 ```
@@ -75,3 +75,4 @@ To start the application running locally in dev mode. Once running you can go to
 ```
   npm run dev
 ```
+
