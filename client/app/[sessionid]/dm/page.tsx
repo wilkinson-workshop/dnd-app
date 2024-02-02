@@ -17,7 +17,7 @@ import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
 import { SessionQrDialog } from './session-qr-dialog'
 
-const baseUrl = process.env.NEXT_PUBLIC_BASEURL;
+const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
@@ -29,7 +29,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const router = useRouter();
 
   const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: string}>(`ws://localhost:8000/sessions/${params.sessionid}/ws`, 
+  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
   {queryParams: {
     role: CharacterType.DungeonMaster,
     name: 'DM'

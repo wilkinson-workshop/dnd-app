@@ -20,7 +20,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [diceRollMessage, setDiceRollMessage] = useState('');
 
   const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: any | string}>(`ws://localhost:8000/sessions/${params.sessionid}/ws`, 
+  useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
   {queryParams: {
     role: CharacterType.Player,
     name: params.playerName
