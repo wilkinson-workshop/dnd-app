@@ -6,6 +6,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { sharePlayerSecret } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
+import { act } from "react-dom/test-utils";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -30,9 +31,16 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
 
     function handleClickRequestRoll() {
         onEdit(false);
+
+        let actualRecipients = recipients;
+
+        if(recipients.length > 0 && recipients[0] == EMPTY_GUID){
+            actualRecipients = recipientOptions.filter(x => x.creature_id != EMPTY_GUID).map(x => x.creature_id);
+        }
+
         sharePlayerSecret(sessionId, {
             secret: secretMsg,
-            client_uuids: recipients
+            client_uuids: actualRecipients
         }).then();
         setRecipient([]);
         setSecretMsg('');
@@ -61,7 +69,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
                             multiple
                             label="Recipients"
                             onChange={handleChangeRecipient}
-                            renderValue={(selected) => selected.join(', ')}  
+                            renderValue={(selected) => selected.map(s => recipientOptions.find(c => c.creature_id == s)?.name).join(', ')} 
                             MenuProps={MenuProps}
                         >
                             {recipientOptions.map(s =>  

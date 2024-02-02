@@ -34,9 +34,16 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
 
     function handleClickRequestRoll() {
         onEdit(false);
+
+        let actualRecipients = recipients;
+
+        if(recipients.length > 0 && recipients[0] == EMPTY_GUID){
+            actualRecipients = recipientOptions.filter(x => x.creature_id != EMPTY_GUID).map(x => x.creature_id);
+        }
+
         requestPlayerInput(sessionId, {
           dice_type: requestDiceType, 
-          client_uuids: recipients, 
+          client_uuids: actualRecipients, 
           reason: reason
         }).then();
         setRecipient([]);
@@ -49,14 +56,16 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
             target: { value },  
         } = event;
         setRequestDiceType(Number.parseInt(value as string));
-        }
+    }
     
-        function handleChangeRecipient(event: SelectChangeEvent<typeof recipients>){
+    function handleChangeRecipient(event: SelectChangeEvent<typeof recipients>){
         const {  
             target: { value },  
         } = event;
+        if(value)
+
         setRecipient(typeof value === 'string' ? value.split(',') : value);
-        }
+    }
 
         if(edit){ return (
             <Box>
@@ -81,7 +90,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                                 multiple
                                 label="Recipients"
                                 onChange={handleChangeRecipient}
-                                renderValue={(selected) => selected.join(', ')}  
+                                renderValue={(selected) => selected.map(s => recipientOptions.find(c => c.creature_id == s)?.name).join(', ')} 
                                 MenuProps={MenuProps}
                             >
                                 {recipientOptions.map(s =>  

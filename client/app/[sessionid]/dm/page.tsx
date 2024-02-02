@@ -9,7 +9,7 @@ import { Container } from "./character-container";
 import { Box, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { Character, CharacterType, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
+import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
 import { EventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
@@ -58,7 +58,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
-      setPlayerOptions(c);
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: []}];
+      withAll.push(...c)
+      setPlayerOptions(withAll);
     });
   }
 
