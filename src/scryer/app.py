@@ -243,23 +243,19 @@ async def characters_find(
     if session_uuid:
         data = data[session_uuid]
 
-    return sorted(data, key=lambda e: e.initiative)
+    return sorted(data, key=lambda e: e.initiative, reverse=True)
 
 
-@APP_ROUTERS["character"].get("/{session_uuid}/initiative")
+@APP_ROUTERS["character"].get("/{session_uuid}/player")
 async def characters_find(session_uuid: UUID):
     """
     List initiative order for characters on the
     field. For use by player so shows limited
     info.
     """
-    _, session = (await _sessions_find(session_uuid))[0]
+    _, session = (await _sessions_find(session_uuid))[0]    
 
-    initiatives = []
-    for c in sorted(session.characters, key=lambda c: c.initiative):
-        initiatives.append({"id": c.creature_id, "name": c.name,})
-
-    return initiatives      
+    return sorted(session.characters, key=lambda c: c.initiative, reverse=True)      
 
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
@@ -425,8 +421,17 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     Send a player input to session.
     """
 
-    PlayerInputService.add(body)
-    await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
+    if(body.body.reason == "Initiative"):
+        session: CombatSession
+        _, session  = (await _sessions_find(session_uuid))[0]
+        character = session.characters.resource_map[body.body.client_uuids[0]]
+        character.initiative = body.value
+        await _character_make(session_uuid, character, character.creature_uuid)
+        await _broadcast_dm_event(session_uuid, events.ReceiveOrderUpdate)
+        await _broadcast_pc_event(session_uuid, events.ReceiveOrderUpdate, body=events.EventBody())
+    else:
+        PlayerInputService.add(body)
+        await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}/player-input")

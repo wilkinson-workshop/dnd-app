@@ -17,8 +17,8 @@ export async function getCharacters(sessionId: string, query: RootFilter): Promi
   return res.json()
 } 
 
-export async function getInitiativeOrder(sessionId: string) {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative`, {
+export async function getCharactersPlayer(sessionId: string): Promise<Character[]> {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/player`, {
     headers:{
       'Content-Type': 'application/json',
     } 
