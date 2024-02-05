@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import { Card } from './character-card'
 import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
 import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { AddCharacter } from './add-character'
+import { AddCharacter } from './add-edit-character'
 
 const style = {
     minHeight: '30px',

@@ -83,7 +83,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     if(edit){ return (
     <>
         <Box sx={{width: '100%'}}>
-            <h2>Add New Character</h2>
+            <h2>{existingCharacter ? 'Edit': 'Add New'} Character</h2>
             <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
             </Box>
