@@ -7,6 +7,7 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { HpAdjust } from "./hp-adjust";
 
 
 const ITEM_HEIGHT = 48;
@@ -80,10 +81,24 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         );  
     }; 
 
+    function setHpOrMax(newHp: number) {
+        if(existingCharacter){
+            const maxHp = existingCharacter.hit_points[1];
+            setHp(newHp > maxHp ? maxHp : newHp);
+            return;
+        }
+        setHp(newHp);        
+    }
+
+    const hpEdit = existingCharacter == null ? 
+        (<TextField size="small" label="HP" value={hp} variant="outlined" onChange={x => setHpOrMax(Number.parseInt(x.target.value? x.target.value : '0'))} />) 
+        :
+        (<HpAdjust hp={hp} updateHp={x => setHpOrMax(x)} />)
+
     if(edit){ return (
     <>
         <Box sx={{width: '100%'}}>
-            <h2>{existingCharacter ? 'Edit': 'Add New'} Character</h2>
+            <h2>{existingCharacter ? `Edit ${existingCharacter.name}`: 'Add New Character'} </h2>
             <Box sx={{margin: '10px 0'}}>
                 <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
             </Box>
@@ -91,7 +106,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 <TextField size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <TextField size="small" label="HP" value={hp} variant="outlined" onChange={x => setHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                {hpEdit}
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <FormControl sx={{ width: 300 }}>  

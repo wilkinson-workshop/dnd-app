@@ -18,7 +18,7 @@ export interface ContainerState {
 
 export interface ContainerProps{
   sessionId: string, 
-  reload: boolean
+  reload: boolean,
   reloadDone: () => void
 }
 
