@@ -2,10 +2,9 @@ import update from 'immutability-helper'
 import type { FC } from 'react'
 import { useCallback, useState } from 'react'
 import { Card } from './character-card'
-import { Character, LogicType } from '@/app/_apis/character'
+import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
 import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { AddCharacter } from './add-character'
-import { Button } from '@mui/material'
 
 const style = {
     minHeight: '30px',
@@ -26,6 +25,7 @@ export interface ContainerProps{
 export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) => {
 
   const [cards, setCards] = useState<Character[] | null>(null);
+  const [characterEdit, setCharacterEdit] = useState<Character | null>(null)
 
   if(cards == null  || reload){
     reloadDone();
@@ -60,13 +60,19 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
   function reloadList(){
     getCharacters(sessionId, {filters: [], logic: LogicType.Or})
     .then(c => {
+      setCharacterEdit(null);
       setCards(c);
     });
   }
 
   function handleAddCharacter(character: Character){
-    addCharacter(sessionId, character)
-    .then(_ => reloadList());
+    if(character.creature_id == EMPTY_GUID){
+      addCharacter(sessionId, character)
+      .then(_ => reloadList());
+    } else {
+      saveCharacter(sessionId, character)
+      .then(_ => reloadList());
+    }
   }
 
   const renderCard = useCallback(
@@ -78,6 +84,7 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
           character={card}
           moveCard={moveCard}
           updateCharacter={updateCharacter}
+          updateCharacterButton={(c: Character) => setCharacterEdit(c)}
         />
       )
     },
@@ -93,7 +100,7 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
         )        
       }
       </div>        
-      <AddCharacter onAddClick={handleAddCharacter} />         
+      <AddCharacter existingCharacter={characterEdit} onAddClick={handleAddCharacter} onCancelClick={() => setCharacterEdit(null)} />         
     </>
   )
 }

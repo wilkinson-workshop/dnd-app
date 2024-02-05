@@ -1,4 +1,4 @@
-import { FC, FormEvent, useState } from "react";
+import { FC, FormEvent, useEffect, useState } from "react";
 import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID } from "../../_apis/character";
 import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
@@ -21,43 +21,67 @@ const MenuProps = {
 };
 
 export interface AddCharacterProps{
+    existingCharacter: Character | null,
     onAddClick: (character: Character) => void
+    onCancelClick: () => void
 }
 
-export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
+export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClick, onCancelClick}) => {
     const [edit, onEdit] = useState(false);
     const [hp, setHp] = useState(1);
     const [initiative, setInitiative] = useState(1);
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
+    useEffect(() => {
+        if(existingCharacter != null){
+            setHp(existingCharacter.hit_points[0]);
+            setInitiative(existingCharacter.initiative);
+            setName(existingCharacter.name);
+            setConditions(existingCharacter.conditions);
+            onEdit(true);
+        }
+    }, [existingCharacter])
+
+
     function handleSubmit(): void {
         onEdit(false);
         onAddClick({
-            creature_id: EMPTY_GUID,
+            creature_id:  existingCharacter ? existingCharacter.creature_id : EMPTY_GUID,
             initiative: initiative,
             name: name, 
-            hit_points: [hp, hp],
+            hit_points: [hp, existingCharacter ? existingCharacter.hit_points[1]: hp],
             conditions:conditions,
             role: CharacterType.NonPlayer
-          });
-          setHp(1);
-          setName('Character')
-          setConditions([]);
-        }
+        });
+        resetForm();
+    }
 
-        const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
-            const {  
-              target: { value },  
-            } = event;  
-            setConditions(  
-              // On autofill we get a stringified value.  
-              typeof value === 'string' ? [ConditionType.Asleep] : value,  
-            );  
-          }; 
+    function handleCancel(): void {
+        onEdit(false);
+        resetForm();
+        onCancelClick();
+    }
 
-      if(edit){ return (
-        <>
+    function resetForm(){
+        setInitiative(1);
+        setHp(1);
+        setName('Character')
+        setConditions([]);
+    }
+
+    const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
+        const {  
+            target: { value },  
+        } = event;  
+        setConditions(  
+            // On autofill we get a stringified value.  
+            typeof value === 'string' ? [ConditionType.Asleep] : value,  
+        );  
+    }; 
+
+    if(edit){ return (
+    <>
         <Box sx={{width: '100%'}}>
             <h2>Add New Character</h2>
             <Box sx={{margin: '10px 0'}}>
@@ -94,24 +118,23 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Add
+                    Save
                 </Button>
-                <Button variant="contained" aria-label="cancel" onClick={_ => onEdit(false)}>
+                <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
                     Cancel
                 </Button>
 
             </Box>
         </Box>
-
-        </>
-        )
-      } else {
-          return (
+    </>
+    )
+    } else {
+        return (
             <>
                 <Button variant="contained" endIcon={<AddIcon />} onClick={_ => onEdit(true)}>
                     Add
                 </Button>
             </>
-          )
-      }    
+        )
+    }    
 }
