@@ -2,13 +2,14 @@
 
 import { addSessionInput} from "@/app/_apis/sessionApi";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID } from "@/app/_apis/character";
-import { Box, Button, IconButton, TextField } from "@mui/material";
+import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
+import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, FieldType, LogicType, OperatorType } from "@/app/_apis/character";
+import { Box, Button, Grid, IconButton, TextField, styled } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "@/app/_apis/eventType";
 import { RequestPlayerInput } from "@/app/_apis/playerInput";
+import { SendPlayerSecret } from "../dm/send-player-secret";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
@@ -19,6 +20,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [isShowSecret, setIsShowSecret] = useState(false);
   const [secret, setSecret] = useState('');
   const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
+  const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
@@ -31,11 +33,11 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 
   useEffect(() => {
     getLatestInitiativeOrder();
+    loadPlayerOptions();
   }, [])
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
-
       switch(lastJsonMessage.event_type){
         case EventType.RequestRoll: {
           setRequestRollBody(lastJsonMessage.event_body);
@@ -44,6 +46,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
         }
         case EventType.ReceiveOrderUpdate: {
           getLatestInitiativeOrder();
+          loadPlayerOptions();
           return;
         }
         case EventType.ReceiveSecret: {
@@ -68,14 +71,27 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     .then(i => setInitiativeOrder(i));
   }
 
-  function calculateStatus(character: Character): string {
+  function loadPlayerOptions(){
+    getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
+    .then(c => {
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: []}];
+      withAll.push(...c)
+      setPlayerOptions(withAll);
+    });
+  }
+
+  function calculateHP(character: Character): string {
     const hpPercent = (character.hit_points[0]/character.hit_points[1]) * 100;
+    if(hpPercent < 10)
+          return 'Looks weakened';
+    else if (hpPercent < 50)
+        return 'Starting to wear out';
+    else
+      return 'Seems very alive';
+  }
 
-    const hpStatus = hpPercent < 10 ? 'Looks weakened' : 'Seems very alive';
-
-    const conditionStatus = character.conditions.map(c => ConditionOptions.find(x => x.id == c)?.name).join(', ');
-
-    return `${hpStatus}, ${conditionStatus}`;
+  function calculateCondition(character: Character): string {
+    return character.conditions.map(c => ConditionOptions.find(x => x.id == c)?.name).join(', ');
   }
 
   const getRollForm = (        
@@ -96,22 +112,40 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
       </IconButton>
     </Box>
   )
+
+  const Item = styled(Box)(({ theme }) => ({
+    padding: theme.spacing(1),  
+  })); 
   
   return (
     <>
+      <a href={playerJoinUrl} target='_blank'>
+        Player Join
+      </a>
       {isGetDiceRoll ? getRollForm : ''}
       {isShowSecret ? showSecretView : ''}
       <Box>
-        <a href={playerJoinUrl} target='_blank'>
-          Player Join
-        </a>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (
-          <Box key={order.creature_id}>
-            {order.name} - {calculateStatus(order)}
-          </Box>
+          <div key={order.creature_id}  style={{border: '1px solid lightgray'  }}>
+              <Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Item>{order.name}</Item>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Item>{calculateHP(order)}</Item>
+                  </Grid>
+                  <Grid item xs={6} sm={5}>
+                    <Item>{calculateCondition(order)}</Item>
+                  </Grid>
+                </Grid>
+              </Box>
+            </div>
         ))}
       </Box>
+      <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+
     </>               
   )    
 }
