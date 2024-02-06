@@ -1,4 +1,6 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, IconButton, TextField } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import { FC, useState } from "react";
 
 export interface HpAdjustProps{
@@ -7,25 +9,22 @@ export interface HpAdjustProps{
 }
 
 export const HpAdjust: FC<HpAdjustProps> = ({hp,  updateHp}) => {
+    const [hpChange, setHpChange] = useState(1);
+
     const quickEdit = {
         minWidth: 0
     };
 
     return (
     <>
-        <Button sx={quickEdit} aria-label="subtract" size="small" variant="contained" onClick={() => updateHp(hp - 5)}>
-            - 5
-        </Button>
-        <Button sx={quickEdit} aria-label="subtract" size="small" variant="contained" onClick={() => updateHp(hp - 1)}>
-            - 1
-        </Button>
         <Box sx={{display: "inline-block", px: 1 }}>{hp}</Box>
-        <Button sx={quickEdit} aria-label="add" size="small" variant="contained" onClick={() => updateHp(hp + 1)}>
-            + 1
-        </Button>
-        <Button sx={quickEdit} aria-label="add" size="small" variant="contained" onClick={() => updateHp(hp + 5)}>
-            + 5
-        </Button>
+        <IconButton sx={quickEdit} onClick={() => updateHp(hp - hpChange)}>
+            <RemoveIcon />
+        </IconButton>
+        <TextField sx={{maxWidth: 60}} size="small" value={hpChange} variant="outlined" onChange={x => setHpChange(Number.parseInt(x.target.value? x.target.value : '0'))} />
+        <IconButton sx={quickEdit} onClick={() => updateHp(hp + hpChange)}>
+            <AddIcon/>
+        </IconButton>
     </>
     );
 }

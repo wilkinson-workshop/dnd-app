@@ -5,16 +5,9 @@ import { Character } from "../../_apis/character";
 import { Box, IconButton } from "@mui/material";
 import LinearWithValueLabel from "./progress-label";
 
-export interface CharacterHpProps{character: Character, updateCharacter: any}
+export interface CharacterHpProps{character: Character}
 
-export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) => {
-
-    function updatedNpc(currentHp: number): Character{
-        let updatedCharacter = {...character}
-        updatedCharacter.hit_points = [currentHp, updatedCharacter.hit_points[1]];
-        return updatedCharacter;
-    }
-
+export const CharacterHp:FC<CharacterHpProps> = ({character}) => {
     return (
         <>    
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

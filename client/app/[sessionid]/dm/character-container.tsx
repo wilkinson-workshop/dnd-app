@@ -43,18 +43,14 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
     )
   }, [])
 
-  function onDelete(npcId: string){
-    deleteCharacter(sessionId, npcId)
+  function onDelete(character: Character){
+    deleteCharacter(sessionId, character.creature_id)
     .then(_ => reloadList());
   }
 
   function updateCharacter(character: Character){
-    if(character.hit_points[0] == 0 ){
-      onDelete(character.creature_id);
-    } else {
       saveCharacter(sessionId, character)
       .then(_ => reloadList());
-    }
   }
 
   function reloadList(){
@@ -85,6 +81,7 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
           moveCard={moveCard}
           updateCharacter={updateCharacter}
           updateCharacterButton={(c: Character) => setCharacterEdit(c)}
+          deleteCharacter={onDelete}
         />
       )
     },

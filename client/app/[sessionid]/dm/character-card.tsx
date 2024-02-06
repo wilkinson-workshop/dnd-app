@@ -22,6 +22,7 @@ export interface CardProps {
   moveCard: (dragIndex: number, hoverIndex: number) => void
   updateCharacter: (character: Character) => void
   updateCharacterButton: (character: Character) => void
+  deleteCharacter: (character: Character) => void
 }
 
 interface DragItem {
@@ -30,7 +31,7 @@ interface DragItem {
   type: string
 }
 
-export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton }) => {
+export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton, deleteCharacter }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [{ handlerId }, drop] = useDrop<
     DragItem,
@@ -121,7 +122,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
             <Item>{character.name}</Item>
           </Grid>
           <Grid item xs={3}>
-            <Item><CharacterHp character={character} updateCharacter={updateCharacter} /></Item>
+            <Item><CharacterHp character={character}/></Item>
           </Grid>
           <Grid item xs={4}>
             <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
@@ -131,7 +132,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
               <IconButton aria-label="edit" onClick={() => updateCharacterButton(character)}>
                 <EditIcon />
               </IconButton>       
-              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:[0, character.hit_points[1]]})}>
+              <IconButton aria-label="delete" onClick={() => deleteCharacter(character)}>
                   <DeleteIcon />
               </IconButton>
             </Item> 

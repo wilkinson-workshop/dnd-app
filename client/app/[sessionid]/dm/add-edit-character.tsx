@@ -29,14 +29,16 @@ export interface AddCharacterProps{
 
 export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClick, onCancelClick}) => {
     const [edit, onEdit] = useState(false);
-    const [hp, setHp] = useState(1);
+    const [currentHp, setCurrentHp] = useState(1);
+    const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState(1);
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
     useEffect(() => {
         if(existingCharacter != null){
-            setHp(existingCharacter.hit_points[0]);
+            setCurrentHp(existingCharacter.hit_points[0]);
+            setMaxHp(existingCharacter.hit_points[1])
             setInitiative(existingCharacter.initiative);
             setName(existingCharacter.name);
             setConditions(existingCharacter.conditions);
@@ -46,12 +48,17 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
 
     function handleSubmit(): void {
+        if(currentHp > maxHp){
+            console.log("Can't set HP more then the max")
+            return;
+        }
+
         onEdit(false);
         onAddClick({
             creature_id:  existingCharacter ? existingCharacter.creature_id : EMPTY_GUID,
             initiative: initiative,
             name: name, 
-            hit_points: [hp, existingCharacter ? existingCharacter.hit_points[1]: hp],
+            hit_points: [currentHp, maxHp],
             conditions:conditions,
             role: CharacterType.NonPlayer
         });
@@ -66,7 +73,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
     function resetForm(){
         setInitiative(1);
-        setHp(1);
+        setCurrentHp(1);
+        setMaxHp(1);
         setName('Character')
         setConditions([]);
     }
@@ -81,19 +89,23 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         );  
     }; 
 
-    function setHpOrMax(newHp: number) {
-        if(existingCharacter){
-            const maxHp = existingCharacter.hit_points[1];
-            setHp(newHp > maxHp ? maxHp : newHp);
+    function updateExistingCurrentHp(newHp: number) {
+        if(newHp < 0){
+            setCurrentHp(0);
             return;
         }
-        setHp(newHp);        
+
+        setCurrentHp(newHp > maxHp ? maxHp : newHp);
+        return;       
     }
 
     const hpEdit = existingCharacter == null ? 
-        (<TextField size="small" label="HP" value={hp} variant="outlined" onChange={x => setHpOrMax(Number.parseInt(x.target.value? x.target.value : '0'))} />) 
+        (<>
+            <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+            <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+        </>) 
         :
-        (<HpAdjust hp={hp} updateHp={x => setHpOrMax(x)} />)
+        (<HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />)
 
     if(edit){ return (
     <>

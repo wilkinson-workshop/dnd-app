@@ -82,10 +82,12 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 
   function calculateHP(character: Character): string {
     const hpPercent = (character.hit_points[0]/character.hit_points[1]) * 100;
-    if(hpPercent < 10)
-          return 'Looks weakened';
+    if(hpPercent == 0)
+      return 'Knocked Out'
+    else if(hpPercent < 10 && hpPercent > 0)
+      return 'Looks weakened';
     else if (hpPercent < 50)
-        return 'Starting to wear out';
+      return 'Starting to wear out';
     else
       return 'Seems very alive';
   }
