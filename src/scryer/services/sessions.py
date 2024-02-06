@@ -245,6 +245,7 @@ class Session[C: WebSocket](Service):
 class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid: UUID
     _characters:   Broker[UUID, Creature]
+    _events:       typing.MutableSequence[Event]
 
     @classmethod
     def new_instance(cls) -> typing.Self:
@@ -252,11 +253,16 @@ class CombatSession[C: SessionSocket](Session[C]):
         inst._session_uuid = request_uuid()
         inst._clients      = dict()
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
+        inst._events       = []
         return inst
 
     @property
     def characters(self) -> Broker[UUID, Creature]:
         return self._characters
+
+    @property
+    def events(self) -> typing.MutableSequence[Event]:
+        return self._events
 
     @property
     def session_uuid(self) -> UUID:

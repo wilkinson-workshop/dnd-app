@@ -39,24 +39,6 @@ class CreaturesFilter(typing.TypedDict):
     condition:  typing.Sequence[Condition]
 
 
-# TODO: move elsewhere.
-# Ideally only one value per player possible
-class PlayerInputService():
-    __inputs:list[events.PlayerInput]= []
-
-    @classmethod
-    def getAll(cls):
-        return cls.__inputs
-
-    @classmethod
-    def add(cls, input):
-        cls.__inputs.append(input)
-    
-    @classmethod
-    def clear(cls):
-        cls.__inputs = []
-
-
 async def _broadcast_client_event(
         session_uuid: UUID,
         action: Action,
@@ -416,7 +398,14 @@ async def sessions_player_input_find(session_uuid: UUID):
     Get all player inputs.
     """
 
-    return PlayerInputService.getAll()
+    session: CombatSession
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    data = [
+        event for event in session.events
+        if isinstance(event, events.PlayerInput)
+    ]
+    return data
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/player-input")
@@ -425,7 +414,10 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     Send a player input to session.
     """
 
-    PlayerInputService.add(body)
+    session: CombatSession
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    session.events.append(body)
     await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
 
 
@@ -435,7 +427,12 @@ async def sessions_player_input_find(session_uuid: UUID):
     Get all player inputs.
     """
 
-    return PlayerInputService.clear()
+    session: CombatSession
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    predicate  = lambda e: isinstance(e, events.PlayerInput)
+    for event in filter(predicate, session.events):
+        session.events.remove(event)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")
