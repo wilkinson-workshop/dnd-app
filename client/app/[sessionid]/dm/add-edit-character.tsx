@@ -1,5 +1,5 @@
 import { FC, FormEvent, useEffect, useState } from "react";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID } from "../../_apis/character";
+import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
 import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -35,6 +35,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [name, setName] = useState('Character');
     const [conditions, setConditions] = useState<ConditionType[]>([]);
 
+    const isPlayer = existingCharacter ? existingCharacter.role == CharacterType.Player : false;
+
     useEffect(() => {
         if(existingCharacter != null){
             setCurrentHp(existingCharacter.hit_points[0]);
@@ -60,7 +62,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             name: name, 
             hit_points: [currentHp, maxHp],
             conditions:conditions,
-            role: CharacterType.NonPlayer
+            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer
         });
         resetForm();
     }
@@ -99,13 +101,29 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         return;       
     }
 
-    const hpEdit = existingCharacter == null ? 
-        (<>
-            <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
-            <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
-        </>) 
-        :
-        (<HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />)
+    const hpEdit =  () => {
+        if(existingCharacter == null){
+           return (<>
+                <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+            </>);
+        } else if(isPlayer){
+            return (
+                <Select
+                    labelId="label"
+                    id="select"
+                    value={currentHp}
+                    label="HP"
+                    onChange={(x) => setCurrentHp(Number.parseInt(x.target.value.toString()))}
+              >
+                {HpBoundaryOptions.map(o => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
+                
+              </Select>
+            )
+        } else {
+            return (<HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />);
+        }
+    }
 
     if(edit){ return (
     <>
@@ -118,7 +136,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 <TextField size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                {hpEdit}
+                {hpEdit()}
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <FormControl sx={{ width: 300 }}>  

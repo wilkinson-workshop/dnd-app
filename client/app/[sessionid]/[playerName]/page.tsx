@@ -3,7 +3,7 @@
 import { addSessionInput} from "@/app/_apis/sessionApi";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, FieldType, LogicType, OperatorType } from "@/app/_apis/character";
+import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
 import { Box, Button, Grid, IconButton, TextField, styled } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
@@ -83,13 +83,13 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   function calculateHP(character: Character): string {
     const hpPercent = (character.hit_points[0]/character.hit_points[1]) * 100;
     if(hpPercent == 0)
-      return 'Knocked Out'
+      return HpBoundaryOptions.find(x => x.id == 0)!.name;
     else if(hpPercent < 10 && hpPercent > 0)
-      return 'Looks weakened';
+      return HpBoundaryOptions.find(x => x.id == 9)!.name;
     else if (hpPercent < 50)
-      return 'Starting to wear out';
+      return HpBoundaryOptions.find(x => x.id == 49)!.name;
     else
-      return 'Seems very alive';
+      return HpBoundaryOptions.find(x => x.id == 100)!.name;
   }
 
   function calculateCondition(character: Character): string {

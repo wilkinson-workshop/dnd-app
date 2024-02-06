@@ -352,7 +352,7 @@ async def sessions_join(
     if role is Role.PLAYER:
         ch = CharacterV2(
             conditions=[],
-            hit_points=hit_points or HitPoints(500, 500),
+            hit_points=hit_points or HitPoints(100, 100),
             creature_id=client_uuid,
             initiative=-1,
             role=role,
