@@ -426,12 +426,21 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
         _, session  = (await _sessions_find(session_uuid))[0]
         character = session.characters.resource_map[body.body.client_uuids[0]]
         character.initiative = body.value
-        await _character_make(session_uuid, character, character.creature_uuid)
-        await _broadcast_dm_event(session_uuid, events.ReceiveOrderUpdate)
-        await _broadcast_pc_event(session_uuid, events.ReceiveOrderUpdate, body=events.EventBody())
+        await _character_make(
+            session_uuid, character, 
+            character.creature_uuid)
+        await _broadcast_dm_event(
+            session_uuid, 
+            events.ReceiveOrderUpdate)
+        await _broadcast_pc_event(
+            session_uuid, 
+            events.ReceiveOrderUpdate, 
+            body=events.EventBody())
     else:
         PlayerInputService.add(body)
-        await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
+        await _broadcast_dm_event(
+            session_uuid, 
+            events.ReceiveRoll)
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}/player-input")
