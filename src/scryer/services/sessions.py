@@ -1,12 +1,18 @@
 
 import abc, asyncio, functools, json, typing, uuid
+from typing import Mapping
 
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 from starlette.datastructures import QueryParams
 
 from scryer.creatures import CharacterV2, Creature, Role
-from scryer.services.brokers import Broker, ShelfBroker, MemoryBroker
+from scryer.services.brokers import (
+    Broker,
+    ShelfBroker,
+    MemoryBroker,
+    RedisBroker
+)
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import UUID, request_uuid
@@ -148,6 +154,13 @@ class Session[C: WebSocket](Service):
 
     @classmethod
     @abc.abstractmethod
+    def from_mapping(cls, mapping: typing.Mapping[str, str]) -> typing.Self:
+        """
+        Create a session instance from a mapping.
+        """
+
+    @classmethod
+    @abc.abstractmethod
     def new_instance(cls) -> typing.Self:
         """Creates a new session instance."""
 
@@ -241,11 +254,30 @@ class Session[C: WebSocket](Service):
             return client, 0
         return (await action(client, **kwds)) #type: ignore
 
+    def into_mapping(self) -> typing.Mapping[str, str]:
+        """Digest this session into a mapping."""
+
+        return {"clients": self.clients}
+
 
 class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid: UUID
     _characters:   Broker[UUID, Creature]
     _events:       typing.MutableSequence[Event]
+
+    @classmethod
+    def from_mapping(cls, mapping: typing.Mapping) -> typing.Self:
+        inst = cls()
+        inst._session_uuid = mapping.get("session_uuid", request_uuid())
+        inst._clients      = mapping.get("clients", dict())
+        inst._events       = mapping.get("events", list())
+
+        # TODO: need to be able to handle
+        # creatures in  a non-in-memory way.
+        inst._characters   = CreaturesMemoryBroker(CharacterV2)
+        inst._characters.resource_map = mapping.get("characters", dict())
+
+        return inst
 
     @classmethod
     def new_instance(cls) -> typing.Self:
@@ -255,6 +287,14 @@ class CombatSession[C: SessionSocket](Session[C]):
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
         inst._events       = []
         return inst
+
+    def into_mapping(self) -> Mapping[str, str]:
+        return {
+            "clients": self.clients.into_mapping(),
+            "session_uuid": self.session_uuid,
+            "events": self.events,
+            "characters": self.characters
+        }
 
     @property
     def characters(self) -> Broker[UUID, Creature]:
@@ -295,6 +335,26 @@ class SessionMemoryBroker(MemoryBroker[UUID, Session]):
 
     async def modify(self, key: UUID, resource: Session):
             self.resource_map[key] = resource
+
+
+class SessionRedisBroker(RedisBroker[UUID, Session]):
+    """
+    Implementation of `RedisBroker` for
+    manipulating `Session` objects from a
+    semi-persistent state.
+    """
+
+    async def create(self):
+        session      = self.resource_cls.new_instance()
+        session_uuid = session.session_uuid
+
+        key = f"{self.resource_cls.__name__}:{session_uuid!s}"
+        self.redis_client.hset(key, mapping=session.into_mapping())
+        return (session_uuid, session)
+
+    async def modify(self, key: UUID, resource: Session):
+        key = f"{self.resource_cls.__name__}:{resource.session_uuid!s}"
+        self.redis_client.hset(key, mapping=resource.into_mapping())
 
 
 class SessionShelver(ShelfBroker[Session]):

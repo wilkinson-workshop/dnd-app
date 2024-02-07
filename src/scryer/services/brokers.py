@@ -1,5 +1,7 @@
 import abc, math, typing
 
+import redis
+
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import shelves
 from scryer.util.filters import FilterStatement, FilterValidator, compose_validator
@@ -92,6 +94,48 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
 
         locator = lambda key: self.resource_map.get(key, None)
         return _locate_any(locator, keys or self.resource_map.keys(), statement)
+
+
+class RedisBroker[K, R](Broker[K, R]):
+    """
+    A partial implementation of a broker which
+    interacts with a `Redis` server.
+    """
+
+    resource_cls: type[R]
+    redis_client: redis.Redis
+
+    def __init__(self, cls: type[R], url: str, **kwds):
+        """
+        Initialize a `RedisBroker` instance from
+        a `URL` connection string. By default,
+        this implementation decodes responses from
+        the server into Python native strings
+        instead of bytes.
+        """
+
+        self.redis_client = cls
+        self.redis_client = redis.Redis.from_url(
+            url,
+            decode_responses=True,
+            **kwds)
+
+    @property
+    def status(self):
+        available = self.redis_client.ping() == "PONG"
+        return ServiceStatus.ONLINE if available else ServiceStatus.UNAVAILABLE
+
+    async def delete(self, key: str):
+        self.redis_client.delete(key)
+
+    async def locate(
+        self,
+        *keys: K,
+        statement: FilterStatement | None = None) -> Located[str, R]:
+
+        locator = lambda key: self.redis_client.get(key)
+        keys    = self.redis_client.keys("|".join(keys) if keys else "*")
+        return _locate_any(locator, keys, statement)
 
 
 class ShelfBroker[R](Broker[str, R]):
