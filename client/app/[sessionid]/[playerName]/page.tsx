@@ -3,13 +3,15 @@
 import { addSessionInput} from "@/app/_apis/sessionApi";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
+import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
 import { Box, Button, Grid, IconButton, TextField, styled } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "@/app/_apis/eventType";
 import { RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerSecret } from "../dm/send-player-secret";
+import { GetSchema, getAllConditions, getCondition } from "@/app/_apis/dnd5eApi";
+import { ConditionItem } from "./condition-item";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
@@ -21,6 +23,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [secret, setSecret] = useState('');
   const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
+  const [conditionOptions, setConditionOptions] = useState<GetSchema[]>([]);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
@@ -33,6 +36,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 
   useEffect(() => {
     getLatestInitiativeOrder();
+    getConditionOptions();
     loadPlayerOptions();
   }, [])
 
@@ -71,6 +75,11 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     .then(i => setInitiativeOrder(i));
   }
 
+  function getConditionOptions(){
+    getAllConditions()
+    .then(c => setConditionOptions(c.results));
+  }
+
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
@@ -90,10 +99,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
       return HpBoundaryOptions.find(x => x.id == 49)!.name;
     else
       return HpBoundaryOptions.find(x => x.id == 100)!.name;
-  }
-
-  function calculateCondition(character: Character): string {
-    return character.conditions.map(c => ConditionOptions.find(x => x.id == c)?.name).join(', ');
   }
 
   const getRollForm = (        
@@ -139,7 +144,9 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
                     <Item>{calculateHP(order)}</Item>
                   </Grid>
                   <Grid item xs={6} sm={5}>
-                    <Item>{calculateCondition(order)}</Item>
+                    <Item>{order.conditions.map(c => 
+                      <ConditionItem conditionId={c} conditionOptions={conditionOptions} />)}
+                    </Item>
                   </Grid>
                 </Grid>
               </Box>

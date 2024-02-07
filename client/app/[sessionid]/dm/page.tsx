@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
@@ -15,13 +15,18 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
+import { createContext } from 'react';
+import { GetSchema, getAllConditions } from '@/app/_apis/dnd5eApi';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+export const ConditionsContext = createContext<GetSchema[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
+
+  const [conditions, dispatch] = useReducer(setInitial, []);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
@@ -33,9 +38,20 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     name: 'DM'
   }});
 
+  function setInitial(conditions: any[], updated: GetSchema[]){
+    return updated;
+  }
+
   useEffect(() => {
     loadPlayerOptions();
+    getConditionOptions();
   }, []);
+
+  function getConditionOptions(){
+    getAllConditions()
+    .then(c => 
+      dispatch(c.results));
+  }
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
@@ -95,9 +111,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           Player Join
         </a>
       </div> 
-      <DndProvider backend={HTML5Backend}>
-        <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
-      </DndProvider>
+      <ConditionsContext.Provider value={conditions}>
+        <DndProvider backend={HTML5Backend}>
+          <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
+        </DndProvider>
+      </ConditionsContext.Provider>
       <Box sx={{margin: '20px 0'}}>
         <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
         <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />

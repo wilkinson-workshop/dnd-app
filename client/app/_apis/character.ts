@@ -4,7 +4,7 @@ export interface Character {
     initiative: number,
     hit_points: number[],
     role: CharacterType,
-    conditions: ConditionType[]
+    conditions: string[]
 }
 
 export enum CharacterType{
@@ -13,35 +13,9 @@ export enum CharacterType{
     DungeonMaster = 'dungeon_master'
 }
 
-export enum ConditionType {
-    BardicInspiration,
-    Stunned,
-    Burned,
-    Poisoned,
-    KnockedOut,
-    KnockedProne,
-    Charmed,
-    Asleep,
-    Petrified,
-    Scared,
-} 
-
 export const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
 export interface KeyValueItem {id: number, name: string}
-
-export const ConditionOptions: KeyValueItem[] = [
-    {id: 0, name: "Bardic Inspiration"},
-    {id: 1, name: "Stunned"},
-    {id: 2, name: "Burned"},
-    {id: 3, name: "Poisoned"},
-    {id: 4, name: "Knocked Out"},
-    {id: 5, name: "Knocked Prone"},
-    {id: 6, name: "Charmed"},
-    {id: 7, name: "Asleep"},
-    {id: 8, name: "Petrified"},
-    {id: 9, name: "Scared"}
-];
 
 export const HpBoundaryOptions: KeyValueItem[] = [
     {id: 0, name: "Knocked Out"},

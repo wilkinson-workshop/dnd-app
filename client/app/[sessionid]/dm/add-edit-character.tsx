@@ -1,5 +1,5 @@
-import { FC, FormEvent, useEffect, useState } from "react";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
+import { FC, FormEvent, useContext, useEffect, useState } from "react";
+import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
 import { Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
@@ -8,6 +8,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { HpAdjust } from "./hp-adjust";
+import { ConditionsContext } from "./page";
 
 
 const ITEM_HEIGHT = 48;
@@ -33,7 +34,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState(1);
     const [name, setName] = useState('Character');
-    const [conditions, setConditions] = useState<ConditionType[]>([]);
+    const [conditions, setConditions] = useState<string[]>([]);
+
+    const conditionOptions = useContext(ConditionsContext);
 
     const isPlayer = existingCharacter ? existingCharacter.role == CharacterType.Player : false;
 
@@ -46,7 +49,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             setConditions(existingCharacter.conditions);
             onEdit(true);
         }
-    }, [existingCharacter])
+    }, [existingCharacter]);
 
 
     function handleSubmit(): void {
@@ -61,7 +64,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             initiative: initiative,
             name: name, 
             hit_points: [currentHp, maxHp],
-            conditions:conditions,
+            conditions: conditions,
             role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer
         });
         resetForm();
@@ -87,7 +90,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         } = event;  
         setConditions(  
             // On autofill we get a stringified value.  
-            typeof value === 'string' ? [ConditionType.Asleep] : value,  
+            typeof value === 'string' ? value.split(',') : value,  
         );  
     }; 
 
@@ -150,10 +153,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                         input={<OutlinedInput size="small" label="Conditions" />}  
                         MenuProps={MenuProps}  
                     >  
-                        {ConditionOptions.map(c =>  
+                        {conditionOptions.map(c =>  
                         <MenuItem  
-                            key={c.id}  
-                            value={c.id} 
+                            key={c.index}  
+                            value={c.index} 
                         >  
                             {c.name}  
                         </MenuItem>  

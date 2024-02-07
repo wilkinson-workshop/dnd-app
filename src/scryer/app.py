@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
-from scryer.creatures import CharacterV2, Condition, Role, HitPoints
+from scryer.creatures import CharacterV2, Role, HitPoints
 from scryer.services import ServiceStatus, sessions
 from scryer.services.sessions import Action, CombatSession, SessionMemoryBroker
 from scryer.util import events, request_uuid, UUID
@@ -36,7 +36,7 @@ SOURCE_ROOT      = APPLICATION_ROOT.parent
 class CreaturesFilter(typing.TypedDict):
     hit_points: int
     role:       typing.Sequence[Role]
-    condition:  typing.Sequence[Condition]
+    condition:  typing.Sequence[str]
 
 
 # TODO: move elsewhere.

@@ -5,7 +5,7 @@ import { useDrag, useDrop } from 'react-dnd'
 import { ItemTypes } from './item-types'
 import { Character } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
-import { CharacterConditions } from './characer-conditions'
+import { CharacterConditions } from './character-conditions'
 import { Box, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
@@ -17,11 +17,11 @@ const style = {
 }
 
 export interface CardProps {
-  character: Character
-  index: number
-  moveCard: (dragIndex: number, hoverIndex: number) => void
-  updateCharacter: (character: Character) => void
-  updateCharacterButton: (character: Character) => void
+  character: Character,
+  index: number,
+  moveCard: (dragIndex: number, hoverIndex: number) => void,
+  updateCharacter: (character: Character) => void,
+  updateCharacterButton: (character: Character) => void,
   deleteCharacter: (character: Character) => void
 }
 

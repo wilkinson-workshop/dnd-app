@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import { Card } from './character-card'
 import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
 import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { AddCharacter } from './add-edit-character'
+import { AddCharacter } from './add-edit-character';
 
 const style = {
     minHeight: '30px',
@@ -25,7 +25,7 @@ export interface ContainerProps{
 export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) => {
 
   const [cards, setCards] = useState<Character[] | null>(null);
-  const [characterEdit, setCharacterEdit] = useState<Character | null>(null)
+  const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
   if(cards == null  || reload){
     reloadDone();
