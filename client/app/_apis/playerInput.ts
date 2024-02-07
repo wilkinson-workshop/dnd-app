@@ -2,7 +2,7 @@ import { CharacterType } from "./character"
 
 export interface PlayerInput {
     value: number,
-    name: string
+    body: RequestPlayerInput
 }
 
 export const DiceTypes = [4,6,8,10,12,20,100];

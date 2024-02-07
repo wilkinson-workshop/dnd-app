@@ -8,7 +8,7 @@ import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './characer-conditions'
 import { Box, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
-import { CharacterInitiative } from './character-initiative'
+import EditIcon from '@mui/icons-material/Edit';
 
 const style = {
   border: '1px solid lightgray',
@@ -21,6 +21,8 @@ export interface CardProps {
   index: number
   moveCard: (dragIndex: number, hoverIndex: number) => void
   updateCharacter: (character: Character) => void
+  updateCharacterButton: (character: Character) => void
+  deleteCharacter: (character: Character) => void
 }
 
 interface DragItem {
@@ -29,7 +31,7 @@ interface DragItem {
   type: string
 }
 
-export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter }) => {
+export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton, deleteCharacter }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [{ handlerId }, drop] = useDrop<
     DragItem,
@@ -114,20 +116,23 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
       <Box>
         <Grid container spacing={2}>
           <Grid item xs={1}>
-            <Item><CharacterInitiative character={character} updateCharacter={updateCharacter} /></Item>
+            <Item>{character.initiative }</Item>
           </Grid>
           <Grid item xs={2}>
             <Item>{character.name}</Item>
           </Grid>
           <Grid item xs={3}>
-            <Item><CharacterHp character={character} updateCharacter={updateCharacter} /></Item>
+            <Item><CharacterHp character={character}/></Item>
           </Grid>
-          <Grid item xs={5}>
+          <Grid item xs={4}>
             <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
           </Grid>
-          <Grid item xs={1}>
-            <Item>            
-              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:[0, character.hit_points[1]]})}>
+          <Grid item xs={2}>
+            <Item style={{"textAlign": "right"}}>
+              <IconButton aria-label="edit" onClick={() => updateCharacterButton(character)}>
+                <EditIcon />
+              </IconButton>       
+              <IconButton aria-label="delete" onClick={() => deleteCharacter(character)}>
                   <DeleteIcon />
               </IconButton>
             </Item> 

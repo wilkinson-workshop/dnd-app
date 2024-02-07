@@ -15,7 +15,6 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
-import { SessionQrDialog } from './session-qr-dialog'
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
@@ -23,7 +22,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
-  const [open, setOpen] = useState(false);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
@@ -64,14 +62,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     });
   }
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
     .then(pi => 
@@ -95,17 +85,12 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   return (
     <div>
       <div>
-        <SessionQrDialog
-          open={open}
-          url={playerJoinUrl}
-          onClose={handleClose}
-        />     
-        <Button variant="contained" aria-label="show qr" onClick={handleClickOpen}>
-          Show Session QR
-        </Button>
         <Button variant="contained" aria-label="end session" onClick={handleEndSession}>
           End Session
         </Button>
+        <a href={`${playerJoinUrl}/qr`} target='_blank'>
+          Show QR code
+        </a>
         <a href={playerJoinUrl} target='_blank'>
           Player Join
         </a>

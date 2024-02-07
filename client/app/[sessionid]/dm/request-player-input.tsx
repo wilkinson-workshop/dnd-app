@@ -75,8 +75,9 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                         <Autocomplete
                             id="role-reason"
                             freeSolo
-                            onChange={(e, v) => 
-                            setReason(v!)}
+                            autoSelect
+                            onChange={(e, v) =>
+                                setReason(v!)}
                             options={rollOptions.map((option) => option)}
                             renderInput={(params) => <TextField {...params} label="Reason" size="small" variant="outlined" />}
                         />  
