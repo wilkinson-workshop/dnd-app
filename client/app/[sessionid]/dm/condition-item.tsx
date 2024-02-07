@@ -2,7 +2,7 @@ import { FC, useContext, useState } from "react";
 import Chip from '@mui/material/Chip';
 import { ConditionsContext } from "./page";
 import { getCondition } from "@/app/_apis/dnd5eApi";
-import { Tooltip } from "@mui/material";
+import { DescriptionTooltip } from "@/app/description-tooltip";
 
 export interface ConditionItemProps {
     conditionId: string,
@@ -11,18 +11,18 @@ export interface ConditionItemProps {
 
 export const ConditionItem: FC<ConditionItemProps> = ({conditionId, onDeleteCondition}) => {
     const conditionOptions = useContext(ConditionsContext);
-    const [description, setDescription] = useState('');
+    const [description, setDescription] = useState<string[]>([]);
 
     function getDescription(){
         getCondition(conditionId)
-        .then(c => setDescription(c.desc!));
+        .then(c => setDescription(c.desc));
     }
 
     let name = conditionOptions.find(x => x.index == conditionId)?.name;
 
     return (<>
-    <Tooltip disableFocusListener title={description}>
+    <DescriptionTooltip title={description.join('\n')}>
         <Chip color="info" size="small" clickable onClick={getDescription} label={name} onDelete={() => onDeleteCondition(conditionId)} />
-    </Tooltip>
+    </DescriptionTooltip>
     </>);
 }

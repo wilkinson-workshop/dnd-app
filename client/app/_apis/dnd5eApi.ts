@@ -9,7 +9,7 @@ export interface GetSchema {
     index:string,    
     name: string,    
     url: string,    
-    desc: string | null    
+    desc: string[]    
 }    
 
 export async function getAllConditions(): Promise<GetAllSchema> {
