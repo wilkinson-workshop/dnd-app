@@ -16,17 +16,17 @@ import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
 import { createContext } from 'react';
-import { GetSchema, getAllConditions } from '@/app/_apis/dnd5eApi';
+import { GetAllItem, getAllConditions } from '@/app/_apis/dnd5eApi';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
-export const ConditionsContext = createContext<GetSchema[]>([]);
+export const ConditionsContext = createContext<GetAllItem[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
 
-  const [conditions, dispatch] = useReducer(setInitial, []);
+  const [conditions, conditionsDispatch] = useReducer(setInitialConditions, []);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
@@ -38,7 +38,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     name: 'DM'
   }});
 
-  function setInitial(conditions: any[], updated: GetSchema[]){
+  function setInitialConditions(conditions: any[], updated: GetAllItem[]){
     return updated;
   }
 
@@ -50,8 +50,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   function getConditionOptions(){
     getAllConditions()
     .then(c => 
-      dispatch(c.results));
+      conditionsDispatch(c.results));
   }
+
+
 
   useEffect(() => {
     if (lastJsonMessage !== null) {

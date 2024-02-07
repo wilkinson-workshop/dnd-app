@@ -1,29 +1,31 @@
 'use client'
 
 import { addSessionInput} from "@/app/_apis/sessionApi";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
 import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
-import { Box, Button, Grid, IconButton, TextField, styled } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import { Box, Grid, styled } from "@mui/material";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "@/app/_apis/eventType";
 import { RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerSecret } from "../dm/send-player-secret";
-import { GetSchema, getAllConditions, getCondition } from "@/app/_apis/dnd5eApi";
+import { GetAllItem, getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
 import { ConditionItem } from "./condition-item";
+import { SkillRequest } from "./skill-request";
+import { Secrets } from "./secrets";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
 export default function PlayerPage({ params }: { params: { sessionid: string, playerName: string } }) {
-  const [rollValue, setRollValue] = useState(0);
+  
   const [initiativeOrder, setInitiativeOrder] = useState<Character[]>([]);
   const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
   const [isShowSecret, setIsShowSecret] = useState(false);
   const [secret, setSecret] = useState('');
   const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
-  const [conditionOptions, setConditionOptions] = useState<GetSchema[]>([]);
+  const [conditionOptions, setConditionOptions] = useState<GetAllItem[]>([]);
+  const [skills, setSkills] = useState<GetAllItem[]>([]);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
@@ -38,6 +40,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     getLatestInitiativeOrder();
     getConditionOptions();
     loadPlayerOptions();
+    getSkillOptions();
   }, [])
 
   useEffect(() => {
@@ -62,10 +65,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     }
   }, [lastJsonMessage]);
 
-  function handleInputSubmit(e: FormEvent){
-    e.preventDefault(); 
-    setIsGetDiceRoll(false);  
-    setRollValue(0) 
+  function handleInputSubmit(rollValue: number){
+    setIsGetDiceRoll(false); 
     addSessionInput(params.sessionid, {value: rollValue, body: requestRollBody})
     .then();
   }
@@ -78,6 +79,14 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   function getConditionOptions(){
     getAllConditions()
     .then(c => setConditionOptions(c.results));
+  }
+
+  function getSkillOptions(){
+      getAllSkills()
+      .then(s => {
+          const skills = [{index: 'initiative', name:'Initiative', url: ''}, ...s.results];
+          setSkills(skills);
+      });
   }
 
   function loadPlayerOptions(){
@@ -101,25 +110,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
       return HpBoundaryOptions.find(x => x.id == 100)!.name;
   }
 
-  const getRollForm = (        
-    <Box>
-      <div>{`The DM has requested input for a ${requestRollBody.dice_type} sided dice for ${requestRollBody.reason}`}</div>
-      <TextField size="small" label="Roll" value={rollValue} variant="outlined" onChange={x => setRollValue(Number.parseInt(x.target.value? x.target.value : '0'))} />
-      <Button variant="contained" aria-label="send dice roll" onClick={handleInputSubmit}>
-        Send
-      </Button>          
-    </Box>
-  );
-
-  const showSecretView = (
-    <Box>
-      {secret}                
-      <IconButton aria-label="delete" onClick={() =>setIsShowSecret(false)}>
-          <CloseIcon />
-      </IconButton>
-    </Box>
-  )
-
   const Item = styled(Box)(({ theme }) => ({
     padding: theme.spacing(1),  
   })); 
@@ -129,8 +119,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
       <a href={playerJoinUrl} target='_blank'>
         Player Join
       </a>
-      {isGetDiceRoll ? getRollForm : ''}
-      {isShowSecret ? showSecretView : ''}
       <Box>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (
@@ -154,7 +142,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
         ))}
       </Box>
       <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
-
+      {isGetDiceRoll ? <SkillRequest skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} /> : ''}
+      {isShowSecret ? <Secrets secret={secret} setIsShowSecret={setIsShowSecret} /> : ''}
     </>               
   )    
 }

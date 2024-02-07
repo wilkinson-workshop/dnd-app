@@ -1,11 +1,11 @@
 import { FC, useState } from "react";
 import Chip from '@mui/material/Chip';
-import { GetSchema, getCondition } from "@/app/_apis/dnd5eApi";
+import { GetAllItem, getCondition } from "@/app/_apis/dnd5eApi";
 import { DescriptionTooltip } from "@/app/description-tooltip";
 
 export interface ConditionItemProps {
     conditionId: string,
-    conditionOptions: GetSchema[]
+    conditionOptions: GetAllItem[]
 }
 
 export const ConditionItem: FC<ConditionItemProps> = ({conditionId, conditionOptions}) => {
