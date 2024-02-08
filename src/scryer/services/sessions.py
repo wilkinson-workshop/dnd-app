@@ -1,16 +1,18 @@
 
 import abc, asyncio, functools, json, typing, uuid
+from typing import Any, Mapping
 
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 from starlette.datastructures import QueryParams
 
 from scryer.creatures import CharacterV2, Creature, CreatureV2, Role
-from scryer.services.brokers import (
+from scryer.services import (
     Broker,
-    ShelfBroker,
+    EventBroker,
     MemoryBroker,
-    RedisBroker
+    RedisBroker,
+    ShelfBroker
 )
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
@@ -143,27 +145,10 @@ class Session[C: SessionSocket](Service):
 
     @classmethod
     @abc.abstractmethod
-    def from_mapping(
+    def new_instance(
             cls,
-            inst: typing.Mapping[str, typing.Any],
-            *,
-            client_broker: SocketBroker | None = None) -> typing.Self:
-        """
-        Digest a mapping representation into a
-        session instance.
-        """
-
-    @classmethod
-    @abc.abstractmethod
-    def into_mapping(cls, inst: typing.Self) -> typing.Mapping[str, typing.Any]:
-        """
-        Digest a session instance into a mapping
-        representation.
-        """
-
-    @classmethod
-    @abc.abstractmethod
-    def new_instance(cls, client_broker: SocketBroker) -> typing.Self:
+            client_broker: SocketBroker,
+            event_broker: EventBroker) -> typing.Self:
         """Creates a new session instance."""
 
     @property
@@ -181,8 +166,23 @@ class Session[C: SessionSocket](Service):
     async def attach_client(self, client: C) -> UUID:
         """Process a `connect` request."""
 
-        client_uuid = (await self.clients.create(client))[0]
-        client.cookies["session_uuid"] = self.session_uuid
+        cookies = client.cookies
+        session_uuid = cookies.get("session_uuid", None)
+        if session_uuid and session_uuid != self.session_uuid:
+            await client.send_text("session_uuid does not match")
+            await client.close()
+            return request_uuid()
+
+        found = []
+        if (client_uuid := cookies.get("client_uuid", None)):
+            found = await self.clients.locate(client_uuid)
+
+        if found and (client_uuid := cookies.get("client_uuid", None)):
+            await self.clients.modify(client_uuid, client)
+        else:
+            client_uuid = (await self.clients.create(client))[0]
+            client.cookies["session_uuid"] = self.session_uuid
+
         return client_uuid
 
     # TODO: Find different verboge for filtered
@@ -196,17 +196,7 @@ class Session[C: SessionSocket](Service):
         client.
         """
 
-        filter_statement = {
-            "logic": "and",
-            "rules": [
-                {
-                    "field": "session_uuid",
-                    "operator": "eq",
-                    "value": self.session_uuid
-                }
-            ]
-        }
-        found = await self.clients.locate(statement=filter_statement) # type: ignore
+        found = await self.clients.locate(statement=_filter_statement(self)) # type: ignore
 
         async with asyncio.TaskGroup() as tg:
             results = [
@@ -222,17 +212,7 @@ class Session[C: SessionSocket](Service):
         required cleanup.
         """
 
-        filter_statement = {
-            "logic": "and",
-            "rules": [
-                {
-                    "field": "session_uuid",
-                    "operator": "eq",
-                    "value": self.session_uuid
-                }
-            ]
-        }
-        found = await self.clients.locate(statement=filter_statement) #type: ignore
+        found = await self.clients.locate(statement=_filter_statement(self)) #type: ignore
 
         async with asyncio.TaskGroup() as tg:
             [
@@ -243,23 +223,12 @@ class Session[C: SessionSocket](Service):
     async def detach_client(self, client: C):
         """Disconnect a client."""
 
-        filter_statement = {
-            "logic": "and",
-            "rules": [
-                {
-                    "field": "session_uuid",
-                    "operator": "eq",
-                    "value": self.session_uuid
-                }
-            ]
-        }
-        found = await self.clients.locate(statement=filter_statement) #type: ignore
-        client_uuid = [ # This will throw an index
-                        # error if the client
-                        # doesn't exist.
-            cuid for cuid, c in found if c is client][0]
+        found = await self.clients.locate(statement=_filter_statement(self)) #type: ignore
+        client_uuids = [cuid for cuid, c in found if c is client]
+        if not client_uuids:
+            return
 
-        await self.clients.delete(client_uuid)
+        await self.clients.delete(client_uuids[0])
         if client.client_state is WebSocketState.DISCONNECTED:
             return
         await client.close()
@@ -279,18 +248,35 @@ class Session[C: SessionSocket](Service):
         return (await action(client, **kwds)) #type: ignore
 
 
+def _filter_statement[C: SessionSocket](session: Session[C]):
+    return {
+            "logic": "and",
+            "filters": [
+                {
+                    "field": "cookies.session_uuid",
+                    "operator": "eq",
+                    "value": session.session_uuid
+                }
+            ]
+        }
+
+
 class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid: UUID
     _characters:   Broker[UUID, Creature]
-    _events:       typing.MutableSequence[Event]
+    _events:       Broker[UUID, Event]
 
     @classmethod
-    def new_instance(cls, client_broker: SocketBroker) -> typing.Self:
+    def new_instance(
+            cls,
+            client_broker: SocketBroker,
+            event_broker: EventBroker) -> typing.Self:
+
         inst = cls()
         inst._session_uuid = request_uuid()
         inst._clients      = client_broker
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
-        inst._events       = []
+        inst._events       = event_broker
         return inst
 
     @property
@@ -299,7 +285,9 @@ class CombatSession[C: SessionSocket](Session[C]):
 
     @property
     def events(self) -> typing.MutableSequence[Event]:
-        return self._events
+        called = self._events.locate(statement=_filter_statement(self)) #type: ignore
+        res = asyncio.get_event_loop().run_until_complete(called)
+        return [event for _,event in res]
 
     @property
     def session_uuid(self) -> UUID:
@@ -320,7 +308,8 @@ class CombatSession[C: SessionSocket](Session[C]):
     async def attach_client(self, client: C) -> UUID:
         ch: CreatureV2
         client_uuid = await super().attach_client(client)
-        if client.query_params["role"] is Role.DUNGEON_MASTER:
+
+        if client.query_params["role"] == Role.DUNGEON_MASTER:
             return client_uuid
 
         if (found := await self.characters.locate(client_uuid)): #type: ignore
@@ -331,7 +320,7 @@ class CombatSession[C: SessionSocket](Session[C]):
             # CharacterV2 is a child of Creature.
             ch = CharacterV2(
                 conditions=[], # type: ignore
-                hit_points=client.query_params.get("hit_points", None), # type: ignore
+                hit_points=client.query_params.get("hit_points", [0, 0]), # type: ignore
                 creature_id=client_uuid, # type: ignore
                 initiative=0, # type: ignore
                 role=client.query_params.get("role", Role.NON_PLAYER), # type: ignore
@@ -349,8 +338,12 @@ class SessionMemoryBroker(MemoryBroker[UUID, Session]):
     """
 
     @typing.override
-    async def create(self, client_broker: SocketBroker):
-        session      = self.resource_cls.new_instance(client_broker)
+    async def create(
+            self,
+            client_broker: SocketBroker,
+            event_broker: EventBroker):
+
+        session = self.resource_cls.new_instance(client_broker, event_broker)
         session_uuid = session.session_uuid
         self.resource_map[session_uuid] = session
         return (session_uuid, session)
@@ -364,8 +357,12 @@ class SessionRedisBroker(RedisBroker[UUID, Session]):
     """
 
     @typing.override
-    async def create(self, client_broker: SocketBroker):
-        session      = self.resource_cls.new_instance(client_broker)
+    async def create(
+            self,
+            client_broker: SocketBroker,
+            event_broker: EventBroker):
+
+        session = self.resource_cls.new_instance(client_broker, event_broker)
         session_uuid = session.session_uuid
 
         rkey = f"{self.resource_cls.__name__}:{session_uuid!s}"
@@ -393,8 +390,12 @@ class SessionShelver(ShelfBroker[Session]):
     """
 
     @typing.override
-    async def create(self, client_broker: SocketBroker) -> tuple[str, Session]:
-        session      = self.resource_cls.new_instance(client_broker)
+    async def create(
+            self,
+            client_broker: SocketBroker,
+            event_broker: EventBroker):
+
+        session = self.resource_cls.new_instance(client_broker, event_broker)
         session_uuid = str(session.session_uuid)
         with self as opened:
             opened.shelf[session_uuid] = session

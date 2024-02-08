@@ -1,8 +1,17 @@
 import enum, typing
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from scryer.util import UUID
+
+__all__ = (
+    "Event",
+    "Message",
+    "ReceiveOrderUpdate",
+    "ReceiveRoll",
+    "ReceiveSecret",
+    "RequestRoll"
+)
 
 type PartialEvent[B, **P] = typing.Callable[typing.Concatenate[B, P], Event]
 """
@@ -19,7 +28,7 @@ class BaseEvent(BaseModel):
 
 
 class EventBody(BaseModel):
-    pass
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EventType(enum.StrEnum):
@@ -27,6 +36,7 @@ class EventType(enum.StrEnum):
     The types of events our system uses.
     """
 
+    MESSAGE              = enum.auto()
     RECEIVE_ORDER_UPDATE = enum.auto()
     RECEIVE_ROLL         = enum.auto()
     RECEIVE_SECRET       = enum.auto()
@@ -38,8 +48,9 @@ class Event(BaseEvent):
     An event sent or received by this application.
     """
 
-    event_body: EventBody | None = None
-    event_type: EventType | None = None
+    session_uuid: UUID | None = None
+    event_body:   EventBody | None = None
+    event_type:   EventType | None = None
 
     @property
     def send_to(self) -> typing.Sequence[UUID]:
@@ -85,23 +96,31 @@ class PlayerSecret(EventBody):
     client_uuids: list[UUID]
 
 
-def NewEvent(etype: EventType, ebody: EventBody):
+def NewEvent(
+        etype: EventType,
+        ebody: EventBody,
+        *,
+        session_uuid: UUID | None = None) -> Event:
     """Create a new event wrapper."""
 
     return Event(event_type=etype, event_body=ebody)
 
 
-def ReceiveOrderUpdate(body: EventBody):
-    return NewEvent(EventType.RECEIVE_ORDER_UPDATE, body)
+def Message(body: EventBody, **kwds):
+    return NewEvent(EventType.MESSAGE, body, **kwds)
 
 
-def ReceiveRoll(body: EventBody):
-    return NewEvent(EventType.RECEIVE_ROLL, body)
+def ReceiveOrderUpdate(body: EventBody, **kwds):
+    return NewEvent(EventType.RECEIVE_ORDER_UPDATE, body, **kwds)
 
 
-def ReceiveSecret(body: EventBody):
-    return NewEvent(EventType.RECEIVE_SECRET, body)
+def ReceiveRoll(body: EventBody, **kwds):
+    return NewEvent(EventType.RECEIVE_ROLL, body, **kwds)
 
 
-def RequestRoll(body: EventBody):
-    return NewEvent(EventType.REQUEST_ROLL, body)
+def ReceiveSecret(body: EventBody, **kwds):
+    return NewEvent(EventType.RECEIVE_SECRET, body, **kwds)
+
+
+def RequestRoll(body: EventBody, **kwds):
+    return NewEvent(EventType.REQUEST_ROLL, body, **kwds)

@@ -73,10 +73,16 @@ def compose_validator(statement: FilterStatement) -> FilterValidator:
         res = True
 
         for f in filters:
-            op        = LogicalOp.from_other(f["operator"])
-            obj_value = getattr(obj, f["field"])
+            op = LogicalOp.from_other(f["operator"])
+
+            field_parts = f["field"].split(".")
+            obj_value   = getattr(obj, field_parts[0])
+            for part in field_parts[1:]:
+                obj_value = getattr(obj_value, part, "NOT_FOUND")
+                if obj_value == "NOT_FOUND":
+                    return False
+
             fil_value = f["value"]
-            print(op, obj_value, fil_value)
             res  = logic.do(res, op.do(fil_value, obj_value))
 
         return res

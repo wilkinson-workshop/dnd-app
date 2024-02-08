@@ -21,15 +21,22 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
 from scryer.creatures import CharacterV2, Condition, Role, HitPoints
-from scryer.services import Broker, Service, ServiceStatus, Session, sessions
-from scryer.services.sessions import (
+from scryer.services import (
     Action,
+    Broker,
     CombatSession,
+    EventMemoryBroker,
+    Service,
+    ServiceStatus,
+    Session,
     SessionMemoryBroker,
-    SessionRedisBroker
+    SessionRedisBroker,
+    SessionSocket,
+    SocketMemoryBroker,
+    sessions
 )
-from scryer.services.sockets import SocketMemoryBroker, SessionSocket
 from scryer.util import events, request_uuid, UUID
+from scryer.util.events import *
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -45,10 +52,10 @@ class CreaturesFilter(typing.TypedDict):
     condition:  typing.Sequence[Condition]
 
 
-async def _broadcast_client_event(
+async def _broadcast_client_event[**P](
         session_uuid: UUID,
         action: Action,
-        cls: type[events.Event],
+        cls: typing.Callable[P, events.Event],
         body: events.EventBody,
         **kwds):
 
@@ -93,7 +100,7 @@ async def _character_make(
 
 
 async def _sessions_find(session_uuid: UUID | str | None = None):
-    broker: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
+    broker: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
     keys = (request_uuid(session_uuid),) if session_uuid else ()
 
     found = await broker.locate(*keys)
@@ -106,12 +113,13 @@ async def _sessions_find(session_uuid: UUID | str | None = None):
 # Appliction Services.
 # -----------------------------------------------
 APP_SERIVCES: typing.Mapping[str, Service] = {
+    "events00": EventMemoryBroker(Event),
     "sessions00": SessionMemoryBroker(CombatSession),
     "sessions01": SessionRedisBroker(
         CombatSession,
         "redis://default:redispw@localhost:32768"
     ),
-    "sockets01": SocketMemoryBroker(SessionSocket)
+    "sockets00": SocketMemoryBroker(SessionSocket)
 }
 
 # -----------------------------------------------
@@ -248,8 +256,8 @@ async def characters_initiative(session_uuid: UUID):
 
     initiatives = []
     characters  = await session.characters.locate()
-    for _,c in sorted(characters, key=lambda c: c.initiative): #type: ignore
-        initiatives.append({"id": c.creature_id, "name": c.name}) #type: ignore
+    for _, ch in sorted(characters, key=lambda loc: loc[1].initiative): #type: ignore
+        initiatives.append({"id": ch.creature_id, "name": ch.name}) #type: ignore
 
     return initiatives      
 
@@ -382,16 +390,17 @@ async def sessions_make():
     `session_uuid`.
     """
 
-    clients:  Broker[UUID, SessionSocket] = APP_SERIVCES["sockets01"] #type: ignore
-    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
-    return (await sessions.create(clients))[0] #type: ignore
+    clients:  Broker[UUID, SessionSocket] = APP_SERIVCES["sockets00"] #type: ignore
+    events:   Broker[UUID, Event]         = APP_SERIVCES["events00"] #type: ignore
+    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
+    return (await sessions.create(clients, events))[0] #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}")
 async def sessions_stop(session_uuid: UUID):
     """Ends an active session."""
 
-    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
+    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
     await sessions.delete(session_uuid)
 
 
@@ -460,7 +469,6 @@ async def sessions_player_secret(
     Send a secret to to a specific player.
     """
 
-    print(body)
     await _broadcast_pc_event(
         session_uuid,
         events.ReceiveSecret, #type: ignore
