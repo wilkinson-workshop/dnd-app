@@ -7,7 +7,8 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { DiceTypes } from "@/app/_apis/playerInput";
 import { requestPlayerInput } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
-import { GetAllItem, INIT_DESC, getAllSkills, getSkil } from "@/app/_apis/dnd5eApi";
+import { INIT_DESC, getAllSkills, getSkil } from "@/app/_apis/dnd5eApi";
+import { APIReference } from "@/app/_apis/dnd5eTypings";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -30,7 +31,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
     const [requestDiceType, setRequestDiceType] = useState(20);
     const [recipients, setRecipient] = useState<string[]>([]);
     const [reason, setReason] = useState('');
-    const [rollOptions, setRollOptions] = useState<GetAllItem[]>([]);
+    const [rollOptions, setRollOptions] = useState<APIReference[]>([]);
     const [description, setDescription] = useState<string[]>([]);
 
     useEffect(() => {
@@ -39,8 +40,12 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
 
     useEffect(() => {
         if(reason != ''){
-            let index = rollOptions.find(x => x.name == reason)!.index;
-            getDescription(index);
+            let index = rollOptions.find(x => x.name == reason)?.index;
+            if(index){
+                getDescription(index);
+            } else {
+                setDescription([]);
+            }
         }
     },[reason]);
 
@@ -105,6 +110,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                     <Box sx={{margin: '10px 0'}}>
                         <Autocomplete
                             id="role-reason"
+                            sx={{ width: 300 }}
                             freeSolo
                             autoSelect
                             onChange={(e, v) =>

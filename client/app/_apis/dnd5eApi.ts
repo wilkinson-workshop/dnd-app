@@ -1,36 +1,8 @@
+import { GetAll, Condition, Skill, Monster } from "./dnd5eTypings";
+
  export const INIT_DESC = 'When determining turn order for battle you roll Dexterity (Initiative).';
 
 const apiBaseUrl = 'https://www.dnd5eapi.co/api/'
-
-export interface GetAll {
-    count: number,
-    results: GetAllItem[]
-}
-
-export interface GetAllItem {
-  index:string,    
-  name: string,    
-  url: string,
-}    
-
-export interface GetCondition {
-    index:string,    
-    name: string,    
-    url: string,    
-    desc: string[]    
-}  
-
-export interface GetSkill {
-  index: string,
-  name: string,
-  desc: string[],
-  ability_score: {
-    index: string,
-    name: string,
-    url: string
-  },
-  url: string
-}
 
 export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/conditions`, {
@@ -46,7 +18,7 @@ export async function getAllConditions(): Promise<GetAll> {
     return res.json()
   } 
 
-  export async function getCondition(condition: string): Promise<GetCondition> {
+  export async function getCondition(condition: string): Promise<Condition> {
     const res = await fetch(`${apiBaseUrl}/conditions/${condition}`, {
       headers:{
         'Content-Type': 'application/json',
@@ -74,7 +46,7 @@ export async function getAllConditions(): Promise<GetAll> {
     return res.json()
   } 
 
-  export async function getSkil(skill: string): Promise<GetSkill> {
+  export async function getSkil(skill: string): Promise<Skill> {
     const res = await fetch(`${apiBaseUrl}/skills/${skill}`, {
       headers:{
         'Content-Type': 'application/json',
@@ -87,3 +59,32 @@ export async function getAllConditions(): Promise<GetAll> {
     
     return res.json()
   } 
+
+
+  export async function getAllMonsters(): Promise<GetAll> {
+    const res = await fetch(`${apiBaseUrl}/monsters`, {
+      headers:{
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    
+    return res.json()
+  } 
+
+  export async function getMonster(monster: string): Promise<Monster> {
+    const res = await fetch(`${apiBaseUrl}/monsters/${monster}`, {
+      headers:{
+        'Content-Type': 'application/json',
+      }
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    
+    return res.json()
+  }

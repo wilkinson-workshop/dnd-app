@@ -9,10 +9,11 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "@/app/_apis/eventType";
 import { RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerSecret } from "../dm/send-player-secret";
-import { GetAllItem, getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
+import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
 import { ConditionItem } from "./condition-item";
 import { SkillRequest } from "./skill-request";
 import { Secrets } from "./secrets";
+import { APIReference } from "@/app/_apis/dnd5eTypings";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
@@ -24,8 +25,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [secret, setSecret] = useState('');
   const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
-  const [conditionOptions, setConditionOptions] = useState<GetAllItem[]>([]);
-  const [skills, setSkills] = useState<GetAllItem[]>([]);
+  const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
+  const [skills, setSkills] = useState<APIReference[]>([]);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 

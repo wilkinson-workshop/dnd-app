@@ -1,4 +1,5 @@
-import { GetAllItem, INIT_DESC, getSkil } from "@/app/_apis/dnd5eApi";
+import { INIT_DESC, getSkil } from "@/app/_apis/dnd5eApi";
+import { APIReference } from "@/app/_apis/dnd5eTypings";
 import { DescriptionTooltip } from "@/app/description-tooltip";
 import { Box, Button, TextField, Link } from "@mui/material";
 import { FC, useEffect, useState } from "react";
@@ -6,7 +7,7 @@ import { FC, useEffect, useState } from "react";
 export interface SkillRequestProps {
     skillName: string,
     diceType: number,
-    skillOptions: GetAllItem[],
+    skillOptions: APIReference[],
     sendValue: (rollValue: number) => void
 }
 

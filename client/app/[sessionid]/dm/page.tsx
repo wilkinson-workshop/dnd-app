@@ -16,10 +16,11 @@ import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
 import { createContext } from 'react';
-import { GetAllItem, getAllConditions } from '@/app/_apis/dnd5eApi';
+import { getAllConditions } from '@/app/_apis/dnd5eApi';
+import { APIReference } from '@/app/_apis/dnd5eTypings';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
-export const ConditionsContext = createContext<GetAllItem[]>([]);
+export const ConditionsContext = createContext<APIReference[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
@@ -38,7 +39,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     name: 'DM'
   }});
 
-  function setInitialConditions(conditions: any[], updated: GetAllItem[]){
+  function setInitialConditions(conditions: any[], updated: APIReference[]){
     return updated;
   }
 
