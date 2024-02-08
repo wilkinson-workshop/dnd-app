@@ -16,6 +16,7 @@ import { Secrets } from "./secrets";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
 export default function PlayerPage({ params }: { params: { sessionid: string, playerName: string } }) {
   
@@ -117,9 +118,10 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   
   return (
     <>
-      <a href={playerJoinUrl} target='_blank'>
-        Player Join
-      </a>
+        { showDeveloperUI ?
+        (<a href={playerJoinUrl} target='_blank'>
+          Player Join
+        </a>) : ''}
       <Box>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (

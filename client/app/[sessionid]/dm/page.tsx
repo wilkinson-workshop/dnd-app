@@ -20,6 +20,8 @@ import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
+
 export const ConditionsContext = createContext<APIReference[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
@@ -110,9 +112,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         <a href={`${playerJoinUrl}/qr`} target='_blank'>
           Show QR code
         </a>
-        <a href={playerJoinUrl} target='_blank'>
+        { showDeveloperUI ?
+        (<a href={playerJoinUrl} target='_blank'>
           Player Join
-        </a>
+        </a>) : ''}
       </div> 
       <ConditionsContext.Provider value={conditions}>
         <DndProvider backend={HTML5Backend}>
