@@ -46,6 +46,7 @@ class CreatureModel(BaseModel):
     or non-playable character.
     """
 
+
 class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     """
     Shortcut class to subclass from both

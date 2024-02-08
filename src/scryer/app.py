@@ -21,8 +21,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
 from scryer.creatures import CharacterV2, Condition, Role, HitPoints
-from scryer.services import ServiceStatus, sessions
-from scryer.services.sessions import Action, CombatSession, SessionMemoryBroker
+from scryer.services import Broker, Service, ServiceStatus, Session, sessions
+from scryer.services.sessions import (
+    Action,
+    CombatSession,
+    SessionMemoryBroker,
+    SessionRedisBroker
+)
+from scryer.services.sockets import SocketMemoryBroker, SessionSocket
 from scryer.util import events, request_uuid, UUID
 
 # Root directory appliction is being executed
@@ -47,7 +53,7 @@ async def _broadcast_client_event(
         **kwds):
 
     _, session = (await _sessions_find(session_uuid))[0]
-    return await session.broadcast_action(action, event=cls(body, **kwds))
+    return await session.broadcast_action(action, event=cls(body, **kwds)) #type: ignore
 
 
 async def _broadcast_dm_event(
@@ -80,20 +86,17 @@ async def _character_make(
 
     session: CombatSession
 
-    _, session = (await _sessions_find(session_uuid))[0]
+    _, session = (await _sessions_find(session_uuid))[0] #type: ignore
     character_uuid = character_uuid or character.creature_uuid
     await session.characters.modify(character_uuid, character)
     return character_uuid
 
 
 async def _sessions_find(session_uuid: UUID | str | None = None):
-    if isinstance(session_uuid, str):
-        session_uuid = request_uuid(session_uuid)
+    broker: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
+    keys = (request_uuid(session_uuid),) if session_uuid else ()
 
-    locator = APP_SERIVCES["sessions"].locate
-    locator = locator(session_uuid) if session_uuid else locator()
-
-    found = await locator
+    found = await broker.locate(*keys)
     if not found and session_uuid:
         raise HTTPException(404, f"No session at {session_uuid}")
     return found
@@ -102,8 +105,13 @@ async def _sessions_find(session_uuid: UUID | str | None = None):
 # -----------------------------------------------
 # Appliction Services.
 # -----------------------------------------------
-APP_SERIVCES = {
-    "sessions": SessionMemoryBroker(CombatSession),
+APP_SERIVCES: typing.Mapping[str, Service] = {
+    "sessions00": SessionMemoryBroker(CombatSession),
+    "sessions01": SessionRedisBroker(
+        CombatSession,
+        "redis://default:redispw@localhost:32768"
+    ),
+    "sockets01": SocketMemoryBroker(SessionSocket)
 }
 
 # -----------------------------------------------
@@ -112,7 +120,7 @@ APP_SERIVCES = {
 # Initialize the application config in static
 # space.
 app = FastAPI(
-    root_path="/api/",
+    # root_path="/api/",
     title="Scryer",
     version="1.0.0",
     description="Interactive D&D combat companion REST API."
@@ -214,32 +222,34 @@ async def characters_find(
         query: str = Query("")):
     """List current characters on the field."""
 
-    query = json.loads(query) if query else None
+    statement = json.loads(query) if query else None #type: ignore
     found = await _sessions_find(session_uuid)
     data  = {
-        f[1].session_uuid: [
-            c[1] for c in await f[1].characters.locate(statement=query)]
-        for f in found
+        sxn.session_uuid: [
+            c for _,c in await sxn.characters.locate(statement=statement)]
+        for _,sxn in found
     }
 
     if session_uuid:
         data = data[session_uuid]
 
-    return sorted(data, key=lambda e: e.initiative)
+    return sorted(data, key=lambda c: c.initiative) #type: ignore
 
 
 @APP_ROUTERS["character"].get("/{session_uuid}/initiative")
-async def characters_find(session_uuid: UUID):
+async def characters_initiative(session_uuid: UUID):
     """
     List initiative order for characters on the
     field. For use by player so shows limited
     info.
     """
+
     _, session = (await _sessions_find(session_uuid))[0]
 
     initiatives = []
-    for c in sorted(session.characters, key=lambda c: c.initiative):
-        initiatives.append({"id": c.creature_id, "name": c.name,})
+    characters  = await session.characters.locate()
+    for _,c in sorted(characters, key=lambda c: c.initiative): #type: ignore
+        initiatives.append({"id": c.creature_id, "name": c.name}) #type: ignore
 
     return initiatives      
 
@@ -252,7 +262,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
     await _character_make(session_uuid, character)
     await _broadcast_pc_event(
         session_uuid,
-        events.ReceiveOrderUpdate,
+        events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
 
 
@@ -266,7 +276,7 @@ async def characters_push(
     await _character_make(session_uuid, character, character_uuid)
     await _broadcast_pc_event(
         session_uuid,
-        events.ReceiveOrderUpdate,
+        events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
 
 
@@ -279,7 +289,7 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
     await session.characters.delete(character_uuid)
     await _broadcast_pc_event(
         session_uuid,
-        events.ReceiveOrderUpdate,
+        events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
 
 
@@ -332,24 +342,15 @@ async def sessions_join(
 
     session: CombatSession
 
-    await sock.accept()
     _, session  = (await _sessions_find(session_uuid))[0]
     client_uuid = await session.attach_client(sock)
     if role is Role.PLAYER:
-        ch = CharacterV2(
-            conditions=[],
-            hit_points=hit_points or HitPoints(500, 500),
-            creature_id=client_uuid,
-            initiative=-1,
-            role=role,
-            name=name)
-        await _character_make(session_uuid, ch)
         await _broadcast_dm_event(
-            session_uuid,
-            events.ReceiveOrderUpdate)
+            request_uuid(session_uuid),
+            events.ReceiveOrderUpdate) #type: ignore
         await _broadcast_pc_event(
-            session_uuid,
-            events.ReceiveOrderUpdate,
+            request_uuid(session_uuid),
+            events.ReceiveOrderUpdate, #type: ignore
             body=events.EventBody())
 
     try:
@@ -370,9 +371,8 @@ async def sessions_join(
 async def sessions_find(session_uuid: UUID | None = None):
     """Attempt to fetch session(s)."""
 
-    locator = APP_SERIVCES["sessions"].locate
-    locator = locator(session_uuid) if session_uuid else locator()
-    return [sxn.session_uuid for _, sxn in await locator]
+    found = await _sessions_find(session_uuid)
+    return [sxn.session_uuid for _, sxn in found]
 
 
 @APP_ROUTERS["session"].post("/")
@@ -382,14 +382,17 @@ async def sessions_make():
     `session_uuid`.
     """
 
-    return (await APP_SERIVCES["sessions"].create())[0]
+    clients:  Broker[UUID, SessionSocket] = APP_SERIVCES["sockets01"] #type: ignore
+    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
+    return (await sessions.create(clients))[0] #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}")
 async def sessions_stop(session_uuid: UUID):
     """Ends an active session."""
 
-    await APP_SERIVCES["sessions"].delete(session_uuid)
+    sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions01"] #type: ignore
+    await sessions.delete(session_uuid)
 
 
 @APP_ROUTERS["session"].get("/{session_uuid}/player-input")
@@ -417,12 +420,12 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     session: CombatSession
 
     _, session = (await _sessions_find(session_uuid))[0]
-    session.events.append(body)
-    await _broadcast_dm_event(session_uuid, events.ReceiveRoll)
+    session.events.append(body) #type: ignore
+    await _broadcast_dm_event(session_uuid, events.ReceiveRoll) #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}/player-input")
-async def sessions_player_input_find(session_uuid: UUID):
+async def sessions_player_input_clear(session_uuid: UUID):
     """
     Get all player inputs.
     """
@@ -445,7 +448,7 @@ async def sessions_player_input_request(
 
     await _broadcast_pc_event(
         session_uuid,
-        events.RequestRoll,
+        events.RequestRoll, #type: ignore
         body)
 
 
@@ -460,7 +463,7 @@ async def sessions_player_secret(
     print(body)
     await _broadcast_pc_event(
         session_uuid,
-        events.ReceiveSecret,
+        events.ReceiveSecret, #type: ignore
         body)
 
 

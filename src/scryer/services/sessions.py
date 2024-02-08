@@ -1,12 +1,11 @@
 
 import abc, asyncio, functools, json, typing, uuid
-from typing import Mapping
 
 from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 from starlette.datastructures import QueryParams
 
-from scryer.creatures import CharacterV2, Creature, Role
+from scryer.creatures import CharacterV2, Creature, CreatureV2, Role
 from scryer.services.brokers import (
     Broker,
     ShelfBroker,
@@ -15,91 +14,79 @@ from scryer.services.brokers import (
 )
 from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
+from scryer.services.sockets import SessionSocket, SocketBroker
 from scryer.util import UUID, request_uuid
 from scryer.util.events import Event
 
 # Special types used only in `Session` specific
 # implementations.
-type ActionResult[C: WebSocket] = tuple[C, int]
+type ActionResult = tuple[WebSocket, int]
 """
 Result from a session action. Returns the
 connection and the number of bytes written to it.
 """
-type ActionAwaitable[C: WebSocket] = typing.Coroutine[None, None, ActionResult[C]]
+type ActionAwaitable = typing.Coroutine[None, None, ActionResult]
 """Awaitable `Action` type."""
-type Action[C, **P] = typing.Callable[typing.Concatenate[C, P], ActionAwaitable]
+type Action[**P] = typing.Callable[typing.Concatenate[WebSocket, P], ActionAwaitable]
 """
 An invokable action which modifies a client
 connection.
 """
 
 
-class SessionSocketParams(typing.TypedDict):
-    """
-    Represents query parameters from a socket
-    connection.
-    """
-
-    client_uuid: UUID
-    role:        Role
-
-
-class SessionSocket(WebSocket):
-    """
-    Purely representative type. Used to override
-    properties of `WebSocket` to more clearly
-    define what we should expecte from the object.
-    """
-
-    @property
-    def query_params(self) -> SessionSocketParams:
-        return super().query_params
-
-
-def event_action[C: SessionSocket, **P](action: Action[C, P]) -> Action[C, P]:
+def event_action[**P](action: Action[P]) -> Action[P]:
     """
     Wrap or decorate an action to only run if the
     action is event based.
     """
 
     @functools.wraps(action)
-    async def inner(client: C, event: Event, *args, **kwds):
+    async def inner(client: WebSocket, event: Event, *args, **kwds):
         # Only filters if 'send_to' is a truthy
         # collection of UUIDs.
         send_to     = event.send_to
         client_uuid = request_uuid(client.query_params["client_uuid"])
         if send_to and client_uuid not in send_to:
             return client, 0
-        return (await action(client, event, *args, **kwds))
+        return (await action(client, event, *args, **kwds)) #type: ignore
 
-    return inner
+    return inner #type: ignore
 
 
-def roled_action[C: SessionSocket, **P](
-        action: Action[C, P] | None = None,
+@typing.overload
+def roled_action[**P](
+    *,
+    roles: typing.Sequence[Role]) -> typing.Callable[[Action[P]], Action[P]]:
+    pass
+@typing.overload
+def roled_action[**P](
+    action: Action[P], *, roles: typing.Sequence[Role]) -> Action[P]:
+    pass
+def roled_action[**P]( #type: ignore
+        action: Action[P] | None = None,
         *,
-        roles: typing.Sequence[Role]) -> Action[C, P]:
+        roles: typing.Sequence[Role]):
     """
     Wrap or decorate an action to only run if the
     client `Role` matches the declared role(s).
     """
 
-    def wrapper(inner_action: Action[C, P]):
+    def wrapper(inner_action: Action[P]) -> Action[P]:
 
         @functools.wraps(inner_action)
-        async def inner(client: C, *args, **kwds):
+        async def inner(client, *args, **kwds):
             if client.query_params['role'] not in roles:
                 return client, 0
             return (await inner_action(client, *args, **kwds))
 
-        return inner
+        return inner #type: ignore
 
     if action:
         return wrapper(action)
     return wrapper
 
 
-async def send_event_action[C: SessionSocket](sock: C, event: Event):
+async def send_event_action(sock: WebSocket, event: Event) -> ActionResult:
     """
     Generic action which sends an event to a
     client connection
@@ -109,7 +96,7 @@ async def send_event_action[C: SessionSocket](sock: C, event: Event):
     if "event_body" in dump and not dump["event_body"]:
         # Event body was empty. Most likely due to
         # an issue with model inheritence.
-        event_body = event.event_body.model_dump()
+        event_body = event.event_body.model_dump() #type: ignore
         if isinstance(event_body, dict) and "client_uuids" in event_body:
             event_body["client_uuids"] = [
                 str(u) for u in event_body["client_uuids"]
@@ -122,9 +109,9 @@ async def send_event_action[C: SessionSocket](sock: C, event: Event):
 
 @event_action
 @roled_action(roles=[Role.DUNGEON_MASTER])
-async def dm_send_event_action[C: SessionSocket](
-        sock: C,
-        event: Event):
+async def dm_send_event_action(
+        sock: WebSocket,
+        event: Event) -> ActionResult:
     """
     Send an event action to the dungeon master.
     """
@@ -134,7 +121,9 @@ async def dm_send_event_action[C: SessionSocket](
 
 @event_action
 @roled_action(roles=[Role.PLAYER])
-async def pc_send_event_action[C: SessionSocket](sock: C, event: Event):
+async def pc_send_event_action(
+    sock: WebSocket,
+    event: Event) -> ActionResult:
     """
     Send an event action to the dungeon master.
     """
@@ -142,7 +131,7 @@ async def pc_send_event_action[C: SessionSocket](sock: C, event: Event):
     return (await send_event_action(sock, event))
 
 
-class Session[C: WebSocket](Service):
+class Session[C: SessionSocket](Service):
     """
     Active session that manages connections and
     action requests available to users.
@@ -150,18 +139,31 @@ class Session[C: WebSocket](Service):
 
     # Set is an array of hashable objects that are
     # unique. Much like a mathematical set.
-    _clients: dict[UUID, C]
+    _clients: SocketBroker
 
     @classmethod
     @abc.abstractmethod
-    def from_mapping(cls, mapping: typing.Mapping[str, str]) -> typing.Self:
+    def from_mapping(
+            cls,
+            inst: typing.Mapping[str, typing.Any],
+            *,
+            client_broker: SocketBroker | None = None) -> typing.Self:
         """
-        Create a session instance from a mapping.
+        Digest a mapping representation into a
+        session instance.
         """
 
     @classmethod
     @abc.abstractmethod
-    def new_instance(cls) -> typing.Self:
+    def into_mapping(cls, inst: typing.Self) -> typing.Mapping[str, typing.Any]:
+        """
+        Digest a session instance into a mapping
+        representation.
+        """
+
+    @classmethod
+    @abc.abstractmethod
+    def new_instance(cls, client_broker: SocketBroker) -> typing.Self:
         """Creates a new session instance."""
 
     @property
@@ -171,7 +173,7 @@ class Session[C: WebSocket](Service):
         return uuid.UUID()
 
     @property
-    def clients(self) -> dict[UUID, C]:
+    def clients(self) -> SocketBroker:
         """Active client connections."""
 
         return self._clients
@@ -179,40 +181,40 @@ class Session[C: WebSocket](Service):
     async def attach_client(self, client: C) -> UUID:
         """Process a `connect` request."""
 
-        query_params = dict()
-        query_params["client_uuid"] = request_uuid()
-        # QueryParams objects are immutable and
-        # not cloneable. For whatever reason,
-        # WebSockets tries to enforce this while
-        # hiding behind a property attr.
-        #
-        # This is barbaric, and not best practice,
-        # but it's what we are going with for now.
-        for key, value in client.query_params.items():
-            query_params[key] = value
-
-        client._query_params = QueryParams(query_params)
-        self.clients[query_params["client_uuid"]] = client
-        return query_params["client_uuid"]
+        client_uuid = (await self.clients.create(client))[0]
+        client.cookies["session_uuid"] = self.session_uuid
+        return client_uuid
 
     # TODO: Find different verboge for filtered
     # action sending.
     async def broadcast_action[**P](
             self,
-            action: Action[C, P], **kwds) -> typing.Sequence[ActionResult]:
+            action: Action[P], **kwds) -> typing.Sequence[ActionResult]:
         """
         Do an action against all connections.
         Returns the number of bytes sent to each
         client.
         """
 
+        filter_statement = {
+            "logic": "and",
+            "rules": [
+                {
+                    "field": "session_uuid",
+                    "operator": "eq",
+                    "value": self.session_uuid
+                }
+            ]
+        }
+        found = await self.clients.locate(statement=filter_statement) # type: ignore
+
         async with asyncio.TaskGroup() as tg:
             results = [
-                tg.create_task(self.do_action(c, action, **kwds))
-                for c in self.clients.values()
+                tg.create_task(self.do_action(c, action, **kwds)) #type: ignore
+                for _, c in found
             ]
 
-        return tuple(results)
+        return tuple([r.result() for r  in results])
 
     async def delete(self):
         """
@@ -220,22 +222,44 @@ class Session[C: WebSocket](Service):
         required cleanup.
         """
 
+        filter_statement = {
+            "logic": "and",
+            "rules": [
+                {
+                    "field": "session_uuid",
+                    "operator": "eq",
+                    "value": self.session_uuid
+                }
+            ]
+        }
+        found = await self.clients.locate(statement=filter_statement) #type: ignore
+
         async with asyncio.TaskGroup() as tg:
             [
-                tg.create_task(self.detach_client(c))
-                for c in self.clients.values()
+                tg.create_task(self.detach_client(c)) #type: ignore
+                for _, c in found
             ]
-        self.clients.clear()
 
     async def detach_client(self, client: C):
         """Disconnect a client."""
 
+        filter_statement = {
+            "logic": "and",
+            "rules": [
+                {
+                    "field": "session_uuid",
+                    "operator": "eq",
+                    "value": self.session_uuid
+                }
+            ]
+        }
+        found = await self.clients.locate(statement=filter_statement) #type: ignore
         client_uuid = [ # This will throw an index
                         # error if the client
                         # doesn't exist.
-            cuid for cuid, c in self.clients.items() if c is client][0]
+            cuid for cuid, c in found if c is client][0]
 
-        client = self.clients.pop(client_uuid)
+        await self.clients.delete(client_uuid)
         if client.client_state is WebSocketState.DISCONNECTED:
             return
         await client.close()
@@ -243,7 +267,7 @@ class Session[C: WebSocket](Service):
     async def do_action[**P](
             self,
             client: C,
-            action: Action[C, P], **kwds) -> ActionResult:
+            action: Action[P], **kwds) -> ActionResult:
         """
         Serve an action to the target client
         connection.
@@ -254,11 +278,6 @@ class Session[C: WebSocket](Service):
             return client, 0
         return (await action(client, **kwds)) #type: ignore
 
-    def into_mapping(self) -> typing.Mapping[str, str]:
-        """Digest this session into a mapping."""
-
-        return {"clients": self.clients}
-
 
 class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid: UUID
@@ -266,35 +285,13 @@ class CombatSession[C: SessionSocket](Session[C]):
     _events:       typing.MutableSequence[Event]
 
     @classmethod
-    def from_mapping(cls, mapping: typing.Mapping) -> typing.Self:
-        inst = cls()
-        inst._session_uuid = mapping.get("session_uuid", request_uuid())
-        inst._clients      = mapping.get("clients", dict())
-        inst._events       = mapping.get("events", list())
-
-        # TODO: need to be able to handle
-        # creatures in  a non-in-memory way.
-        inst._characters   = CreaturesMemoryBroker(CharacterV2)
-        inst._characters.resource_map = mapping.get("characters", dict())
-
-        return inst
-
-    @classmethod
-    def new_instance(cls) -> typing.Self:
+    def new_instance(cls, client_broker: SocketBroker) -> typing.Self:
         inst = cls()
         inst._session_uuid = request_uuid()
-        inst._clients      = dict()
+        inst._clients      = client_broker
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
         inst._events       = []
         return inst
-
-    def into_mapping(self) -> Mapping[str, str]:
-        return {
-            "clients": self.clients.into_mapping(),
-            "session_uuid": self.session_uuid,
-            "events": self.events,
-            "characters": self.characters
-        }
 
     @property
     def characters(self) -> Broker[UUID, Creature]:
@@ -320,6 +317,30 @@ class CombatSession[C: SessionSocket](Session[C]):
             return ServiceStatus.FAILING
         return ServiceStatus.OFFLINE
 
+    async def attach_client(self, client: C) -> UUID:
+        ch: CreatureV2
+        client_uuid = await super().attach_client(client)
+        if client.query_params["role"] is Role.DUNGEON_MASTER:
+            return client_uuid
+
+        if (found := await self.characters.locate(client_uuid)): #type: ignore
+            _, ch = found[0] #type: ignore
+            ch.creature_id = client_uuid
+        else:
+            # Pylance is refusing to admit
+            # CharacterV2 is a child of Creature.
+            ch = CharacterV2(
+                conditions=[], # type: ignore
+                hit_points=client.query_params.get("hit_points", None), # type: ignore
+                creature_id=client_uuid, # type: ignore
+                initiative=0, # type: ignore
+                role=client.query_params.get("role", Role.NON_PLAYER), # type: ignore
+                name=client.query_params.get("name", "nameless") # type: ignore
+            )
+
+        await self.characters.modify(client_uuid, ch) #type: ignore
+        return client_uuid
+
 
 class SessionMemoryBroker(MemoryBroker[UUID, Session]):
     """
@@ -327,14 +348,12 @@ class SessionMemoryBroker(MemoryBroker[UUID, Session]):
     and maintaining `Session` objects.
     """
 
-    async def create(self):
-        session      = self.resource_cls.new_instance()
+    @typing.override
+    async def create(self, client_broker: SocketBroker):
+        session      = self.resource_cls.new_instance(client_broker)
         session_uuid = session.session_uuid
         self.resource_map[session_uuid] = session
         return (session_uuid, session)
-
-    async def modify(self, key: UUID, resource: Session):
-            self.resource_map[key] = resource
 
 
 class SessionRedisBroker(RedisBroker[UUID, Session]):
@@ -344,17 +363,20 @@ class SessionRedisBroker(RedisBroker[UUID, Session]):
     semi-persistent state.
     """
 
-    async def create(self):
-        session      = self.resource_cls.new_instance()
+    @typing.override
+    async def create(self, client_broker: SocketBroker):
+        session      = self.resource_cls.new_instance(client_broker)
         session_uuid = session.session_uuid
 
-        key = f"{self.resource_cls.__name__}:{session_uuid!s}"
-        self.redis_client.hset(key, mapping=session.into_mapping())
+        rkey = f"{self.resource_cls.__name__}:{session_uuid!s}"
+        rdat = json.dumps(session.into_mapping(session))
+        self.redis_client.set(rkey, rdat)
         return (session_uuid, session)
 
     async def modify(self, key: UUID, resource: Session):
-        key = f"{self.resource_cls.__name__}:{resource.session_uuid!s}"
-        self.redis_client.hset(key, mapping=resource.into_mapping())
+        rkey = f"{self.resource_cls.__name__}:{resource.session_uuid!s}"
+        rdat = json.dumps(resource.into_mapping(resource))
+        self.redis_client.set(rkey, rdat)
 
 
 class SessionShelver(ShelfBroker[Session]):
@@ -370,8 +392,9 @@ class SessionShelver(ShelfBroker[Session]):
     development.
     """
 
-    async def create(self) -> tuple[str, Session]:
-        session      = self.resource_cls.new_instance()
+    @typing.override
+    async def create(self, client_broker: SocketBroker) -> tuple[str, Session]:
+        session      = self.resource_cls.new_instance(client_broker)
         session_uuid = str(session.session_uuid)
         with self as opened:
             opened.shelf[session_uuid] = session
