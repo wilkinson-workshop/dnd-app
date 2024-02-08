@@ -37,7 +37,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState(1);
-    const [name, setName] = useState('Character');
+    const [name, setName] = useState('Creature');
     const [conditions, setConditions] = useState<string[]>([]);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
@@ -118,14 +118,14 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 const isAdd = result[3] == '+';
                 const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
 
-                const maxHp = randomNumber(multiple + addition, (count*multiple + addition));
+                const min =  isAdd ? (count + addition) : (count - addition)
+                const max = isAdd ? (count*multiple + addition) : (count*multiple - addition)
+
+                const maxHp = randomNumber(min, max);
                 setCurrentHp(maxHp);
                 setMaxHp(maxHp);
             }
-
-        }
-
-        
+        }        
     }
 
     function handleCancel(): void {
@@ -138,8 +138,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         setInitiative(1);
         setCurrentHp(1);
         setMaxHp(1);
-        setName('Character')
+        setName('Creature')
         setConditions([]);
+        setMonsterInfo(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
@@ -165,8 +166,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const hpEdit =  () => {
         if(existingCharacter == null){
            return (<>
-                <TextField sx={{maxWidth: 150}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
-                <TextField sx={{maxWidth: 150}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
             </>);
         } else if(isPlayer){
             return (
@@ -193,25 +195,31 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
             </Box>
-            <Box>
+            {existingCharacter ? '' 
+            : (<Box>
                 <Autocomplete
                     id="monster"
                     freeSolo
                     autoSelect
                     sx={{ width: 300 }}
-                    onChange={(e, v) =>
-                        setMonster(v!)}
+                    onChange={(e, v) => {
+                        setMonster(v!);
+                        if(v != null)
+                            setName(v!);
+                        else 
+                            setName('Creature');
+                    }}
                     options={monsterOptions.map((option) => option.name)}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
-            </Box>
+            </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
-            <Box>
-                Hit Points Roll: {monsterInfo?.hit_points_roll}
-                <Button variant="contained" onClick={generateHp}>Generate HP</Button>
-            </Box>
+            {existingCharacter ? '' 
+            : (<Box>
+                Hit Points Roll: {monsterInfo?.hit_points_roll}                
+            </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 {hpEdit()}
             </Box>

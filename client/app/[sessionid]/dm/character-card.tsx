@@ -115,19 +115,19 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
     <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
       <Box>
         <Grid container spacing={2}>
-          <Grid item xs={1}>
+          <Grid item xs={1} sm={1}>
             <Item>{character.initiative }</Item>
           </Grid>
-          <Grid item xs={2}>
+          <Grid item xs={5} sm={3}>
             <Item>{character.name}</Item>
           </Grid>
-          <Grid item xs={3}>
+          <Grid item xs={6} sm={3}>
             <Item><CharacterHp character={character}/></Item>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={8} sm={3}>
             <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
           </Grid>
-          <Grid item xs={2}>
+          <Grid item xs={4} sm={2}>
             <Item style={{"textAlign": "right"}}>
               <IconButton aria-label="edit" onClick={() => updateCharacterButton(character)}>
                 <EditIcon />
