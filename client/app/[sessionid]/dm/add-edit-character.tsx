@@ -11,8 +11,6 @@ import { HpAdjust } from "./hp-adjust";
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-import { RsvpOutlined } from "@mui/icons-material";
-
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -98,14 +96,26 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             name: name, 
             hit_points: [currentHp, maxHp],
             conditions: conditions,
-            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer
+            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer,
+            monster: existingCharacter ? existingCharacter.monster : monsterInfo!.index
         });
         resetForm();
     }
 
     function randomNumber(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateInitiative(): void {
+        if(monsterInfo){
+            const dex = monsterInfo.dexterity;
+            const min =  1;
+            const add = Math.floor((dex - 10)/2);
+
+            const init = randomNumber(min, 20);
+            setInitiative(init + add);
         }
+    }
 
     function generateHp(): void {
         if(monsterInfo){
@@ -138,7 +148,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         setInitiative(1);
         setCurrentHp(1);
         setMaxHp(1);
-        setName('Creature')
+        setName('Creature');
+        setMonster('')
         setConditions([]);
         setMonsterInfo(null);
     }
@@ -192,9 +203,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     <>
         <Box sx={{width: '100%'}}>
             <h2>{existingCharacter ? `Edit ${existingCharacter.name}`: 'Add New Character'} </h2>
-            <Box sx={{margin: '10px 0'}}>
-                <TextField sx={{ width: 300 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
-            </Box>
             {existingCharacter ? '' 
             : (<Box>
                 <Autocomplete
@@ -213,6 +221,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>)}
+            <Box sx={{margin: '10px 0'}}>
+                <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
+            </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>

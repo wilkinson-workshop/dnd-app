@@ -58,6 +58,7 @@ class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     initiative:  int
     name:        str | None = None
     role:        Role = Role.NON_PLAYER
+    monster:     str | None = None
 
     @property
     def creature_uuid(self):

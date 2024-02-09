@@ -8,7 +8,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/conditions`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {
@@ -22,7 +23,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/conditions/${condition}`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {
@@ -36,7 +38,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/skills`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {
@@ -50,7 +53,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/skills/${skill}`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {
@@ -65,7 +69,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/monsters`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {
@@ -79,7 +84,8 @@ export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/monsters/${monster}`, {
       headers:{
         'Content-Type': 'application/json',
-      }
+      }, 
+      cache: 'force-cache'
     });
     
     if (!res.ok) {

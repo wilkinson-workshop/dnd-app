@@ -4,7 +4,8 @@ export interface Character {
     initiative: number,
     hit_points: number[],
     role: CharacterType,
-    conditions: string[]
+    conditions: string[],
+    monster: string | null
 }
 
 export enum CharacterType{

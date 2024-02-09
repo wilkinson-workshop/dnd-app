@@ -356,6 +356,7 @@ async def sessions_join(
             creature_id=client_uuid,
             initiative=-1,
             role=role,
+            monster=None,
             name=name)
         await _character_make(session_uuid, ch)
         await _broadcast_dm_event(

@@ -1,14 +1,18 @@
 import type { Identifier, XYCoord } from 'dnd-core'
 import type { FC } from 'react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { ItemTypes } from './item-types'
-import { Character } from '@/app/_apis/character'
+import { Character, CharacterType } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './character-conditions'
 import { Box, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
+import InfoIcon from '@mui/icons-material/Info';
+import { getMonster } from '@/app/_apis/dnd5eApi'
+import { Monster } from '@/app/_apis/dnd5eTypings'
+import { MonsterInfoDialog } from './monster-dialog'
 
 const style = {
   border: '1px solid lightgray',
@@ -32,6 +36,13 @@ interface DragItem {
 }
 
 export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton, deleteCharacter }) => {
+  const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+  
   const ref = useRef<HTMLDivElement>(null)
   const [{ handlerId }, drop] = useDrop<
     DragItem,
@@ -102,7 +113,19 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
     collect: (monitor: any) => ({
       isDragging: monitor.isDragging(),
     }),
-  })
+  });
+
+  function getMonsterInfo(monsterId: string){    
+    if(monsterInfo){
+      setOpen(true);
+    } else {    
+      getMonster(monsterId)
+      .then(m => {
+        setMonsterInfo(m);
+        setOpen(true);
+      });
+    }
+  }
 
   const Item = styled(Box)(({ theme }) => ({
     padding: theme.spacing(1),  
@@ -112,6 +135,12 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
   const opacity = isDragging ? 0 : 1
   drag(drop(ref))
   return (
+    <>
+    <MonsterInfoDialog
+      open={open}
+      monsterInfo={monsterInfo!}
+      onClose={handleClose}
+    /> 
     <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
       <Box>
         <Grid container spacing={2}>
@@ -119,7 +148,15 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
             <Item>{character.initiative }</Item>
           </Grid>
           <Grid item xs={5} sm={3}>
-            <Item>{character.name}</Item>
+            <Item>
+              {character.name}
+              {
+                character.role == CharacterType.NonPlayer ? 
+                (<IconButton aria-label="delete" onClick={() => getMonsterInfo(character.monster!)}>
+                      <InfoIcon />
+                  </IconButton>) : ''
+              }
+            </Item>                        
           </Grid>
           <Grid item xs={6} sm={3}>
             <Item><CharacterHp character={character}/></Item>
@@ -140,5 +177,5 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
         </Grid>
       </Box>
     </div>
-  )
+    </>);
 }
