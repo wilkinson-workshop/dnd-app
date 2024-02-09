@@ -65,8 +65,11 @@ export async function getAllConditions(): Promise<GetAll> {
   } 
 
 
-  export async function getAllMonsters(): Promise<GetAll> {
-    const res = await fetch(`${apiBaseUrl}/monsters`, {
+  export async function getAllMonsters(ratings: string[]): Promise<GetAll> {
+    const ratingsQueryString = ratings.map(r => `challenge_rating=${r}`);
+    const query = ratings.length == 0 ? '' : `?${ratingsQueryString.join('&')}`;
+
+    const res = await fetch(`${apiBaseUrl}/monsters${query}`, {
       headers:{
         'Content-Type': 'application/json',
       }, 

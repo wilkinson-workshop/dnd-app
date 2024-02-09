@@ -71,7 +71,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     }, [existingCharacter]);
 
     function getMonsterOptions(){
-        getAllMonsters()
+        getAllMonsters([])
         .then(m => {
             setMonsterOptions(m.results);
         });
