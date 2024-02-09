@@ -1,6 +1,6 @@
-import { FC, FormEvent, useEffect, useState } from "react";
-import { Character, CharacterType, ConditionOptions, ConditionType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
-import { Box, Button, TextField } from "@mui/material";
+import { FC, FormEvent, useContext, useEffect, useState } from "react";
+import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
+import { Autocomplete, Box, Button, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
@@ -8,7 +8,9 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { HpAdjust } from "./hp-adjust";
-
+import { ConditionsContext } from "./page";
+import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
+import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -29,13 +31,33 @@ export interface AddCharacterProps{
 
 export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClick, onCancelClick}) => {
     const [edit, onEdit] = useState(false);
+    const [monster, setMonster] = useState('')
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState(1);
-    const [name, setName] = useState('Character');
-    const [conditions, setConditions] = useState<ConditionType[]>([]);
+    const [name, setName] = useState('Creature');
+    const [conditions, setConditions] = useState<string[]>([]);
+    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
+    const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
+
+    const conditionOptions = useContext(ConditionsContext);
 
     const isPlayer = existingCharacter ? existingCharacter.role == CharacterType.Player : false;
+
+    useEffect(() => {
+        getMonsterOptions();
+    }, []);
+
+    useEffect(() => {
+        if(monster != ''){
+            let index = monsterOptions.find(x => x.name == monster)?.index;
+            if(index){
+                getMonsterInfo(index);
+            } else {
+                setMonsterInfo(null);
+            }
+        }
+    },[monster]);
 
     useEffect(() => {
         if(existingCharacter != null){
@@ -46,7 +68,19 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             setConditions(existingCharacter.conditions);
             onEdit(true);
         }
-    }, [existingCharacter])
+    }, [existingCharacter]);
+
+    function getMonsterOptions(){
+        getAllMonsters([])
+        .then(m => {
+            setMonsterOptions(m.results);
+        });
+    }
+
+    function getMonsterInfo(monsterId: string){        
+        getMonster(monsterId)
+        .then(m => setMonsterInfo(m));
+    }
 
 
     function handleSubmit(): void {
@@ -61,10 +95,47 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             initiative: initiative,
             name: name, 
             hit_points: [currentHp, maxHp],
-            conditions:conditions,
-            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer
+            conditions: conditions,
+            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer,
+            monster: existingCharacter ? existingCharacter.monster : monsterInfo!.index
         });
         resetForm();
+    }
+
+    function randomNumber(min: number, max: number): number {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateInitiative(): void {
+        if(monsterInfo){
+            const dex = monsterInfo.dexterity;
+            const min =  1;
+            const add = Math.floor((dex - 10)/2);
+
+            const init = randomNumber(min, 20);
+            setInitiative(init + add);
+        }
+    }
+
+    function generateHp(): void {
+        if(monsterInfo){
+            const strValue = monsterInfo.hit_points_roll;
+            var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
+            const result = values.exec(strValue);
+            if(result){
+                const count = Number.parseInt(result[1]);
+                const multiple = Number.parseInt(result[2]);
+                const isAdd = result[3] == '+';
+                const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
+
+                const min =  isAdd ? (count + addition) : (count - addition)
+                const max = isAdd ? (count*multiple + addition) : (count*multiple - addition)
+
+                const maxHp = randomNumber(min, max);
+                setCurrentHp(maxHp);
+                setMaxHp(maxHp);
+            }
+        }        
     }
 
     function handleCancel(): void {
@@ -77,8 +148,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         setInitiative(1);
         setCurrentHp(1);
         setMaxHp(1);
-        setName('Character')
+        setName('Creature');
+        setMonster('')
         setConditions([]);
+        setMonsterInfo(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
@@ -87,7 +160,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         } = event;  
         setConditions(  
             // On autofill we get a stringified value.  
-            typeof value === 'string' ? [ConditionType.Asleep] : value,  
+            typeof value === 'string' ? value.split(',') : value,  
         );  
     }; 
 
@@ -106,6 +179,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
            return (<>
                 <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
                 <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
             </>);
         } else if(isPlayer){
             return (
@@ -129,12 +203,35 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     <>
         <Box sx={{width: '100%'}}>
             <h2>{existingCharacter ? `Edit ${existingCharacter.name}`: 'Add New Character'} </h2>
+            {existingCharacter ? '' 
+            : (<Box>
+                <Autocomplete
+                    id="monster"
+                    freeSolo
+                    autoSelect
+                    sx={{ width: 300 }}
+                    onChange={(e, v) => {
+                        setMonster(v!);
+                        if(v != null)
+                            setName(v!);
+                        else 
+                            setName('Creature');
+                    }}
+                    options={monsterOptions.map((option) => option.name)}
+                    renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
+                />
+            </Box>)}
             <Box sx={{margin: '10px 0'}}>
-                <TextField size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <TextField size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
+                <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
+            {existingCharacter ? '' 
+            : (<Box>
+                Hit Points Roll: {monsterInfo?.hit_points_roll}                
+            </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 {hpEdit()}
             </Box>
@@ -150,10 +247,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                         input={<OutlinedInput size="small" label="Conditions" />}  
                         MenuProps={MenuProps}  
                     >  
-                        {ConditionOptions.map(c =>  
+                        {conditionOptions.map(c =>  
                         <MenuItem  
-                            key={c.id}  
-                            value={c.id} 
+                            key={c.index}  
+                            value={c.index} 
                         >  
                             {c.name}  
                         </MenuItem>  

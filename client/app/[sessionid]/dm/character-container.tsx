@@ -4,7 +4,8 @@ import { useCallback, useState } from 'react'
 import { Card } from './character-card'
 import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
 import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { AddCharacter } from './add-edit-character'
+import { AddCharacter } from './add-edit-character';
+import { AddRandomCharacter } from './add-random-character'
 
 const style = {
     minHeight: '30px',
@@ -25,7 +26,7 @@ export interface ContainerProps{
 export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) => {
 
   const [cards, setCards] = useState<Character[] | null>(null);
-  const [characterEdit, setCharacterEdit] = useState<Character | null>(null)
+  const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
   if(cards == null  || reload){
     reloadDone();
@@ -71,6 +72,13 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
     }
   }
 
+  function handleAddMultipleCharacters(characters: Character[]){
+    const addAll = characters.map(c => addCharacter(sessionId, c));
+
+    Promise.all(addAll)
+    .then(_ => reloadList());
+  }
+
   const renderCard = useCallback(
     (card: Character, index: number) => {
       return (
@@ -97,7 +105,8 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
         )        
       }
       </div>        
-      <AddCharacter existingCharacter={characterEdit} onAddClick={handleAddCharacter} onCancelClick={() => setCharacterEdit(null)} />         
+      <AddCharacter existingCharacter={characterEdit} onAddClick={handleAddCharacter} onCancelClick={() => setCharacterEdit(null)} />
+      <AddRandomCharacter onAddClick={handleAddMultipleCharacters} onCancelClick={() => setCharacterEdit(null)} />
     </>
   )
 }

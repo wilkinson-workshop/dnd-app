@@ -58,7 +58,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
             <Box sx={{width: '100%'}}>
                 <h2>Player Input Request</h2>
                 <Box sx={{margin: '10px 0'}}>
-                    <TextField onChange={e => setSecretMsg(e.target.value)} label="Secret" size="small" variant="outlined" />
+                    <TextField sx={{ width: 300 }} onChange={e => setSecretMsg(e.target.value)} label="Secret" size="small" variant="outlined" />
                 </Box>
                 <Box sx={{margin: '10px 0'}}>
                     <FormControl sx={{ width: 300 }}>

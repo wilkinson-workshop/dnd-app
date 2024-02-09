@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
@@ -15,13 +15,21 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
+import { createContext } from 'react';
+import { getAllConditions } from '@/app/_apis/dnd5eApi';
+import { APIReference } from '@/app/_apis/dnd5eTypings';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
+
+export const ConditionsContext = createContext<APIReference[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
+
+  const [conditions, conditionsDispatch] = useReducer(setInitialConditions, []);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
@@ -33,9 +41,22 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
     name: 'DM'
   }});
 
+  function setInitialConditions(conditions: any[], updated: APIReference[]){
+    return updated;
+  }
+
   useEffect(() => {
     loadPlayerOptions();
+    getConditionOptions();
   }, []);
+
+  function getConditionOptions(){
+    getAllConditions()
+    .then(c => 
+      conditionsDispatch(c.results));
+  }
+
+
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
@@ -91,13 +112,16 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         <a href={`${playerJoinUrl}/qr`} target='_blank'>
           Show QR code
         </a>
-        <a href={playerJoinUrl} target='_blank'>
+        { showDeveloperUI ?
+        (<a href={playerJoinUrl} target='_blank'>
           Player Join
-        </a>
+        </a>) : ''}
       </div> 
-      <DndProvider backend={HTML5Backend}>
-        <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
-      </DndProvider>
+      <ConditionsContext.Provider value={conditions}>
+        <DndProvider backend={HTML5Backend}>
+          <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
+        </DndProvider>
+      </ConditionsContext.Provider>
       <Box sx={{margin: '20px 0'}}>
         <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
         <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />

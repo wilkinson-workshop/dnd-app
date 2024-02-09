@@ -2,13 +2,12 @@ __all__ = (
     "Creature",
     "CreatureV2",
     "CreatureModel",
-    "Condition",
     "HitPoints",
     "Role",
     "User"
 )
 
-from scryer.creatures.attrs import Condition, HitPoints, Role
+from scryer.creatures.attrs import HitPoints, Role
 from scryer.creatures.creature import (
     Creature,
     CreatureV2,
