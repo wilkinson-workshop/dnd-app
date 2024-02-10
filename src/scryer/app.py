@@ -367,10 +367,6 @@ async def sessions_join(
             # clients via this event loop.
             data = await sock.receive_text()
     except (WebSocketDisconnect, RuntimeError):
-        # Must ensure invalid/disconnected
-        # clients are removed.
-        if role is Role.PLAYER:
-            await session.characters.delete(client_uuid)
         await session.detach_client(sock)
 
 
