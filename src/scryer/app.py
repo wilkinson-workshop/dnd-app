@@ -33,7 +33,8 @@ from scryer.services import (
     SessionRedisBroker,
     SessionSocket,
     SocketMemoryBroker,
-    sessions
+    sessions,
+    send_event_action
 )
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
@@ -44,12 +45,6 @@ from scryer.util.events import *
 EXECUTION_ROOT   = pathlib.Path.cwd()
 APPLICATION_ROOT = pathlib.Path(__file__).parent
 SOURCE_ROOT      = APPLICATION_ROOT.parent
-
-
-class CreaturesFilter(typing.TypedDict):
-    hit_points: int
-    role:       typing.Sequence[Role]
-    condition:  typing.Sequence[Condition]
 
 
 async def _broadcast_client_event[**P](
@@ -362,6 +357,9 @@ async def sessions_join(
             body=events.EventBody())
 
     try:
+        await send_event_action(
+            sock,
+            ReceiveClientUUID(ClientUUID(client_uuid=client_uuid)))
         while True:
             # TODO: need to accept messages from
             # clients via this event loop.

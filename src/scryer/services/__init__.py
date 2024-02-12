@@ -21,7 +21,8 @@ __all__ = (
     "SessionSocket",
     "ShelfBroker",
     "SocketBroker",
-    "SocketMemoryBroker"
+    "SocketMemoryBroker",
+    "send_event_action"
 )
 
 from scryer.services.brokers import (
@@ -39,7 +40,8 @@ from scryer.services.sessions import (
     Session,
     SessionMemoryBroker,
     SessionRedisBroker,
-    SessionShelver
+    SessionShelver,
+    send_event_action
 )
 from scryer.services.sockets import (
     SessionSocket,

@@ -78,7 +78,12 @@ def compose_validator(statement: FilterStatement) -> FilterValidator:
             field_parts = f["field"].split(".")
             obj_value   = getattr(obj, field_parts[0])
             for part in field_parts[1:]:
-                obj_value = getattr(obj_value, part, "NOT_FOUND")
+
+                if isinstance(obj_value, dict):
+                    obj_value = obj_value.get(part, "NOT_FOUND")
+                else:
+                    obj_value = getattr(obj_value, part, "NOT_FOUND")
+
                 if obj_value == "NOT_FOUND":
                     return False
 

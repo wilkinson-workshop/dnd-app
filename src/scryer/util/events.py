@@ -6,7 +6,9 @@ from scryer.util import UUID
 
 __all__ = (
     "Event",
+    "ClientUUID",
     "Message",
+    "ReceiveClientUUID",
     "ReceiveOrderUpdate",
     "ReceiveRoll",
     "ReceiveSecret",
@@ -37,6 +39,7 @@ class EventType(enum.StrEnum):
     """
 
     MESSAGE              = enum.auto()
+    RECEIVE_CLIENT_UUID  = enum.auto()
     RECEIVE_ORDER_UPDATE = enum.auto()
     RECEIVE_ROLL         = enum.auto()
     RECEIVE_SECRET       = enum.auto()
@@ -70,6 +73,10 @@ class PlayerInput(EventBody):
 
     value: int
     name:  str
+
+
+class ClientUUID(EventBody):
+    client_uuid: UUID
 
 
 class RequestPlayerInput(EventBody):
@@ -108,6 +115,10 @@ def NewEvent(
 
 def Message(body: EventBody, **kwds):
     return NewEvent(EventType.MESSAGE, body, **kwds)
+
+
+def ReceiveClientUUID(body: EventBody, **kwds):
+    return NewEvent(EventType.RECEIVE_CLIENT_UUID, body, **kwds)
 
 
 def ReceiveOrderUpdate(body: EventBody, **kwds):

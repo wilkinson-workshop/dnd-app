@@ -47,7 +47,7 @@ def event_action[**P](action: Action[P]) -> Action[P]:
         # Only filters if 'send_to' is a truthy
         # collection of UUIDs.
         send_to     = event.send_to
-        client_uuid = request_uuid(client.query_params["client_uuid"])
+        client_uuid = request_uuid(client.cookies["client_uuid"])
         if send_to and client_uuid not in send_to:
             return client, 0
         return (await action(client, event, *args, **kwds)) #type: ignore
@@ -174,13 +174,15 @@ class Session[C: SessionSocket](Service):
             return request_uuid()
 
         found = []
-        if (client_uuid := cookies.get("client_uuid", None)):
+        client_uuid = cookies.get("client_uuid", None)
+        if client_uuid:
             found = await self.clients.locate(client_uuid)
 
-        if found and (client_uuid := cookies.get("client_uuid", None)):
+        if found:
             await self.clients.modify(client_uuid, client)
         else:
             client_uuid = (await self.clients.create(client))[0]
+            client.cookies["client_uuid"]  = client_uuid
             client.cookies["session_uuid"] = self.session_uuid
 
         return client_uuid
@@ -298,7 +300,7 @@ class CombatSession[C: SessionSocket](Session[C]):
         stats       = [st.status for st in (self.characters,)]
         valid_stats = (ServiceStatus.ACTIVE, ServiceStatus.ONLINE)
         validator   = lambda fn: fn((stat in valid_stats for stat in stats))
-        
+
         if validator(all):
             return ServiceStatus.ONLINE
         if validator(any):
@@ -320,10 +322,10 @@ class CombatSession[C: SessionSocket](Session[C]):
             # CharacterV2 is a child of Creature.
             ch = CharacterV2(
                 conditions=[], # type: ignore
-                hit_points=client.query_params.get("hit_points", [0, 0]), # type: ignore
+                hit_points=client.query_params.get("hit_points", [100, 100]), # type: ignore
                 creature_id=client_uuid, # type: ignore
                 initiative=0, # type: ignore
-                role=client.query_params.get("role", Role.NON_PLAYER), # type: ignore
+                role=client.query_params.get("role", Role.PLAYER), # type: ignore
                 name=client.query_params.get("name", "nameless") # type: ignore
             )
 

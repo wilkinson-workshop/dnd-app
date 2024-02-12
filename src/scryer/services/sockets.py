@@ -14,7 +14,7 @@ class SessionCookies(typing.TypedDict):
     via socket connection.
     """
 
-    client_uuid:  UUID
+    client_uuid:  UUID # Client UUID is the same as Creature UUID.
     name:         str
     role:         Role
     session_uuid: UUID
@@ -26,7 +26,7 @@ class SessionQueryParams(typing.TypedDict):
     connection.
     """
 
-    hit_points: HitPoints
+    hit_points: HitPoints | None
     name:       str
     role:       Role
 
