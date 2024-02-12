@@ -33,8 +33,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
   let query = {
-    role: CharacterType.DungeonMaster,
-    name: 'DM'
+    role: CharacterType.Player, 
+    name: params.playerName
   };
   let fullQuery: any;
 
