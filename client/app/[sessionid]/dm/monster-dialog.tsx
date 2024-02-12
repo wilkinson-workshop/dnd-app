@@ -1,14 +1,14 @@
+import { Monster } from '@/app/_apis/dnd5eTypings';
 import Dialog from '@mui/material/Dialog';
-import QRCode from "react-qr-code";
 
 export interface SimpleDialogProps {
     open: boolean;
-    url: string;
+    monsterInfo: Monster;
     onClose: () => void;
   }  
 
-export const SessionQrDialog = (props: SimpleDialogProps) => {
-  const { onClose, url, open } = props;
+export const MonsterInfoDialog = (props: SimpleDialogProps) => {
+  const { onClose, monsterInfo, open } = props;
 
   const handleClose = () => {
     onClose();
@@ -16,7 +16,7 @@ export const SessionQrDialog = (props: SimpleDialogProps) => {
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <QRCode value={url}/>
+        <pre>{JSON.stringify(monsterInfo, undefined, 2)}</pre>
     </Dialog>
   );
 }

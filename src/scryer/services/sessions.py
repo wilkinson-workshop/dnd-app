@@ -307,7 +307,7 @@ class CombatSession[C: SessionSocket](Session[C]):
             return ServiceStatus.FAILING
         return ServiceStatus.OFFLINE
 
-    async def attach_client(self, client: C) -> UUID:
+    async def attach_client(self, client: C, client_uuid: str) -> UUID:
         ch: CreatureV2
         client_uuid = await super().attach_client(client)
 
@@ -326,7 +326,8 @@ class CombatSession[C: SessionSocket](Session[C]):
                 creature_id=client_uuid, # type: ignore
                 initiative=0, # type: ignore
                 role=client.query_params.get("role", Role.PLAYER), # type: ignore
-                name=client.query_params.get("name", "nameless") # type: ignore
+                name=client.query_params.get("name", "nameless"), # type: ignore
+                monster=None #type: ignore
             )
 
         await self.characters.modify(client_uuid, ch) #type: ignore

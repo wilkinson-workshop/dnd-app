@@ -76,7 +76,7 @@ class PlayerInput(EventBody):
 
 
 class ClientUUID(EventBody):
-    client_uuid: UUID
+    client_uuid: str
 
 
 class RequestPlayerInput(EventBody):
@@ -91,6 +91,15 @@ class RequestPlayerInput(EventBody):
     dice_type:    int
     client_uuids: list[UUID]
     reason:       str
+
+class PlayerInput(EventBody):
+    """
+    This is the request and response class for
+    sending dice roles from player to dm.
+    """
+
+    value: int
+    body:  RequestPlayerInput
 
 
 class PlayerSecret(EventBody):

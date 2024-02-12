@@ -1,46 +1,73 @@
 'use client'
 
 import { addSessionInput} from "@/app/_apis/sessionApi";
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { getInitiativeOrder } from "@/app/_apis/characterApi";
-import { CharacterType, EMPTY_GUID } from "@/app/_apis/character";
-import { Box, Button, IconButton, TextField } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import { useEffect, useState } from "react";
+import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
+import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
+import { Box, Grid, styled } from "@mui/material";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType } from "@/app/_apis/eventType";
+import { RequestPlayerInput } from "@/app/_apis/playerInput";
+import { SendPlayerSecret } from "../dm/send-player-secret";
+import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
+import { ConditionItem } from "./condition-item";
+import { SkillRequest } from "./skill-request";
+import { Secrets } from "./secrets";
+import { APIReference } from "@/app/_apis/dnd5eTypings";
+import { getClientId, setClientId } from "@/app/_apis/sessionStorage";
 
-export interface InitiativeOrder {id: string, name: string}
+const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
 export default function PlayerPage({ params }: { params: { sessionid: string, playerName: string } }) {
-  const [rollValue, setRollValue] = useState(0);
-  const [initiativeOrder, setInitiativeOrder] = useState<InitiativeOrder[]>([]);
+  
+  const [initiativeOrder, setInitiativeOrder] = useState<Character[]>([]);
   const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
   const [isShowSecret, setIsShowSecret] = useState(false);
   const [secret, setSecret] = useState('');
-  const [diceRollMessage, setDiceRollMessage] = useState('');
+  const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
+  const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
+  const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
+  const [skills, setSkills] = useState<APIReference[]>([]);
+
+  const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
+
+  let query = {
+    role: CharacterType.DungeonMaster,
+    name: 'DM'
+  };
+  let fullQuery: any;
+
+  if(getClientId()){
+    fullQuery = {...query, existing_client_uuid: getClientId()};
+  }
+  else {
+    fullQuery = query;
+  }
+
 
   const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } = 
   useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
-  {queryParams: {
-    role: CharacterType.Player,
-    name: params.playerName
-  }});
+  {queryParams: fullQuery});
 
   useEffect(() => {
     getLatestInitiativeOrder();
+    getConditionOptions();
+    loadPlayerOptions();
+    getSkillOptions();
   }, [])
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
-
       switch(lastJsonMessage.event_type){
         case EventType.RequestRoll: {
-          setDiceRollMessage(`The DM has requested input for a ${lastJsonMessage.event_body.dice_type} sided dice for ${lastJsonMessage.event_body.reason}`);
+          setRequestRollBody(lastJsonMessage.event_body);
           setIsGetDiceRoll(true);
           return;
         }
         case EventType.ReceiveOrderUpdate: {
           getLatestInitiativeOrder();
+          loadPlayerOptions();
           return;
         }
         case EventType.ReceiveSecret: {
@@ -48,54 +75,94 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           setIsShowSecret(true);
           return;
         }
+        case EventType.ReceiveClientId: {
+          const body: any = lastJsonMessage.event_body;
+          setClientId(body["client_uuid"])
+        }
       }
     }
   }, [lastJsonMessage]);
 
-  function handleInputSubmit(e: FormEvent){
-    e.preventDefault(); 
-    setIsGetDiceRoll(false);  
-    setRollValue(0) 
-    addSessionInput(params.sessionid, {value: rollValue, name: params.playerName})
+  function handleInputSubmit(rollValue: number){
+    setIsGetDiceRoll(false); 
+    addSessionInput(params.sessionid, {value: rollValue, body: requestRollBody})
     .then();
   }
 
   function getLatestInitiativeOrder(){
-    getInitiativeOrder(params.sessionid)
+    getCharactersPlayer(params.sessionid)
     .then(i => setInitiativeOrder(i));
   }
 
-  const getRollForm = (        
-    <Box>
-      <div>{diceRollMessage}</div>
-      <TextField size="small" label="Roll" value={rollValue} variant="outlined" onChange={x => setRollValue(Number.parseInt(x.target.value? x.target.value : '0'))} />
-      <Button variant="contained" aria-label="send dice roll" onClick={handleInputSubmit}>
-        Send
-      </Button>          
-    </Box>
-  );
+  function getConditionOptions(){
+    getAllConditions()
+    .then(c => setConditionOptions(c.results));
+  }
 
-  const showSecretView = (
-    <Box>
-      {secret}                
-      <IconButton aria-label="delete" onClick={() =>setIsShowSecret(false)}>
-          <CloseIcon />
-      </IconButton>
-    </Box>
-  )
+  function getSkillOptions(){
+      getAllSkills()
+      .then(s => {
+          const skills = [{index: 'initiative', name:'Initiative', url: ''}, ...s.results];
+          setSkills(skills);
+      });
+  }
+
+  function loadPlayerOptions(){
+    getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
+    .then(c => {
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
+      withAll.push(...c)
+      setPlayerOptions(withAll);
+    });
+  }
+
+  function calculateHP(character: Character): string {
+    const hpPercent = (character.hit_points[0]/character.hit_points[1]) * 100;
+    if(hpPercent == 0)
+      return HpBoundaryOptions.find(x => x.id == 0)!.name;
+    else if(hpPercent < 10 && hpPercent > 0)
+      return HpBoundaryOptions.find(x => x.id == 9)!.name;
+    else if (hpPercent < 50)
+      return HpBoundaryOptions.find(x => x.id == 49)!.name;
+    else
+      return HpBoundaryOptions.find(x => x.id == 100)!.name;
+  }
+
+  const Item = styled(Box)(({ theme }) => ({
+    padding: theme.spacing(1),  
+  })); 
   
   return (
     <>
-      {isGetDiceRoll ? getRollForm : ''}
-      {isShowSecret ? showSecretView : ''}
+        { showDeveloperUI ?
+        (<a href={playerJoinUrl} target='_blank'>
+          Player Join
+        </a>) : ''}
       <Box>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (
-          <Box key={order.id}>
-            {order.name}
-          </Box>
+          <div key={order.creature_id}  style={{border: '1px solid lightgray'  }}>
+              <Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Item>{order.name}</Item>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Item>{calculateHP(order)}</Item>
+                  </Grid>
+                  <Grid item xs={6} sm={5}>
+                    <Item>{order.conditions.map(c => 
+                      <ConditionItem conditionId={c} conditionOptions={conditionOptions} />)}
+                    </Item>
+                  </Grid>
+                </Grid>
+              </Box>
+            </div>
         ))}
       </Box>
+      <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+      {isGetDiceRoll ? <SkillRequest skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} /> : ''}
+      {isShowSecret ? <Secrets secret={secret} setIsShowSecret={setIsShowSecret} /> : ''}
     </>               
   )    
 }

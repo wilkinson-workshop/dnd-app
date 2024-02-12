@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useContext, useEffect, useState } from "react";
 import { Autocomplete, Box, Button, Checkbox, ListItemText, TextField } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -7,6 +7,8 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { DiceTypes } from "@/app/_apis/playerInput";
 import { requestPlayerInput } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
+import { INIT_DESC, getAllSkills, getSkil } from "@/app/_apis/dnd5eApi";
+import { APIReference } from "@/app/_apis/dnd5eTypings";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -19,8 +21,6 @@ const MenuProps = {
   },
 };
 
-const rollOptions = ['Initiative']
-
 export interface RequestPlayerInputProps{
     sessionId: string,
     recipientOptions: Character[]
@@ -31,6 +31,42 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
     const [requestDiceType, setRequestDiceType] = useState(20);
     const [recipients, setRecipient] = useState<string[]>([]);
     const [reason, setReason] = useState('');
+    const [rollOptions, setRollOptions] = useState<APIReference[]>([]);
+    const [description, setDescription] = useState<string[]>([]);
+
+    useEffect(() => {
+        getSkillOptions();
+    }, []);
+
+    useEffect(() => {
+        if(reason != ''){
+            let index = rollOptions.find(x => x.name == reason)?.index;
+            if(index){
+                getDescription(index);
+            } else {
+                setDescription([]);
+            }
+        }
+    },[reason]);
+
+    function getDescription(skillId: string){
+        if(skillId == 'initiative'){
+            setDescription([INIT_DESC]);
+            return;
+        }
+        
+        getSkil(skillId)
+        .then(c => setDescription(c.desc));
+    }
+
+
+    function getSkillOptions(){
+        getAllSkills()
+        .then(s => {
+            const skills = [{index: 'initiative', name:'Initiative', url: ''}, ...s.results];
+            setRollOptions(skills);
+        });
+    }
 
     function handleClickRequestRoll() {
         onEdit(false);
@@ -74,13 +110,16 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                     <Box sx={{margin: '10px 0'}}>
                         <Autocomplete
                             id="role-reason"
+                            sx={{ width: 300 }}
                             freeSolo
-                            onChange={(e, v) => 
-                            setReason(v!)}
-                            options={rollOptions.map((option) => option)}
+                            autoSelect
+                            onChange={(e, v) =>
+                                setReason(v!)}
+                            options={rollOptions.map((option) => option.name)}
                             renderInput={(params) => <TextField {...params} label="Reason" size="small" variant="outlined" />}
                         />  
                     </Box>
+                    <Box>{description.join('/n')}</Box>
                     <Box sx={{margin: '10px 0'}}>
                         <FormControl sx={{ width: 300 }}>
                             <InputLabel id="recipient">Recipient</InputLabel>

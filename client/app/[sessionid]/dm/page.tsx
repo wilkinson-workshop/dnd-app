@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
@@ -15,29 +15,60 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
 import { getCharacters } from '@/app/_apis/characterApi';
-import { SessionQrDialog } from './session-qr-dialog'
+import { createContext } from 'react';
+import { getAllConditions } from '@/app/_apis/dnd5eApi';
+import { APIReference } from '@/app/_apis/dnd5eTypings';
+import { getClientId, setClientId } from '@/app/_apis/sessionStorage';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
+const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
+
+export const ConditionsContext = createContext<APIReference[]>([]);
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const [inputs, setInputs] = useState<PlayerInput[]>([]);
   const [isLoadCharacter, setIsLoadCharacter] = useState(false);
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
-  const [open, setOpen] = useState(false);
+
+  const [conditions, conditionsDispatch] = useReducer(setInitialConditions, []);
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
 
-  const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
-  {queryParams: {
+  let query = {
     role: CharacterType.DungeonMaster,
     name: 'DM'
-  }});
+  };
+  let fullQuery: any;
+
+  if(getClientId()){
+    fullQuery = {...query, existing_client_uuid: getClientId()};
+  }
+  else {
+    fullQuery = query;
+  }
+
+
+  const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
+  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
+  {queryParams: fullQuery});
+
+  function setInitialConditions(conditions: any[], updated: APIReference[]){
+    return updated;
+  }
 
   useEffect(() => {
     loadPlayerOptions();
+    getConditionOptions();
   }, []);
+
+  function getConditionOptions(){
+    getAllConditions()
+    .then(c => 
+      conditionsDispatch(c.results));
+  }
+
+
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
@@ -51,6 +82,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           loadPlayerOptions();
           return;
         }
+        case EventType.ReceiveClientId: {
+          const body: any = lastJsonMessage.event_body;
+          setClientId(body["client_uuid"])
+        }
       }
     }
   }, [lastJsonMessage]);
@@ -58,19 +93,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
-      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: []}];
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
       withAll.push(...c)
       setPlayerOptions(withAll);
     });
   }
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
 
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
@@ -95,24 +122,22 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   return (
     <div>
       <div>
-        <SessionQrDialog
-          open={open}
-          url={playerJoinUrl}
-          onClose={handleClose}
-        />     
-        <Button variant="contained" aria-label="show qr" onClick={handleClickOpen}>
-          Show Session QR
-        </Button>
         <Button variant="contained" aria-label="end session" onClick={handleEndSession}>
           End Session
         </Button>
-        <a href={playerJoinUrl} target='_blank'>
-          Player Join
+        <a href={`${playerJoinUrl}/qr`} target='_blank'>
+          Show QR code
         </a>
+        { showDeveloperUI ?
+        (<a href={playerJoinUrl} target='_blank'>
+          Player Join
+        </a>) : ''}
       </div> 
-      <DndProvider backend={HTML5Backend}>
-        <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
-      </DndProvider>
+      <ConditionsContext.Provider value={conditions}>
+        <DndProvider backend={HTML5Backend}>
+          <Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
+        </DndProvider>
+      </ConditionsContext.Provider>
       <Box sx={{margin: '20px 0'}}>
         <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
         <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />

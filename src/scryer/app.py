@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
-from scryer.creatures import CharacterV2, Condition, Role, HitPoints
+from scryer.creatures import CharacterV2, Role, HitPoints
 from scryer.services import (
     Action,
     Broker,
@@ -236,25 +236,19 @@ async def characters_find(
     if session_uuid:
         data = data[session_uuid]
 
-    return sorted(data, key=lambda c: c.initiative) #type: ignore
+    return sorted(data, key=lambda c: c.initiative, reverse=True) #type: ignore
 
 
-@APP_ROUTERS["character"].get("/{session_uuid}/initiative")
-async def characters_initiative(session_uuid: UUID):
+@APP_ROUTERS["character"].get("/{session_uuid}/player")
+async def characters_find(session_uuid: UUID):
     """
     List initiative order for characters on the
     field. For use by player so shows limited
     info.
     """
-
     _, session = (await _sessions_find(session_uuid))[0]
 
-    initiatives = []
-    characters  = await session.characters.locate()
-    for _, ch in sorted(characters, key=lambda loc: loc[1].initiative): #type: ignore
-        initiatives.append({"id": ch.creature_id, "name": ch.name}) #type: ignore
-
-    return initiatives      
+    return sorted(session.characters, key=lambda c: c.initiative, reverse=True) #type: ignore
 
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
@@ -337,6 +331,7 @@ async def sessions_join(
         session_uuid: typing.Annotated[str, Path()],
         name: typing.Annotated[str | None, Query()] = None,
         hit_points: typing.Annotated[HitPoints | None, Query()] = None,
+        existing_client_uuid: typing.Annotated[str | None, Query()] = None,
         role: typing.Annotated[Role | None, Query()] = None):
     """
     Join an active session. Passes in some
@@ -346,7 +341,12 @@ async def sessions_join(
     session: CombatSession
 
     _, session  = (await _sessions_find(session_uuid))[0]
-    client_uuid = await session.attach_client(sock)
+    client_uuid = await session.attach_client(sock, existing_client_uuid)
+    if(existing_client_uuid == None):
+        await send_event_action(
+            sock,
+            ReceiveClientUUID(ClientUUID(client_uuid=str(client_uuid))))
+    
     if role is Role.PLAYER:
         await _broadcast_dm_event(
             request_uuid(session_uuid),
@@ -357,9 +357,6 @@ async def sessions_join(
             body=events.EventBody())
 
     try:
-        await send_event_action(
-            sock,
-            ReceiveClientUUID(ClientUUID(client_uuid=client_uuid)))
         while True:
             # TODO: need to accept messages from
             # clients via this event loop.
@@ -420,11 +417,26 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     Send a player input to session.
     """
 
-    session: CombatSession
-
-    _, session = (await _sessions_find(session_uuid))[0]
-    session.events.append(body) #type: ignore
-    await _broadcast_dm_event(session_uuid, events.ReceiveRoll) #type: ignore
+    if(body.body.reason == "Initiative"):
+        session: CombatSession
+        _, session  = (await _sessions_find(session_uuid))[0]
+        character = session.characters.resource_map[body.body.client_uuids[0]]
+        character.initiative = body.value
+        await _character_make(
+            session_uuid, character, 
+            character.creature_uuid)
+        await _broadcast_dm_event(
+            session_uuid, 
+            events.ReceiveOrderUpdate)
+        await _broadcast_pc_event(
+            session_uuid, 
+            events.ReceiveOrderUpdate, 
+            body=events.EventBody())
+    else:
+        session.events.events.append(body)
+        await _broadcast_dm_event(
+            session_uuid, 
+            events.ReceiveRoll)
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}/player-input")

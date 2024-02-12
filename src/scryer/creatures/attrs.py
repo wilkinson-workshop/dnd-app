@@ -1,17 +1,6 @@
 import enum, math, typing
 
 
-class Condition(typing.NamedTuple):
-    """
-    A condition, or status effect, applicable to a
-    creature.
-    """
-
-    name:        str
-    description: str
-    color:       int
-
-
 class HitPoints(typing.NamedTuple):
     """
     Integer alias to represent **Hit Points**
