@@ -85,7 +85,7 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
             return ServiceStatus.BUSY
 
     async def delete(self, key: K):
-        self.resource_map.pop(key)
+        self.resource_map.pop(key, None)
 
     async def locate(
             self,

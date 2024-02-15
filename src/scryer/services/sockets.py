@@ -26,9 +26,10 @@ class SessionQueryParams(typing.TypedDict):
     connection.
     """
 
-    hit_points: HitPoints | None
-    name:       str
-    role:       Role
+    existing_client_uuid: str | None
+    hit_points:           HitPoints | None
+    name:                 str
+    role:                 Role
 
 
 class SessionSocket(WebSocket):
@@ -60,6 +61,12 @@ class SocketMemoryBroker(SocketBroker, MemoryBroker[UUID, SessionSocket]):
     manages socket connections between server and
     client.
     """
+
+    async def modify(self, key: UUID, resource: SessionSocket) -> None:
+        try:
+            await resource.accept()
+        finally:
+            return await super().modify(key, resource)
 
     async def create(self, sock: SessionSocket):
         if "client_uuid" in sock.cookies:

@@ -65,23 +65,13 @@ class Event(BaseEvent):
         return clients or ()
 
 
-class PlayerInput(EventBody):
-    """
-    This is the request and response class for
-    sending dice roles from player to dm.
-    """
-
-    value: int
-    name:  str
-
-
 class ClientUUID(EventBody):
     client_uuid: str
 
 
 class RequestPlayerInput(EventBody):
     """
-    This is the reqeust of the player(s) to submit
+    This is the request of the player(s) to submit
     a dice role for use by the dm. 
     Recipient value could be All for all players
     or a specific client id to send the
@@ -91,6 +81,7 @@ class RequestPlayerInput(EventBody):
     dice_type:    int
     client_uuids: list[UUID]
     reason:       str
+
 
 class PlayerInput(EventBody):
     """
