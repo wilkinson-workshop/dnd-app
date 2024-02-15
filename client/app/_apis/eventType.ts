@@ -5,3 +5,7 @@ export enum EventType{
     ReceiveOrderUpdate = 'receive_order_update',
     ReceiveClientId = 'receive_client_uuid'
 }
+
+export enum SubscriptionEventType{
+    JoinSession = 'join_session',
+}

@@ -1,6 +1,7 @@
 import enum, typing
 
 from pydantic import BaseModel, ConfigDict
+from scryer.creatures.attrs import Role
 
 from scryer.util import UUID
 
@@ -32,6 +33,12 @@ class BaseEvent(BaseModel):
 class EventBody(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+class SessionJoinBody(typing.TypedDict):
+    session_uuid: str
+    role: Role
+    name: str
+    client_uuid: str
+
 
 class EventType(enum.StrEnum):
     """
@@ -44,6 +51,9 @@ class EventType(enum.StrEnum):
     RECEIVE_ROLL         = enum.auto()
     RECEIVE_SECRET       = enum.auto()
     REQUEST_ROLL         = enum.auto()
+
+    JOIN_SESSION         = enum.auto()
+
 
 
 class Event(BaseEvent):
@@ -65,23 +75,13 @@ class Event(BaseEvent):
         return clients or ()
 
 
-class PlayerInput(EventBody):
-    """
-    This is the request and response class for
-    sending dice roles from player to dm.
-    """
-
-    value: int
-    name:  str
-
-
 class ClientUUID(EventBody):
     client_uuid: str
 
 
 class RequestPlayerInput(EventBody):
     """
-    This is the reqeust of the player(s) to submit
+    This is the request of the player(s) to submit
     a dice role for use by the dm. 
     Recipient value could be All for all players
     or a specific client id to send the
@@ -99,7 +99,8 @@ class PlayerInput(EventBody):
     """
 
     value: int
-    body:  RequestPlayerInput
+    reason: str
+    client_uuid: str
 
 
 class PlayerSecret(EventBody):

@@ -6,7 +6,7 @@ import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
 import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
 import { Box, Grid, styled } from "@mui/material";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { EventType } from "@/app/_apis/eventType";
+import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
 import { RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerSecret } from "../dm/send-player-secret";
 import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
@@ -32,23 +32,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
-  let query = {
-    role: CharacterType.Player, 
-    name: params.playerName
-  };
-  let fullQuery: any;
-
-  if(getClientId()){
-    fullQuery = {...query, existing_client_uuid: getClientId()};
-  }
-  else {
-    fullQuery = query;
-  }
-
-
   const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
-  {queryParams: fullQuery});
+  useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/ws`);
 
   useEffect(() => {
     getLatestInitiativeOrder();
@@ -77,7 +62,15 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
         }
         case EventType.ReceiveClientId: {
           const body: any = lastJsonMessage.event_body;
-          setClientId(body["client_uuid"])
+          setClientId(body["client_uuid"]);
+          sendJsonMessage({
+            event_type: SubscriptionEventType.JoinSession, 
+            event_body: {
+              session_uuid: params.sessionid,
+              role: CharacterType.Player, 
+              name: params.playerName,
+              client_uuid: getClientId()}
+            });
         }
       }
     }
@@ -85,7 +78,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 
   function handleInputSubmit(rollValue: number){
     setIsGetDiceRoll(false); 
-    addSessionInput(params.sessionid, {value: rollValue, body: requestRollBody})
+    addSessionInput(params.sessionid, {value: rollValue, client_uuid: getClientId(), reason: requestRollBody.reason})
     .then();
   }
 

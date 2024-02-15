@@ -38,6 +38,7 @@ from scryer.services import (
 )
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
+from scryer.util.events import SessionJoinBody
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -57,6 +58,16 @@ async def _broadcast_client_event[**P](
     _, session = (await _sessions_find(session_uuid))[0]
     return await session.broadcast_action(action, event=cls(body, **kwds)) #type: ignore
 
+async def _broadcast_session_event(
+        session_uuid: UUID,
+        cls: type[events.Event],
+        body: events.EventBody):
+
+    return await _broadcast_client_event(
+        session_uuid,
+        sessions.all_send_event_action,
+        cls,
+        body)
 
 async def _broadcast_dm_event(
         session_uuid: UUID,
@@ -67,7 +78,6 @@ async def _broadcast_dm_event(
         sessions.dm_send_event_action,
         cls,
         events.EventBody())
-
 
 async def _broadcast_pc_event(
         session_uuid: UUID,
@@ -204,7 +214,9 @@ APP_ROUTERS = {
     "client": APIRouter(prefix="/clients"),
     # Defines the routes available to managing
     # game sessions.
-    "session": APIRouter(prefix="/sessions")
+    "session": APIRouter(prefix="/sessions"),
+    # Defines top level routes.
+    "app": APIRouter()
 }
 
 # -----------------------------------------------
@@ -240,7 +252,7 @@ async def characters_find(
 
 
 @APP_ROUTERS["character"].get("/{session_uuid}/player")
-async def characters_find(session_uuid: UUID):
+async def characters_find_player(session_uuid: UUID):
     """
     List initiative order for characters on the
     field. For use by player so shows limited
@@ -284,22 +296,16 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
     session: CombatSession
     _, session = (await _sessions_find(session_uuid))[0]
     await session.characters.delete(character_uuid)
+
+    # do we want to forcefully disconnect a player if their character is "killed"
+    if (found := await session.clients.locate(character_uuid)): 
+        _, client = found[0] 
+        await session.detach_client(client)
+
     await _broadcast_pc_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
-
-
-@APP_ROUTERS["client"].post("/")
-async def clients_make():
-    """
-    Create a new `client_id` to be used for
-    websockets and session tracking. Returns new
-    client `UUID`
-    """
-
-    return request_uuid()
-
 
 @APP_ROUTERS["admin"].get("/healthcheck")
 @APP_ROUTERS["admin"].get("/healthcheck/{service_name}", description="Ping a specific service.")
@@ -324,44 +330,37 @@ async def healthcheck(service_name: str | None = None):
 
     return {"count": 1, "results": [result]}
 
+@APP_ROUTERS["app"].websocket("/ws")
+async def sessions_join(sock: WebSocket):
 
-@APP_ROUTERS["session"].websocket("/{session_uuid}/ws")
-async def sessions_join(
-        sock: WebSocket,
-        session_uuid: typing.Annotated[str, Path()],
-        name: typing.Annotated[str | None, Query()] = None,
-        hit_points: typing.Annotated[HitPoints | None, Query()] = None,
-        existing_client_uuid: typing.Annotated[str | None, Query()] = None,
-        role: typing.Annotated[Role | None, Query()] = None):
     """
     Join an active session. Passes in some
     arbitrary `client_uuid`.
     """
+    await sock.accept()
 
-    session: CombatSession
+    client_uuid = request_uuid()
 
-    _, session  = (await _sessions_find(session_uuid))[0]
-    client_uuid = await session.attach_client(sock, existing_client_uuid)
-    if(existing_client_uuid == None):
-        await send_event_action(
-            sock,
-            ReceiveClientUUID(ClientUUID(client_uuid=str(client_uuid))))
-    
-    if role is Role.PLAYER:
-        await _broadcast_dm_event(
-            request_uuid(session_uuid),
-            events.ReceiveOrderUpdate) #type: ignore
-        await _broadcast_pc_event(
-            request_uuid(session_uuid),
-            events.ReceiveOrderUpdate, #type: ignore
-            body=events.EventBody())
-
+    await send_event_action(
+        sock,
+        ReceiveClientUUID(ClientUUID(client_uuid=str(client_uuid))))
+        
     try:
         while True:
-            # TODO: need to accept messages from
-            # clients via this event loop.
-            data = await sock.receive_text()
+            data: Event = await sock.receive_json()
+            match data['event_type']:
+                case events.EventType.JOIN_SESSION:
+                    body: SessionJoinBody = data['event_body']
+                    _, session  = (await _sessions_find(body['session_uuid']))[0]
+                    await session.attach_client(sock, body)
+                    if body['role'] == 'player':
+                        await _broadcast_session_event(
+                            request_uuid(session.session_uuid),
+                            events.ReceiveOrderUpdate, 
+                            body = events.EventBody())                   
+
     except (WebSocketDisconnect, RuntimeError):
+        #remove the socket from all groups
         await session.detach_client(sock)
 
 
@@ -371,11 +370,17 @@ async def sessions_find(session_uuid: UUID | None = None):
     """Attempt to fetch session(s)."""
 
     found = await _sessions_find(session_uuid)
-    return [sxn.session_uuid for _, sxn in found]
+
+    def mapper(sxn: Session): 
+        return sessions.SessionApi( 
+            session_uuid=sxn.session_uuid, 
+            session_name=sxn.session_name, 
+            session_description=sxn.session_description) 
+    return [mapper(sxn) for _, sxn in found]
 
 
 @APP_ROUTERS["session"].post("/")
-async def sessions_make():
+async def sessions_make(session: sessions.SessionApi):
     """
     Create a new joinable session. Returns new
     `session_uuid`.
@@ -384,7 +389,7 @@ async def sessions_make():
     clients:  Broker[UUID, SessionSocket] = APP_SERIVCES["sockets00"] #type: ignore
     events:   Broker[UUID, Event]         = APP_SERIVCES["events00"] #type: ignore
     sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
-    return (await sessions.create(clients, events))[0] #type: ignore
+    return (await sessions.create(session.session_name, clients, events, session.session_description))[0] #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}")
@@ -406,7 +411,7 @@ async def sessions_player_input_find(session_uuid: UUID):
     _, session = (await _sessions_find(session_uuid))[0]
     data = [
         event for event in session.events
-        if isinstance(event, events.PlayerInput)
+        if isinstance(event, events.ReceiveRoll)
     ]
     return data
 
@@ -416,27 +421,33 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     """
     Send a player input to session.
     """
+    ch: CharacterV2
+    session: CombatSession
 
-    if(body.body.reason == "Initiative"):
-        session: CombatSession
-        _, session  = (await _sessions_find(session_uuid))[0]
-        character = session.characters.resource_map[body.body.client_uuids[0]]
-        character.initiative = body.value
-        await _character_make(
-            session_uuid, character, 
-            character.creature_uuid)
-        await _broadcast_dm_event(
-            session_uuid, 
-            events.ReceiveOrderUpdate)
-        await _broadcast_pc_event(
-            session_uuid, 
-            events.ReceiveOrderUpdate, 
-            body=events.EventBody())
+    _, session  = (await _sessions_find(session_uuid))[0]
+
+    if(body.reason == "Initiative"):
+        found = await session.characters.locate(*[body.client_uuid])
+        if found:
+            ch = found[1]
+            ch.initiative = body.value
+            await _character_make(
+                session_uuid, 
+                ch, 
+                ch.creature_uuid)
+            await _broadcast_session_event(
+                session_uuid, 
+                events.ReceiveOrderUpdate, 
+                body=events.EventBody())
     else:
-        session.events.events.append(body)
+        await APP_SERIVCES["events00"].create( 
+            session_uuid, #type: ignore 
+            body, #type: ignore 
+            events.ReceiveRoll) #type: ignore
+        
         await _broadcast_dm_event(
             session_uuid, 
-            events.ReceiveRoll)
+            events.ReceiveRoll) #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}/player-input")

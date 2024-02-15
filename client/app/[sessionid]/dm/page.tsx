@@ -10,7 +10,7 @@ import { Box, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
-import { EventType } from '@/app/_apis/eventType';
+import { EventType, SubscriptionEventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
@@ -35,23 +35,8 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
   const router = useRouter();
 
-  let query = {
-    role: CharacterType.DungeonMaster,
-    name: 'DM'
-  };
-  let fullQuery: any;
-
-  if(getClientId()){
-    fullQuery = {...query, existing_client_uuid: getClientId()};
-  }
-  else {
-    fullQuery = query;
-  }
-
-
   const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
-  {queryParams: fullQuery});
+  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/ws`);
 
   function setInitialConditions(conditions: any[], updated: APIReference[]){
     return updated;
@@ -68,8 +53,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
       conditionsDispatch(c.results));
   }
 
-
-
   useEffect(() => {
     if (lastJsonMessage !== null) {
       switch(lastJsonMessage.event_type){
@@ -84,7 +67,15 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         }
         case EventType.ReceiveClientId: {
           const body: any = lastJsonMessage.event_body;
-          setClientId(body["client_uuid"])
+          setClientId(body["client_uuid"]);
+          sendJsonMessage({
+            event_type: SubscriptionEventType.JoinSession, 
+            event_body: {
+              session_uuid: params.sessionid,
+              role: CharacterType.DungeonMaster,
+              name: 'DM',
+              client_uuid: getClientId()}
+            });
         }
       }
     }

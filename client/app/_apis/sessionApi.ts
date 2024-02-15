@@ -1,9 +1,10 @@
-import { JoinSessionRequest, PlayerInput, RequestPlayerInput, PlayerSecret } from "./playerInput";
+import { PlayerInput, RequestPlayerInput, PlayerSecret } from "./playerInput";
+import { Session } from "./session";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/sessions`;
 
-export async function getSessions(): Promise<any[]> {
+export async function getSessions(): Promise<Session[]> {
   const res = await fetch(apiBaseUrl, {
     headers:{
       'Content-Type': 'application/json',
@@ -17,9 +18,10 @@ export async function getSessions(): Promise<any[]> {
   return res.json()
 }
 
-export async function createSession() {
+export async function createSession(newSession: Session): Promise<string> {
   const res = await fetch(`${apiBaseUrl}/`, {
     method: 'POST',
+    body: JSON.stringify(newSession),
     headers:{
       'Content-Type': 'application/json',
     } 
