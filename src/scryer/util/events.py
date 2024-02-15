@@ -92,6 +92,7 @@ class RequestPlayerInput(EventBody):
     client_uuids: list[UUID]
     reason:       str
 
+
 class PlayerInput(EventBody):
     """
     This is the request and response class for

@@ -46,7 +46,7 @@ class SocketMemoryBroker(SocketBroker, MemoryBroker[UUID, SessionSocket]):
     manages socket connections between server and
     client.
     """
-
+    
     async def create(self, sock: SessionSocket):
         client_uuid = sock.cookies["client_uuid"]
 

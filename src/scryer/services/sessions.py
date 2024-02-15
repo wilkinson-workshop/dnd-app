@@ -183,7 +183,7 @@ class Session[C: SessionSocket](Service):
         Human readable identity of this session. 
         """
 
-        return f"{type(self).__name__}:{self.session_uuid!s}"    
+        return f"{type(self).__name__}:{self.session_uuid!s}"
 
     @property
     def session_uuid(self) -> UUID:

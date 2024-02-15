@@ -258,8 +258,8 @@ async def characters_find_player(session_uuid: UUID):
     field. For use by player so shows limited
     info.
     """
-    _, session = (await _sessions_find(session_uuid))[0]
 
+    _, session = (await _sessions_find(session_uuid))[0]
     return sorted(session.characters, key=lambda c: c.initiative, reverse=True) #type: ignore
 
 
@@ -417,7 +417,7 @@ async def sessions_player_input_find(session_uuid: UUID):
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/player-input")
-async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInput):
+async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInput):
     """
     Send a player input to session.
     """
@@ -426,11 +426,11 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
 
     _, session  = (await _sessions_find(session_uuid))[0]
 
-    if(body.reason == "Initiative"):
-        found = await session.characters.locate(*[body.client_uuid])
+    if(event.reason == "Initiative"):
+        found = await session.characters.locate(*[event.client_uuid])
         if found:
             ch = found[1]
-            ch.initiative = body.value
+            ch.initiative = event.value
             await _character_make(
                 session_uuid, 
                 ch, 
@@ -442,7 +442,7 @@ async def sessions_player_input_send(session_uuid: UUID, body: events.PlayerInpu
     else:
         await APP_SERIVCES["events00"].create( 
             session_uuid, #type: ignore 
-            body, #type: ignore 
+            event, #type: ignore 
             events.ReceiveRoll) #type: ignore
         
         await _broadcast_dm_event(
