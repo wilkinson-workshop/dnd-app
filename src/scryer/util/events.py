@@ -13,7 +13,9 @@ __all__ = (
     "ReceiveOrderUpdate",
     "ReceiveRoll",
     "ReceiveSecret",
-    "RequestRoll"
+    "RequestRoll",
+    "SessionJoinBody",
+    "dump_event"
 )
 
 type PartialEvent[B, **P] = typing.Callable[typing.Concatenate[B, P], Event]
@@ -114,6 +116,25 @@ class PlayerSecret(EventBody):
     client_uuids: list[UUID]
 
 
+def dump_event(event: Event) -> dict[str, object]:
+    """
+    Transform an event into a dictionary
+    representation of itself.
+    """
+
+    dump = event.model_dump()
+    if "event_body" in dump and not dump["event_body"]:
+        # Event body was empty. Most likely due to
+        # an issue with model inheritence.
+        event_body = event.event_body.model_dump() #type: ignore
+        if isinstance(event_body, dict) and "client_uuids" in event_body:
+            event_body["client_uuids"] = [
+                str(u) for u in event_body["client_uuids"]
+            ]
+        dump["event_body"] = event_body
+    return dump
+
+
 def NewEvent(
         etype: EventType,
         ebody: EventBody,
@@ -121,7 +142,7 @@ def NewEvent(
         session_uuid: UUID | None = None) -> Event:
     """Create a new event wrapper."""
 
-    return Event(event_type=etype, event_body=ebody)
+    return Event(event_type=etype, event_body=ebody, session_uuid=session_uuid)
 
 
 def Message(body: EventBody, **kwds):

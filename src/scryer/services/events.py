@@ -1,4 +1,4 @@
-import abc, asyncio, typing
+import abc, typing
 
 from scryer.services.brokers import Broker, MemoryBroker
 from scryer.util import request_uuid, UUID
@@ -38,6 +38,6 @@ class EventMemoryBroker(EventBroker, MemoryBroker[UUID, Event]):
             **kwds: P.kwargs) -> tuple[UUID, Event]:
 
         event_uuid = request_uuid()
-        event = (factory or Message)(body, session_uuid=session_uuid **kwds) #type: ignore
+        event = (factory or Message)(body, session_uuid=session_uuid, **kwds) #type: ignore
         self.resource_map[event_uuid] = event
         return (event_uuid, event)

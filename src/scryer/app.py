@@ -38,7 +38,6 @@ from scryer.services import (
 )
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
-from scryer.util.events import SessionJoinBody
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -120,7 +119,7 @@ async def join_session(sock, data):
     if body['role'] == 'player':
         await _broadcast_session_event(
             request_uuid(session.session_uuid),
-            events.ReceiveOrderUpdate, 
+            events.ReceiveOrderUpdate, #type: ignore
             body = events.EventBody())
 
 
@@ -394,7 +393,11 @@ async def sessions_make(session: sessions.SessionApi):
     clients:  Broker[UUID, SessionSocket] = APP_SERIVCES["sockets00"] #type: ignore
     events:   Broker[UUID, Event]         = APP_SERIVCES["events00"] #type: ignore
     sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
-    return (await sessions.create(session.session_name, clients, events, session.session_description))[0] #type: ignore
+    return (await sessions.create(
+        session.session_name, #type: ignore
+        clients,
+        events,
+        session.session_description))[0] #type: ignore
 
 
 @APP_ROUTERS["session"].delete("/{session_uuid}")
@@ -415,8 +418,8 @@ async def sessions_player_input_find(session_uuid: UUID):
 
     _, session = (await _sessions_find(session_uuid))[0]
     data = [
-        event for event in session.events
-        if isinstance(event, events.ReceiveRoll)
+        dump_event(event) for _, event in (await session.owned_events())
+        if event.event_type == events.EventType.RECEIVE_ROLL
     ]
     return data
 
@@ -426,15 +429,16 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
     """
     Send a player input to session.
     """
+
     ch: CharacterV2
     session: CombatSession
 
     _, session  = (await _sessions_find(session_uuid))[0]
 
     if(event.reason == "Initiative"):
-        found = await session.characters.locate(*[event.client_uuid])
+        found = await session.characters.locate(request_uuid(event.client_uuid))
         if found:
-            ch = found[1]
+            ch = found[1] #type: ignore
             ch.initiative = event.value
             await _character_make(
                 session_uuid, 
@@ -442,7 +446,7 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
                 ch.creature_uuid)
             await _broadcast_session_event(
                 session_uuid, 
-                events.ReceiveOrderUpdate, 
+                events.ReceiveOrderUpdate, #type: ignore
                 body=events.EventBody())
     else:
         await APP_SERIVCES["events00"].create( 
@@ -464,9 +468,9 @@ async def sessions_player_input_clear(session_uuid: UUID):
     session: CombatSession
 
     _, session = (await _sessions_find(session_uuid))[0]
-    predicate  = lambda e: isinstance(e, events.PlayerInput)
-    for event in filter(predicate, session.events):
-        session.events.remove(event)
+    for event_uuid, event in await session.owned_events():
+        if isinstance(event.event_body, events.PlayerInput):
+            await session.events.delete(event_uuid)
 
 
 @APP_ROUTERS["session"].post("/{session_uuid}/request-player-input")

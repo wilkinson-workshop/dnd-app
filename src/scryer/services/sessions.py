@@ -19,7 +19,14 @@ from scryer.services.creatures import CreaturesMemoryBroker
 from scryer.services.service import Service, ServiceStatus
 from scryer.services.sockets import SessionSocket, SocketBroker
 from scryer.util import UUID, request_uuid
-from scryer.util.events import Event, EventBody, ReceiveRoll, SessionJoinBody
+from scryer.util.events import (
+    Event,
+    EventBody,
+    ReceiveRoll,
+    SessionJoinBody,
+    dump_event
+)
+from scryer.util.filters import FilterStatement
 
 # Special types used only in `Session` specific
 # implementations.
@@ -100,18 +107,8 @@ async def send_event_action(sock: WebSocket, event: Event) -> ActionResult:
     client connection
     """
 
-    dump = event.model_dump()
-    if "event_body" in dump and not dump["event_body"]:
-        # Event body was empty. Most likely due to
-        # an issue with model inheritence.
-        event_body = event.event_body.model_dump() #type: ignore
-        if isinstance(event_body, dict) and "client_uuids" in event_body:
-            event_body["client_uuids"] = [
-                str(u) for u in event_body["client_uuids"]
-            ]
-        dump["event_body"] = event_body
-
-    await sock.send_text(json.dumps(dump))
+    dump = dump_event(event)
+    await sock.send_json(dump)
     return sock, len(dump)
 
 @event_action
@@ -234,7 +231,7 @@ class Session[C: SessionSocket](Service):
         client.
         """
 
-        found = await self.clients.locate(statement=_filter_statement(self)) # type: ignore
+        found = await self.clients.locate(statement=_filter_statement_client(self)) # type: ignore
 
         async with asyncio.TaskGroup() as tg:
             results = [
@@ -250,7 +247,7 @@ class Session[C: SessionSocket](Service):
         required cleanup.
         """
 
-        found = await self.clients.locate(statement=_filter_statement(self)) #type: ignore
+        found = await self.clients.locate(statement=_filter_statement_client(self)) #type: ignore
 
         async with asyncio.TaskGroup() as tg:
             [
@@ -261,7 +258,7 @@ class Session[C: SessionSocket](Service):
     async def detach_client(self, client: C):
         """Disconnect a client."""
 
-        found = await self.clients.locate(statement=_filter_statement(self)) #type: ignore
+        found = await self.clients.locate(statement=_filter_statement_client(self)) #type: ignore
         client_uuids = [cuid for cuid, c in found if c is client]
         if not client_uuids:
             return
@@ -295,12 +292,25 @@ class Session[C: SessionSocket](Service):
             return ret
 
 
-def _filter_statement[C: SessionSocket](session: Session[C]):
+def _filter_statement_client[C: SessionSocket](session: Session[C]):
     return {
             "logic": "and",
             "filters": [
                 {
                     "field": "cookies.session_uuid",
+                    "operator": "eq",
+                    "value": session.session_uuid
+                }
+            ]
+        }
+
+
+def _filter_statement_event[C: SessionSocket](session: Session[C]):
+    return {
+            "logic": "and",
+            "filters": [
+                {
+                    "field": "session_uuid",
                     "operator": "eq",
                     "value": session.session_uuid
                 }
@@ -339,10 +349,8 @@ class CombatSession[C: SessionSocket](Session[C]):
         return self._characters
 
     @property
-    def events(self) -> typing.MutableSequence[Event]:
-        called = self._events.locate(statement=_filter_statement(self)) #type: ignore
-        res = asyncio.get_event_loop().run_until_complete(called)
-        return [event for _,event in res]
+    def events(self) -> Broker[UUID, Event]:
+        return self._events
 
     @property
     def session_description(self) -> str: 
@@ -393,6 +401,10 @@ class CombatSession[C: SessionSocket](Session[C]):
             )
 
         return client_uuid
+
+    async def owned_events(self):
+        statement: FilterStatement = _filter_statement_event(self) #type: ignore
+        return (await self.events.locate(statement=statement))
 
 
 class SessionMemoryBroker(MemoryBroker[UUID, Session]):
