@@ -3,7 +3,7 @@ import type { FC } from 'react'
 import { useCallback, useState } from 'react'
 import { Card } from './character-card'
 import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
-import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
+import { addCharacter, addMultipleCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { AddCharacter } from './add-edit-character';
 import { AddRandomCharacter } from './add-random-character'
 
@@ -73,9 +73,7 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
   }
 
   function handleAddMultipleCharacters(characters: Character[]){
-    const addAll = characters.map(c => addCharacter(sessionId, c));
-
-    Promise.all(addAll)
+    addMultipleCharacter(sessionId, {characters})
     .then(_ => reloadList());
   }
 

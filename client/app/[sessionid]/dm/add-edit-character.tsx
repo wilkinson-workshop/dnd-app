@@ -23,6 +23,20 @@ const MenuProps = {
   },
 };
 
+interface CalculatedMonsterInfo {
+    initiativeAdd: number,
+    minHp: number,
+    maxHp: number,
+    averageHp: number
+}
+
+const DEFAULT_CALC_MONSTER_INFO: CalculatedMonsterInfo = {
+    initiativeAdd: 1,
+    minHp: 1,
+    maxHp: 1,
+    averageHp: 1
+}
+
 export interface AddCharacterProps{
     existingCharacter: Character | null,
     onAddClick: (character: Character) => void
@@ -39,6 +53,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [conditions, setConditions] = useState<string[]>([]);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
+    const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
+    
 
     const conditionOptions = useContext(ConditionsContext);
 
@@ -55,6 +71,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 getMonsterInfo(index);
             } else {
                 setMonsterInfo(null);
+                setCalculatedMonsterInfo(DEFAULT_CALC_MONSTER_INFO);
             }
         }
     },[monster]);
@@ -79,9 +96,17 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
     function getMonsterInfo(monsterId: string){        
         getMonster(monsterId)
-        .then(m => setMonsterInfo(m));
+        .then(m => {
+            setMonsterInfo(m);
+            const hp = calculateHp(m);
+            setCalculatedMonsterInfo({
+                initiativeAdd: calculateInitiative(m),
+                minHp: hp[0],
+                maxHp: hp[1],                
+                averageHp: hp[2]
+            });
+        });
     }
-
 
     function handleSubmit(): void {
         if(currentHp > maxHp){
@@ -89,7 +114,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             return;
         }
 
-        onEdit(false);
+        //onEdit(false);
         onAddClick({
             creature_id:  existingCharacter ? existingCharacter.creature_id : EMPTY_GUID,
             initiative: initiative,
@@ -106,37 +131,46 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function generateInitiative(): void {
-        if(monsterInfo){
-            const dex = monsterInfo.dexterity;
-            const min =  1;
-            const add = Math.floor((dex - 10)/2);
-
-            const init = randomNumber(min, 20);
-            setInitiative(init + add);
-        }
+    function calculateInitiative(monsterInfo: Monster): number {
+        const dex = monsterInfo.dexterity;
+        return Math.floor((dex - 10)/2);
     }
+
+    function generateInitiative(): void {
+        const add = calculatedMonsterInfo.initiativeAdd;
+        const init = randomNumber(1, 20);
+        setInitiative(init + add);
+    }
+
+    function calculateHp(monsterInfo: Monster): number[] {
+        const strValue = monsterInfo.hit_points_roll;
+        var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
+        const result = values.exec(strValue);
+        if(result){
+            const count = Number.parseInt(result[1]);
+            const multiple = Number.parseInt(result[2]);
+            const isAdd = result[3] == '+';
+            const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
+
+            const min =  isAdd ? (count + addition) : (count - addition);
+            const max = isAdd ? (count*multiple + addition) : (count*multiple - addition);
+            const average = (max-min)/2 + min;
+
+            return [min, max, average];
+        }
+
+        return [1,1,1];
+    } 
+
 
     function generateHp(): void {
-        if(monsterInfo){
-            const strValue = monsterInfo.hit_points_roll;
-            var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
-            const result = values.exec(strValue);
-            if(result){
-                const count = Number.parseInt(result[1]);
-                const multiple = Number.parseInt(result[2]);
-                const isAdd = result[3] == '+';
-                const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
+        const min = calculatedMonsterInfo.minHp;
+        const max = calculatedMonsterInfo. maxHp;
 
-                const min =  isAdd ? (count + addition) : (count - addition)
-                const max = isAdd ? (count*multiple + addition) : (count*multiple - addition)
-
-                const maxHp = randomNumber(min, max);
-                setCurrentHp(maxHp);
-                setMaxHp(maxHp);
-            }
-        }        
-    }
+        const maxHp = randomNumber(min, max);
+        setCurrentHp(maxHp);
+        setMaxHp(maxHp);
+    } 
 
     function handleCancel(): void {
         onEdit(false);
@@ -207,7 +241,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             : (<Box>
                 <Autocomplete
                     id="monster"
-                    freeSolo
                     autoSelect
                     sx={{ width: 300 }}
                     onChange={(e, v) => {
@@ -221,6 +254,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>)}
+            {existingCharacter ? '' 
+            : (<Box>
+                Initiative Bonus: {calculatedMonsterInfo.initiativeAdd}               
+            </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
                 <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
@@ -230,7 +267,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>
             {existingCharacter ? '' 
             : (<Box>
-                Hit Points Roll: {monsterInfo?.hit_points_roll}                
+                Hit Points Roll: {monsterInfo?.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
             </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 {hpEdit()}
@@ -260,10 +297,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Save
+                    Add
                 </Button>
                 <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
-                    Cancel
+                    Close
                 </Button>
 
             </Box>

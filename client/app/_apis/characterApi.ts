@@ -1,4 +1,4 @@
-import { Character, RootFilter } from "./character";
+import { Character, MultipleCharacters, RootFilter } from "./character";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/characters`;
@@ -51,6 +51,22 @@ export async function addCharacter(sessionId: string, character:Character) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     method: 'POST',
     body: JSON.stringify(character),
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+} 
+
+export async function addMultipleCharacter(sessionId: string, characters:MultipleCharacters) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/multiple`, {
+    method: 'POST',
+    body: JSON.stringify(characters),
     headers:{
       'Content-Type': 'application/json',
     } 

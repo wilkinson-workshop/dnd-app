@@ -8,6 +8,10 @@ export interface Character {
     monster: string | null
 }
 
+export interface MultipleCharacters {
+    characters: Character[]
+}
+
 export enum CharacterType{
     NonPlayer = 'non_player',
     Player = 'player',
