@@ -6,9 +6,11 @@ import { Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEve
 import { useRouter } from "next/navigation";
 import { Session } from "./_apis/session";
 import { EMPTY_GUID } from "./_apis/character";
+import { CreateSession } from "./create-session";
 
 export default function HomePage() {
   const [session, setSession] = useState<Session | null>(null);
+  const [selectedSession, setSelectedSession] = useState('');
   const [sessionOptions, setSessionOptions] = useState<Session[]>([]);
 
   const router = useRouter();
@@ -28,26 +30,27 @@ export default function HomePage() {
     router.push(`/${selectedSession}/dm`);
   }
 
-  function handleCreateSession(){
-    createSession({session_name:"test", session_description:"description", session_uuid:EMPTY_GUID})
+  function handleCreateSession(newSession: Session){
+    createSession(newSession)
     .then(session => {
-      const fullSession = {session_name: session, session_uuid: session, session_description: session};
+      const fullSession = {session_name: newSession.session_name, session_uuid: session, session_description: newSession.session_description};
 
       let newSessionOtions = sessionOptions.slice();
       newSessionOtions.push(fullSession);
       setSessionOptions(newSessionOtions);
 
-      joinActiveSession(fullSession.session_uuid);
+      setSelectedSession(fullSession.session_uuid);
       setSession(fullSession);
     });
   }
 
-  function handleChangeSession(event: SelectChangeEvent<typeof session>){
+  function handleChangeSession(event: SelectChangeEvent<typeof selectedSession>){
     const {  
       target: { value },  
     } = event;
 
     const selectedSession = sessionOptions.find(s => s.session_uuid == value);
+    setSelectedSession(selectedSession!.session_uuid);
     setSession(selectedSession!);
   }
 
@@ -57,8 +60,10 @@ export default function HomePage() {
           <InputLabel id="session">Session</InputLabel>
           <Select
             labelId="session"
-            value={session}
-            renderValue={(selected) => selected?.session_name} 
+            value={selectedSession}
+            renderValue={(selected) => { 
+              return sessionOptions.find(s => s.session_uuid == selected)?.session_name
+            }} 
             label="Session"
             onChange={handleChangeSession}
           >
@@ -70,9 +75,7 @@ export default function HomePage() {
       <Button disabled={session==null} variant="contained" aria-label="create session" onClick={() => joinActiveSession(session!.session_uuid)}>
         Join
       </Button>
-      <Button variant="contained" aria-label="create session" onClick={handleCreateSession}>
-        Create Session
-      </Button>
+      <CreateSession onAddClick={handleCreateSession} />
       <Box>
         {session?.session_description}
       </Box>

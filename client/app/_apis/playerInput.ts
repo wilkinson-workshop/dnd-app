@@ -1,9 +1,18 @@
 import { CharacterType } from "./character"
+import { EventType } from "./eventType";
 
 export interface PlayerInput {
     value: number,
     client_uuid: string,
+    name: string,
     reason: string
+}
+
+export interface SessionInput {
+    session_uuid: string,
+    event_body: PlayerInput,
+    event_type: EventType 
+    
 }
 
 export const DiceTypes = [4,6,8,10,12,20,100];

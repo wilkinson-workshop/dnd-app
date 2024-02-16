@@ -1,6 +1,6 @@
 'use client'
 
-import { addSessionInput} from "@/app/_apis/sessionApi";
+import { addSessionInput, getSingleSession} from "@/app/_apis/sessionApi";
 import { useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
 import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
@@ -15,6 +15,8 @@ import { SkillRequest } from "./skill-request";
 import { Secrets } from "./secrets";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
 import { getClientId, setClientId } from "@/app/_apis/sessionStorage";
+import { Session } from "@/app/_apis/session";
+
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -29,6 +31,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
   const [skills, setSkills] = useState<APIReference[]>([]);
+  const [session, setSession] = useState<Session>();
 
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
@@ -40,7 +43,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     getConditionOptions();
     loadPlayerOptions();
     getSkillOptions();
-  }, [])
+    getCurrentSession();
+  }, []);
 
   useEffect(() => {
     if (lastJsonMessage !== null) {
@@ -62,7 +66,9 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
         }
         case EventType.ReceiveClientId: {
           const body: any = lastJsonMessage.event_body;
-          setClientId(body["client_uuid"]);
+          if(!getClientId()){
+            setClientId(body["client_uuid"]);
+          }
           sendJsonMessage({
             event_type: SubscriptionEventType.JoinSession, 
             event_body: {
@@ -76,9 +82,21 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     }
   }, [lastJsonMessage]);
 
+  function getCurrentSession(){
+    getSingleSession(params.sessionid)
+    .then(sessions => {
+      setSession(sessions[0]);
+    });
+  }
+
   function handleInputSubmit(rollValue: number){
     setIsGetDiceRoll(false); 
-    addSessionInput(params.sessionid, {value: rollValue, client_uuid: getClientId(), reason: requestRollBody.reason})
+    addSessionInput(params.sessionid, {
+      value: rollValue, 
+      client_uuid: getClientId(), 
+      reason: requestRollBody.reason,
+      name: params.playerName
+    })
     .then();
   }
 
@@ -132,6 +150,16 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           Player Join
         </a>) : ''}
       <Box>
+        <Box>
+          {session?.session_name}
+        </Box>
+        <Box>
+          {session?.session_description}
+        </Box>
+      </Box>
+
+
+      <Box>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (
           <div key={order.creature_id}  style={{border: '1px solid lightgray'  }}>
@@ -159,3 +187,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
     </>               
   )    
 }
+function getSingleSessions() {
+  throw new Error("Function not implemented.");
+}
+

@@ -103,6 +103,7 @@ class PlayerInput(EventBody):
 
     value: int
     reason: str
+    name: str
     client_uuid: str
 
 

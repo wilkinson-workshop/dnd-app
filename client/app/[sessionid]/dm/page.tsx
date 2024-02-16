@@ -92,8 +92,8 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
-    .then(pi => 
-      setInputs(pi))
+    .then(si => 
+      setInputs(si.map(si => si.event_body)))
   }
 
   function handleClearPlayerInput(){

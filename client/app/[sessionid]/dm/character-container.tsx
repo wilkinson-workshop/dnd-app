@@ -29,7 +29,7 @@ export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) =
   const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
   if(cards == null  || reload){
-    reloadDone();
+    reloadDone(); //TODO fix this implementation
     reloadList();    
   }
 
