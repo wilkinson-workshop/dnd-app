@@ -10,7 +10,7 @@ import { Box, Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
-import { EventType } from '@/app/_apis/eventType';
+import { EventType, SubscriptionEventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerSecret } from './send-player-secret';
@@ -18,6 +18,7 @@ import { getCharacters } from '@/app/_apis/characterApi';
 import { createContext } from 'react';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
+import { getClientId, setClientId } from '@/app/_apis/sessionStorage';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -35,11 +36,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const router = useRouter();
 
   const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`, 
-  {queryParams: {
-    role: CharacterType.DungeonMaster,
-    name: 'DM'
-  }});
+  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
 
   function setInitialConditions(conditions: any[], updated: APIReference[]){
     return updated;
@@ -56,8 +53,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
       conditionsDispatch(c.results));
   }
 
-
-
   useEffect(() => {
     if (lastJsonMessage !== null) {
       switch(lastJsonMessage.event_type){
@@ -70,6 +65,18 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           loadPlayerOptions();
           return;
         }
+        case EventType.ReceiveClientId: {
+          const body: any = lastJsonMessage.event_body;
+          setClientId(body["client_uuid"]);
+          sendJsonMessage({
+            event_type: SubscriptionEventType.JoinSession, 
+            event_body: {
+              session_uuid: params.sessionid,
+              role: CharacterType.DungeonMaster,
+              name: 'DM',
+              client_uuid: getClientId()}
+            });
+        }
       }
     }
   }, [lastJsonMessage]);
@@ -77,7 +84,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
-      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: []}];
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
       withAll.push(...c)
       setPlayerOptions(withAll);
     });
@@ -85,8 +92,8 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
   function handleGetPlayerInput(){
     getAllSessionInput(params.sessionid)
-    .then(pi => 
-      setInputs(pi))
+    .then(si => 
+      setInputs(si.map(si => si.event_body)))
   }
 
   function handleClearPlayerInput(){

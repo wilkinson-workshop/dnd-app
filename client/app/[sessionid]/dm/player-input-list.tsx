@@ -8,8 +8,8 @@ export const PlayerInputList: FC<PlayerInputListProps> = ({playerInputs, handleC
     return (
         <div>
         {playerInputs.map(input => (
-            <div key={input.body.client_uuids[0]}>
-                Name: {input.body.client_uuids[0]} - Value: {input.value}
+            <div key={input.client_uuid}>
+               Reason: {input.reason} Name: {input.name} - Value: {input.value}
             </div>
             ))} 
             <Button variant="contained" aria-label="end session" onClick={handleClickClearResults}>
