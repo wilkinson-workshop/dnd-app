@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
-from scryer.creatures import CharacterV2, Role, HitPoints
+from scryer.creatures import CharacterV2, MutlipleCharactersV2
 from scryer.services import (
     Action,
     Broker,
@@ -280,6 +280,18 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
+        
+@APP_ROUTERS["character"].post("/{session_uuid}/multiple")
+async def characters_make(session_uuid: UUID, body: MutlipleCharactersV2):
+    """Create a new character"""
+
+    for character in body.characters:
+        character.creature_id = request_uuid()
+        await _character_make(session_uuid, character)
+    await _broadcast_pc_event(
+        session_uuid,
+        events.ReceiveOrderUpdate, #type: ignore
+        body=events.EventBody())    
 
 
 @APP_ROUTERS["character"].patch("/{session_uuid}/{character_uuid}")

@@ -1,6 +1,6 @@
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
-import { Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
+import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
 import AddIcon from '@mui/icons-material/PersonAdd'
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
@@ -28,8 +28,21 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
     const [count, setCount] = useState(1);
     const [challengeRatings, setChallengeRatings] = useState<string>('');
     const [conditions, setConditions] = useState(false);
+    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
+    const [monster, setMonster] = useState('')
 
     const conditionOptions = useContext(ConditionsContext);
+
+    useEffect(() => {
+        getMonsterOptions();
+    }, []);
+
+    function getMonsterOptions(){
+        getAllMonsters([])
+        .then(m => {
+            setMonsterOptions(m.results);
+        });
+    }
 
     function getMonsterInfo(monsterId: string){        
         getMonster(monsterId)
@@ -37,7 +50,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
     }
 
     function generateMonster(monsterInfo: Monster) {
-        const monster = {
+                const monster = {
             creature_id: EMPTY_GUID,
             initiative: generateInitiative(monsterInfo),
             name: monsterInfo.name, 
@@ -49,22 +62,33 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
 
         monsters.current.push(monster);
         if(monsters.current.length == count){
-            onEdit(false);
+            //onEdit(false);
             onAddClick(monsters.current);
             resetForm();
         }
     }
 
     function handleSubmit(): void {
-        getAllMonsters(challengeRatings.split(','))
-        .then(m => {
+        if(monster){
             let number = 0;
+            let index = monsterOptions.find(x => x.name == monster)!.index;                   
             while(number < count){
-                const selectedMonster = randomNumber(0, m.results.length-1);
-                getMonsterInfo(m.results[selectedMonster].index);
+                //ideally only make request once since only creating one monster type
+                //but this api is force cached so not actually making multple calls.
+                getMonsterInfo(index);   
                 number++;
             }
-        });
+        } else {
+            getAllMonsters(challengeRatings.split(','))
+            .then(m => {
+                let number = 0;
+                while(number < count){
+                    const selectedMonster = randomNumber(0, m.results.length-1);
+                    getMonsterInfo(m.results[selectedMonster].index);
+                    number++;
+                }
+            });
+        }
     }
 
     function randomNumber(min: number, max: number): number {
@@ -115,6 +139,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
         monsters.current = [];
         setChallengeRatings('');
         setConditions(false);
+        setMonster('');
     }
 
     if(edit){ return (
@@ -122,30 +147,44 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
         <Box sx={{width: '100%'}}>
             <h2>Add Random New Creature(s)</h2>
             <Box>
-                <TextField sx={{ width: 300 }} size="small" label="Count" value={count} variant="outlined" onChange={x => setCount(Number.parseInt(x.target.value))} />
+                <Autocomplete
+                    id="monster"
+                    autoSelect
+                    sx={{ width: 300 }}
+                    onChange={(e, v) => {
+                        setMonster(v!);
+                    }}
+                    options={monsterOptions.map((option) => option.name)}
+                    renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
+                />
+            </Box>
+            <Box>
+                -OR-
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Challenge Ratings" value={challengeRatings} variant="outlined" onChange={x => setChallengeRatings(x.target.value)} />
             </Box>
+            <Box>
+                <TextField sx={{ width: 300 }} size="small" label="Count" value={count} variant="outlined" onChange={x => setCount(Number.parseInt(x.target.value))} />
+            </Box>
             <Box sx={{margin: '10px 0'}}>
-            <FormGroup>
-                <FormControlLabel control={
-                    <Checkbox
-                    checked={conditions}
-                    onChange={(e, c) => setConditions(c)}
-                    inputProps={{ 'aria-label': 'controlled' }}
-                    />}
-                label="Set a Condition" />
-            </FormGroup>
+                <FormGroup>
+                    <FormControlLabel control={
+                        <Checkbox
+                        checked={conditions}
+                        onChange={(e, c) => setConditions(c)}
+                        inputProps={{ 'aria-label': 'controlled' }}
+                        />}
+                    label="Set a Condition" />
+                </FormGroup>
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Create
+                    Add
                 </Button>
                 <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
-                    Cancel
+                    Close
                 </Button>
-
             </Box>
         </Box>
     </>
