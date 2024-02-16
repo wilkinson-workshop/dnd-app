@@ -36,7 +36,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   const router = useRouter();
 
   const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/ws`);
+  useWebSocket<{event_type: EventType, event_body: string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
 
   function setInitialConditions(conditions: any[], updated: APIReference[]){
     return updated;

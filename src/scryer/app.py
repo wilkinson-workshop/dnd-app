@@ -113,6 +113,16 @@ async def _sessions_find(session_uuid: UUID | str | None = None):
         raise HTTPException(404, f"No session at {session_uuid}")
     return found
 
+async def join_session(sock, data):
+    body: SessionJoinBody = data['event_body']
+    _, session  = (await _sessions_find(body['session_uuid']))[0]
+    await session.attach_client(sock, body)
+    if body['role'] == 'player':
+        await _broadcast_session_event(
+            request_uuid(session.session_uuid),
+            events.ReceiveOrderUpdate, 
+            body = events.EventBody())
+
 
 # -----------------------------------------------
 # Appliction Services.
@@ -214,9 +224,7 @@ APP_ROUTERS = {
     "client": APIRouter(prefix="/clients"),
     # Defines the routes available to managing
     # game sessions.
-    "session": APIRouter(prefix="/sessions"),
-    # Defines top level routes.
-    "app": APIRouter()
+    "session": APIRouter(prefix="/sessions")
 }
 
 # -----------------------------------------------
@@ -330,13 +338,18 @@ async def healthcheck(service_name: str | None = None):
 
     return {"count": 1, "results": [result]}
 
-@APP_ROUTERS["app"].websocket("/ws")
-async def sessions_join(sock: WebSocket):
+@APP_ROUTERS["session"].websocket("/{session_uuid}/ws")
+async def sessions_join(sock: WebSocket, session_uuid: typing.Annotated[str, Path()]):
 
     """
     Join an active session. Passes in some
     arbitrary `client_uuid`.
     """
+
+    session: CombatSession
+
+    _, session = (await _sessions_find(session_uuid))[0]
+
     await sock.accept()
 
     client_uuid = request_uuid()
@@ -350,19 +363,11 @@ async def sessions_join(sock: WebSocket):
             data: Event = await sock.receive_json()
             match data['event_type']:
                 case events.EventType.JOIN_SESSION:
-                    body: SessionJoinBody = data['event_body']
-                    _, session  = (await _sessions_find(body['session_uuid']))[0]
-                    await session.attach_client(sock, body)
-                    if body['role'] == 'player':
-                        await _broadcast_session_event(
-                            request_uuid(session.session_uuid),
-                            events.ReceiveOrderUpdate, 
-                            body = events.EventBody())                   
+                    await join_session(sock, data)                   
 
     except (WebSocketDisconnect, RuntimeError):
         #remove the socket from all groups
         await session.detach_client(sock)
-
 
 @APP_ROUTERS["session"].get("/", description="Get all active sessions.")
 @APP_ROUTERS["session"].get("/{session_uuid}", description="Get a specific, active, session.")

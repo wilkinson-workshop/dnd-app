@@ -33,7 +33,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 
   const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } = 
-  useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/ws`);
+  useWebSocket<{event_type: EventType, event_body: any | string}>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
 
   useEffect(() => {
     getLatestInitiativeOrder();
