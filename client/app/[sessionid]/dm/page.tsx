@@ -13,12 +13,12 @@ import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorTyp
 import { EventType, SubscriptionEventType } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
-import { SendPlayerSecret } from './send-player-secret';
+import { SendPlayerMessage } from '../chat/send-player-message';
 import { getCharacters } from '@/app/_apis/characterApi';
 import { createContext } from 'react';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
-import { getClientId, setClientId } from '@/app/_apis/sessionStorage';
+import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -68,6 +68,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         case EventType.ReceiveClientId: {
           const body: any = lastJsonMessage.event_body;
           setClientId(body["client_uuid"]);
+          setName("DM");
           sendJsonMessage({
             event_type: SubscriptionEventType.JoinSession, 
             event_body: {
@@ -84,7 +85,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
-      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All Players", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
       withAll.push(...c)
       setPlayerOptions(withAll);
     });
@@ -130,7 +131,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
         </DndProvider>
       </ConditionsContext.Provider>
       <Box sx={{margin: '20px 0'}}>
-        <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+        <SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
         <RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
         {inputs.length > 0 ? <PlayerInputList playerInputs={inputs} handleClickClearResults={handleClearPlayerInput} /> : '' }  
       </Box>    

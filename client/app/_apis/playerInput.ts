@@ -23,9 +23,10 @@ export interface JoinSessionRequest {
     role: CharacterType
 }
 
-export interface PlayerSecret {
+export interface PlayerMessage {
+    sender: string,
     client_uuids: string[],
-    secret: string
+    message: string
 }
 
 export interface RequestPlayerInput {

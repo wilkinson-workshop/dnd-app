@@ -4,9 +4,9 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { sharePlayerSecret } from "@/app/_apis/sessionApi";
+import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
-import { act } from "react-dom/test-utils";
+import { getName } from "@/app/_apis/sessionStorage";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -19,31 +19,33 @@ const MenuProps = {
   },
 };
 
-export interface SendPlayerSecretProps{
+export interface SendPlayerMessageProps{
     sessionId: string,
     recipientOptions: Character[]
 }
 
-export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipientOptions}) => {
+export const SendPlayerMessage:FC<SendPlayerMessageProps> = ({sessionId, recipientOptions}) => {
     const [edit, onEdit] = useState(false);
     const [recipients, setRecipient] = useState<string[]>([]);
-    const [secretMsg, setSecretMsg] = useState('');
+    const [message, setMessage] = useState('');
 
     function handleClickRequestRoll() {
         onEdit(false);
 
         let actualRecipients = recipients;
 
+        //account for "All Players" Option
         if(recipients.length > 0 && recipients[0] == EMPTY_GUID){
             actualRecipients = recipientOptions.filter(x => x.creature_id != EMPTY_GUID).map(x => x.creature_id);
         }
 
-        sharePlayerSecret(sessionId, {
-            secret: secretMsg,
+        sendPlayerMessageApi(sessionId, {
+            sender: getName(),
+            message: message,
             client_uuids: actualRecipients
         }).then();
         setRecipient([]);
-        setSecretMsg('');
+        setMessage('');
     }
 
     function handleChangeRecipient(event: SelectChangeEvent<typeof recipients>){
@@ -56,10 +58,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
     if(edit){ return (
         <Box>
             <Box sx={{width: '100%'}}>
-                <h2>Player Input Request</h2>
-                <Box sx={{margin: '10px 0'}}>
-                    <TextField sx={{ width: 300 }} onChange={e => setSecretMsg(e.target.value)} label="Secret" size="small" variant="outlined" />
-                </Box>
+                <h2>New Conversation</h2>
                 <Box sx={{margin: '10px 0'}}>
                     <FormControl sx={{ width: 300 }}>
                         <InputLabel id="recipient">Recipients</InputLabel>
@@ -82,6 +81,9 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
                     </FormControl>
                 </Box>
                 <Box sx={{margin: '10px 0'}}>
+                    <TextField sx={{ width: 300 }} onChange={e => setMessage(e.target.value)} label="Message" size="small" variant="outlined" />
+                </Box>
+                <Box sx={{margin: '10px 0'}}>
                     <Button variant="contained" aria-label="Send" onClick={handleClickRequestRoll}>
                         Send
                     </Button>
@@ -96,7 +98,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
         return (
         <Box sx={{margin: '10px 0'}}>
             <Button variant="contained" onClick={_ => onEdit(true)}>
-                Send Player Secret
+                New Conversation
             </Button>
         </Box>
         )
