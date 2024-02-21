@@ -86,7 +86,7 @@ export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretIn
                     label="Conversation"
                     onChange={handleThreadChange}
                 >
-                    {threads.map(t => <MenuItem value={t.ids}>{t.names}</MenuItem>)}
+                    {threads.map(t => <MenuItem key={t.ids} value={t.ids}>{t.names}</MenuItem>)}
                 </Select>
             </FormControl>
             <Box sx={{overflowY: 'auto', maxHeight: 500, border: 1, borderColor: 'lightgrey'}}>
