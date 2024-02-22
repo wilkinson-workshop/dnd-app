@@ -2,7 +2,7 @@ import { GetAll, Condition, Skill, Monster } from "./dnd5eTypings";
 
  export const INIT_DESC = 'When determining turn order for battle you roll Dexterity (Initiative).';
 
-const apiBaseUrl = 'https://www.dnd5eapi.co/api/'
+const apiBaseUrl = 'https://www.dnd5eapi.co/api'
 
 export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/conditions`, {
