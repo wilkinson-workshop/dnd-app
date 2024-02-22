@@ -12,7 +12,7 @@ __all__ = (
     "ReceiveClientUUID",
     "ReceiveOrderUpdate",
     "ReceiveRoll",
-    "ReceiveSecret",
+    "ReceiveMessage",
     "RequestRoll",
     "SessionJoinBody",
     "dump_event"
@@ -47,14 +47,14 @@ class EventType(enum.StrEnum):
     The types of events our system uses.
     """
 
-    MESSAGE              = enum.auto()
-    RECEIVE_CLIENT_UUID  = enum.auto()
-    RECEIVE_ORDER_UPDATE = enum.auto()
-    RECEIVE_ROLL         = enum.auto()
-    RECEIVE_SECRET       = enum.auto()
-    REQUEST_ROLL         = enum.auto()
+    MESSAGE               = enum.auto()
+    RECEIVE_CLIENT_UUID   = enum.auto()
+    RECEIVE_ORDER_UPDATE  = enum.auto()
+    RECEIVE_ROLL          = enum.auto()
+    RECEIVE_MESSAGE       = enum.auto()
+    REQUEST_ROLL          = enum.auto()
 
-    JOIN_SESSION         = enum.auto()
+    JOIN_SESSION          = enum.auto()
 
 
 
@@ -107,13 +107,14 @@ class PlayerInput(EventBody):
     client_uuid: str
 
 
-class PlayerSecret(EventBody):
+class PlayerMessage(EventBody):
     """
-    This is the request for sending secrets from
-    DM to player
+    This is the request for sending chat messages
+    between users
     """
 
-    secret:       str
+    sender:       str
+    message:      str
     client_uuids: list[UUID]
 
 
@@ -162,8 +163,8 @@ def ReceiveRoll(body: EventBody, **kwds):
     return NewEvent(EventType.RECEIVE_ROLL, body, **kwds)
 
 
-def ReceiveSecret(body: EventBody, **kwds):
-    return NewEvent(EventType.RECEIVE_SECRET, body, **kwds)
+def ReceiveMessage(body: EventBody, **kwds):
+    return NewEvent(EventType.RECEIVE_MESSAGE, body, **kwds)
 
 
 def RequestRoll(body: EventBody, **kwds):

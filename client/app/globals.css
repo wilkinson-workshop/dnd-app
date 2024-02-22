@@ -20,3 +20,31 @@
   display: inline-block;
   margin-right: 10px;
 }
+
+.message-line.self {
+  text-align: right;
+}
+
+.message {
+  display: inline-block;
+  margin: 5px;
+  padding: 5px 15px;  
+  color: white;
+  border-radius: 15px;
+  max-width: 80%;
+}
+
+.message.self {
+  background-color: #1976d2;
+}
+
+.message.other {
+  background-color: rgb(172, 172, 172);
+}
+
+.message-line > .sender {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 400;
+  margin-left: 10px;
+}

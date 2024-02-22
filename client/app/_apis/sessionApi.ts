@@ -1,4 +1,4 @@
-import { PlayerInput, RequestPlayerInput, PlayerSecret, SessionInput } from "./playerInput";
+import { PlayerInput, RequestPlayerInput, PlayerMessage, SessionInput } from "./playerInput";
 import { Session } from "./session";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
@@ -124,8 +124,8 @@ export async function requestPlayerInput(sessionId: string, input: RequestPlayer
   return res.json()
 }
 
-export async function sharePlayerSecret(sessionId: string, input: PlayerSecret) {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}/secret`, {
+export async function sendPlayerMessageApi(sessionId: string, input: PlayerMessage) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/message`, {
     method: 'POST',
     body: JSON.stringify(input),
     headers:{

@@ -7,15 +7,15 @@ import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, Log
 import { Box, Grid, styled } from "@mui/material";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
-import { RequestPlayerInput } from "@/app/_apis/playerInput";
-import { SendPlayerSecret } from "../dm/send-player-secret";
+import { PlayerMessage, RequestPlayerInput } from "@/app/_apis/playerInput";
+import { SendPlayerMessage } from "../chat/send-player-message";
 import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
 import { ConditionItem } from "./condition-item";
 import { SkillRequest } from "./skill-request";
-import { Secrets } from "./secrets";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
-import { getClientId, setClientId } from "@/app/_apis/sessionStorage";
+import { getClientId, setClientId, setName } from "@/app/_apis/sessionStorage";
 import { Session } from "@/app/_apis/session";
+import { ChatBox } from "../chat/chat-box";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
@@ -26,7 +26,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   const [initiativeOrder, setInitiativeOrder] = useState<Character[]>([]);
   const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
   const [isShowSecret, setIsShowSecret] = useState(false);
-  const [secret, setSecret] = useState('');
+  const [secretBody, setSecret] = useState<PlayerMessage | null>(null);
   const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({client_uuids: [], reason: '', dice_type: 20});
   const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
   const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
@@ -59,8 +59,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           loadPlayerOptions();
           return;
         }
-        case EventType.ReceiveSecret: {
-          setSecret(lastJsonMessage.event_body.secret);
+        case EventType.ReceiveMessage: {
+          setSecret(lastJsonMessage.event_body);
           setIsShowSecret(true);
           return;
         }
@@ -68,6 +68,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           const body: any = lastJsonMessage.event_body;
           if(!getClientId()){
             setClientId(body["client_uuid"]);
+            setName(params.playerName);
+
           }
           sendJsonMessage({
             event_type: SubscriptionEventType.JoinSession, 
@@ -121,7 +123,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})
     .then(c => {
-      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
+      const withAll: Character[] = [{creature_id: EMPTY_GUID, name: "All Players", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: ''}];
       withAll.push(...c)
       setPlayerOptions(withAll);
     });
@@ -157,8 +159,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
           {session?.session_description}
         </Box>
       </Box>
-
-
       <Box>
         <h2>Initiative Order</h2>
         {initiativeOrder.map(order => (
@@ -181,13 +181,9 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
             </div>
         ))}
       </Box>
-      <SendPlayerSecret sessionId={params.sessionid} recipientOptions={playerOptions} />
+      <SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
       {isGetDiceRoll ? <SkillRequest skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} /> : ''}
-      {isShowSecret ? <Secrets secret={secret} setIsShowSecret={setIsShowSecret} /> : ''}
+      {isShowSecret ? <ChatBox sessionId={params.sessionid} recipientOptions={playerOptions} secretInfo={secretBody!} setIsShowSecret={setIsShowSecret} /> : ''}
     </>               
   )    
 }
-function getSingleSessions() {
-  throw new Error("Function not implemented.");
-}
-

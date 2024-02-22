@@ -499,17 +499,17 @@ async def sessions_player_input_request(
         body)
 
 
-@APP_ROUTERS["session"].post("/{session_uuid}/secret")
+@APP_ROUTERS["session"].post("/{session_uuid}/message")
 async def sessions_player_secret(
     session_uuid: UUID,
-    body: events.PlayerSecret):
+    body: events.PlayerMessage):
     """
-    Send a secret to to a specific player.
+    Send a messsage to to player(s).
     """
 
     await _broadcast_pc_event(
         session_uuid,
-        events.ReceiveSecret, #type: ignore
+        events.ReceiveMessage, #type: ignore
         body)
 
 

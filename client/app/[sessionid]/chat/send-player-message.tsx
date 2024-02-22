@@ -1,12 +1,12 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Box, Button, Checkbox, ListItemText, TextField } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { sharePlayerSecret } from "@/app/_apis/sessionApi";
+import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
-import { act } from "react-dom/test-utils";
+import { getClientId, getName } from "@/app/_apis/sessionStorage";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -19,47 +19,53 @@ const MenuProps = {
   },
 };
 
-export interface SendPlayerSecretProps{
+export interface SendPlayerMessageProps{
     sessionId: string,
     recipientOptions: Character[]
 }
 
-export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipientOptions}) => {
+export const SendPlayerMessage:FC<SendPlayerMessageProps> = ({sessionId, recipientOptions}) => {
     const [edit, onEdit] = useState(false);
+    //When starting a conversation as DM it add the DM as a recipient even though they are not an option
+    //this causes no ill effect and there is a potential future story to add them so keeping the side effect for now.
     const [recipients, setRecipient] = useState<string[]>([]);
-    const [secretMsg, setSecretMsg] = useState('');
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        setRecipient([getClientId()])
+    },[recipientOptions])
 
     function handleClickRequestRoll() {
         onEdit(false);
 
-        let actualRecipients = recipients;
-
-        if(recipients.length > 0 && recipients[0] == EMPTY_GUID){
-            actualRecipients = recipientOptions.filter(x => x.creature_id != EMPTY_GUID).map(x => x.creature_id);
-        }
-
-        sharePlayerSecret(sessionId, {
-            secret: secretMsg,
-            client_uuids: actualRecipients
+        sendPlayerMessageApi(sessionId, {
+            sender: getName(),
+            message: message,
+            client_uuids: recipients
         }).then();
-        setRecipient([]);
-        setSecretMsg('');
+        setRecipient([getClientId()]);
+        setMessage('');
     }
 
     function handleChangeRecipient(event: SelectChangeEvent<typeof recipients>){
         const {  
             target: { value },  
         } = event;
-        setRecipient(typeof value === 'string' ? value.split(',') : value);
+
+        let selectedRecipients = value;
+
+        //account for "All Players" Option
+        if(selectedRecipients.includes(EMPTY_GUID)){
+            selectedRecipients = recipientOptions.filter(x => x.creature_id != EMPTY_GUID).map(x => x.creature_id);
+        }
+
+        setRecipient(typeof selectedRecipients === 'string' ? selectedRecipients.split(',') : selectedRecipients);
     }
 
     if(edit){ return (
         <Box>
             <Box sx={{width: '100%'}}>
-                <h2>Player Input Request</h2>
-                <Box sx={{margin: '10px 0'}}>
-                    <TextField sx={{ width: 300 }} onChange={e => setSecretMsg(e.target.value)} label="Secret" size="small" variant="outlined" />
-                </Box>
+                <h2>New Conversation</h2>
                 <Box sx={{margin: '10px 0'}}>
                     <FormControl sx={{ width: 300 }}>
                         <InputLabel id="recipient">Recipients</InputLabel>
@@ -73,13 +79,16 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
                             MenuProps={MenuProps}
                         >
                             {recipientOptions.map(s =>  
-                            <MenuItem key={s.creature_id} value={s.creature_id}>
+                            <MenuItem disabled={s.creature_id == getClientId()} key={s.creature_id} value={s.creature_id}>
                                 <Checkbox checked={recipients.indexOf(s.creature_id) > -1} />
                                 <ListItemText primary={s.name} />
                             </MenuItem>
                             )}
                         </Select>
                     </FormControl>
+                </Box>
+                <Box sx={{margin: '10px 0'}}>
+                    <TextField sx={{ width: 300 }} onChange={e => setMessage(e.target.value)} label="Message" size="small" variant="outlined" />
                 </Box>
                 <Box sx={{margin: '10px 0'}}>
                     <Button variant="contained" aria-label="Send" onClick={handleClickRequestRoll}>
@@ -96,7 +105,7 @@ export const SendPlayerSecret:FC<SendPlayerSecretProps> = ({sessionId, recipient
         return (
         <Box sx={{margin: '10px 0'}}>
             <Button variant="contained" onClick={_ => onEdit(true)}>
-                Send Player Secret
+                New Conversation
             </Button>
         </Box>
         )

@@ -11,8 +11,8 @@ export interface CharacterConditionsProps {
 
 export const CreateSession: FC<CharacterConditionsProps> = ({onAddClick}) => {
     const [edit, onEdit] = useState(false);
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
+    const [name, setName] = useState(new Date().toLocaleDateString());
+    const [description, setDescription] = useState(`Session on ${new Date().toDateString()}`);
 
     function handleSubmit(): void {
         onEdit(false);
