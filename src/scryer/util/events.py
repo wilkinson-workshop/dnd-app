@@ -55,6 +55,7 @@ class EventType(enum.StrEnum):
     REQUEST_ROLL          = enum.auto()
 
     JOIN_SESSION          = enum.auto()
+    END_SESSION           = enum.auto()
 
 
 
@@ -169,3 +170,6 @@ def ReceiveMessage(body: EventBody, **kwds):
 
 def RequestRoll(body: EventBody, **kwds):
     return NewEvent(EventType.REQUEST_ROLL, body, **kwds)
+
+def EndSession(body: EventBody, **kwds):
+    return NewEvent(EventType.END_SESSION, body, **kwds)

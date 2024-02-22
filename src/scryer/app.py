@@ -417,6 +417,12 @@ async def sessions_stop(session_uuid: UUID):
     """Ends an active session."""
 
     sessions: Broker[UUID, CombatSession] = APP_SERIVCES["sessions00"] #type: ignore
+
+    await _broadcast_session_event(
+        request_uuid(session_uuid),
+        events.EndSession, #type: ignore
+        body = events.EventBody())
+
     await sessions.delete(session_uuid)
 
 
@@ -450,7 +456,7 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
     if(event.reason == "Initiative"):
         found = await session.characters.locate(request_uuid(event.client_uuid))
         if found:
-            ch = found[1] #type: ignore
+            ch = found[0][1] #type: ignore
             ch.initiative = event.value
             await _character_make(
                 session_uuid, 
