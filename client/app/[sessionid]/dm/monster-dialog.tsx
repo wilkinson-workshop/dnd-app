@@ -1,13 +1,13 @@
 import { Monster } from '@/app/_apis/dnd5eTypings';
 import Dialog from '@mui/material/Dialog';
 
-export interface SimpleDialogProps {
+export interface MonsterInfoDialogProps {
     open: boolean;
     monsterInfo: Monster;
     onClose: () => void;
   }  
 
-export const MonsterInfoDialog = (props: SimpleDialogProps) => {
+export const MonsterInfoDialog = (props: MonsterInfoDialogProps) => {
   const { onClose, monsterInfo, open } = props;
 
   const handleClose = () => {

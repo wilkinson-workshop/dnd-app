@@ -13,6 +13,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import { getMonster } from '@/app/_apis/dnd5eApi'
 import { Monster } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
+import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
 
 const style = {
 	border: '1px solid lightgray',
@@ -36,11 +37,9 @@ interface DragItem {
 
 export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton, deleteCharacter }) => {
 	const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
-	const [open, setOpen] = useState(false);
-
-	const handleClose = () => {
-		setOpen(false);
-	};
+	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
+	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
+	const responseDialogInfo: ResponseDialogInfo = {title: 'Delete', message: 'Are you sure you want to delete this Creature?'};
 
 	const ref = useRef<HTMLDivElement>(null)
 	const [{ handlerId }, drop] = useDrop<
@@ -102,7 +101,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 			// to avoid expensive index searches.
 			item.index = hoverIndex
 		},
-	})
+	});
 
 	const [{ isDragging }, drag] = useDrag({
 		type: ItemTypes.CARD,
@@ -114,15 +113,35 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 		}),
 	});
 
+	function handleDelete(){
+		//extra caution deleting PC or creatures with hp left
+		if (character.hit_points[0] != 0 || character.role == CharacterType.Player) {
+			setIsResponseDialogOpen(true);
+		} else {
+			deleteCharacter(character);	
+		}			
+	}
+
 	function getMonsterInfo(monsterId: string) {
 		if (monsterInfo) {
-			setOpen(true);
+			setIsMonsterInfoOpen(true);
 		} else {
 			getMonster(monsterId)
 				.then(m => {
 					setMonsterInfo(m);
-					setOpen(true);
+					setIsMonsterInfoOpen(true);
 				});
+		}
+	}
+
+	const handleMonsterDialogClose = () => {
+		setIsMonsterInfoOpen(false);
+	};
+
+	const handleResponseDialogClose = (isYes: boolean) => {
+		setIsResponseDialogOpen(false);
+		if(isYes){
+			deleteCharacter(character);
 		}
 	}
 
@@ -131,9 +150,14 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 	return (
 		<>
 			<MonsterInfoDialog
-				open={open}
+				open={isMonsterInfoOpen}
 				monsterInfo={monsterInfo!}
-				onClose={handleClose}
+				onClose={handleMonsterDialogClose}
+			/>
+			<ResponseDialog
+				open={isResponseDialogOpen}
+				info={responseDialogInfo}
+				onClose={handleResponseDialogClose}
 			/>
 			<div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
 				<Box>
@@ -167,7 +191,7 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 								<IconButton aria-label="edit" onClick={() => updateCharacterButton(character)}>
 									<EditIcon />
 								</IconButton>
-								<IconButton aria-label="delete" onClick={() => deleteCharacter(character)}>
+								<IconButton aria-label="delete" onClick={handleDelete}>
 									<DeleteIcon />
 								</IconButton>
 							</Box>
