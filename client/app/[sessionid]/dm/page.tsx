@@ -65,6 +65,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
           loadPlayerOptions();
           return;
         }
+        case EventType.EndSession: {
+          endSessionEvent();
+          return;
+        }
         case EventType.ReceiveClientId: {
           const body: any = lastJsonMessage.event_body;
           setClientId(body["client_uuid"]);
@@ -81,6 +85,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
       }
     }
   }, [lastJsonMessage]);
+
+  //event handler in case there are more then one DM and one ends the session.
+  function endSessionEvent(){
+    router.push(baseUrl!);
+  }
 
   function loadPlayerOptions(){
     getCharacters(params.sessionid, {filters: [{field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player}], logic: LogicType.And})

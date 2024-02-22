@@ -5,7 +5,7 @@ import { getName } from "@/app/_apis/sessionStorage";
 import { PlayerMessage } from "@/app/_apis/playerInput";
 import { Character } from "@/app/_apis/character";
 
-interface ThreadOptions {
+export interface ThreadOptions {
     ids: string,
     names: string
 }
