@@ -61,7 +61,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		<>
 			{(monsterInfo == null) ? '' : (
 				<Dialog onClose={handleClose} open={open}>
-					<DialogTitle sx={{ m: 0, p: 2 }}>
+					<DialogTitle sx={{ m: 0, paddingX: 2, paddingY:1, fontWeight: 700 }}>
 						{monsterInfo.name}
 					</DialogTitle>
 					<IconButton
@@ -76,7 +76,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 					>
 						<CloseIcon />
 					</IconButton>
-					<DialogContent>
+					<DialogContent sx={{paddingTop: 1}}>
 						<Grid container spacing={1}>
 							<Grid item xs={5}>
 								{monsterInfo.image ?
@@ -103,7 +103,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							</Grid>
 						</Grid>
 						<Box>{monsterInfo.desc}</Box>
-						<Grid container spacing={2}>
+						<Grid sx={{paddingTop: 1}} container spacing={2}>
 							<Grid item xs={4}>
 								<Box><span className="bold-label">Strength:</span> {monsterInfo.strength}</Box>
 								<Box><span className="bold-label">Dexterity:</span> {monsterInfo.dexterity}</Box>
@@ -126,9 +126,9 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 						<Box><span className="bold-label">Proficiencies:</span> {monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')}</Box>
 						<Accordion>
 							<AccordionSummary
-							expandIcon={<ExpandMoreIcon />}
-							aria-controls="actions-content"
-							id="actions-header"
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="actions-content"
+								id="actions-header"
 							>
 							<span className="bold-label">Actions</span>
 							</AccordionSummary>
@@ -138,9 +138,9 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 						</Accordion>
 						<Accordion>
 							<AccordionSummary
-							expandIcon={<ExpandMoreIcon />}
-							aria-controls="legendary-actions-content"
-							id="legendary-actions-header"
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="legendary-actions-content"
+								id="legendary-actions-header"
 							>
 							<span className="bold-label">Legendary Actions</span>
 							</AccordionSummary>
@@ -150,9 +150,9 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 						</Accordion>
 						<Accordion>
 							<AccordionSummary
-							expandIcon={<ExpandMoreIcon />}
-							aria-controls="special-abilities-content"
-							id="special-abilitie-header"
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="special-abilities-content"
+								id="special-abilitie-header"
 							>
 							<span className="bold-label">Special Abilities</span>
 							</AccordionSummary>
