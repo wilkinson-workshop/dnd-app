@@ -59,7 +59,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 					return;
 				}
 				case EventType.ReceiveOrderUpdate: {
-					setAlert({type: 'info', message: 'New creatures have appeared!'});
+					setAlert({ type: 'info', message: 'New creatures have appeared!' });
 
 					getLatestInitiativeOrder();
 					loadPlayerOptions();
@@ -78,15 +78,14 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 					const body: any = lastJsonMessage.event_body;
 					if (!getClientId()) {
 						setClientId(body["client_uuid"]);
-						setName(params.playerName);
-
+						setName(decodeURI(params.playerName));
 					}
 					sendJsonMessage({
 						event_type: SubscriptionEventType.JoinSession,
 						event_body: {
 							session_uuid: params.sessionid,
 							role: CharacterType.Player,
-							name: params.playerName,
+							name: decodeURI(params.playerName),
 							client_uuid: getClientId()
 						}
 					});
@@ -96,15 +95,15 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 	}, [lastJsonMessage]);
 
 	function endSession() {
-		setAlert({type: 'info', message: 'The current session has ended.'});
-		setTimeout(() => {router.push(`/${params.sessionid}`)}, 5000);		
+		setAlert({ type: 'info', message: 'The current session has ended.' });
+		setTimeout(() => { router.push(`/${params.sessionid}`) }, 5000);
 	}
 
 	function getCurrentSession() {
 		getSingleSession(params.sessionid)
-			.then(sessions => {
-				setSession(sessions[0]);
-			});
+		.then(sessions => {
+			setSession(sessions[0]);
+		});
 	}
 
 	function handleInputSubmit(rollValue: number) {
@@ -113,36 +112,50 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 			value: rollValue,
 			client_uuid: getClientId(),
 			reason: requestRollBody.reason,
-			name: params.playerName
+			name: decodeURI(params.playerName)
 		})
-			.then();
+		.then();
 	}
 
 	function getLatestInitiativeOrder() {
 		getCharactersPlayer(params.sessionid)
-			.then(i => setInitiativeOrder(i));
+		.then(i => setInitiativeOrder(i));
 	}
 
 	function getConditionOptions() {
 		getAllConditions()
-			.then(c => setConditionOptions(c.results));
+		.then(c => setConditionOptions(c.results));
 	}
 
 	function getSkillOptions() {
 		getAllSkills()
-			.then(s => {
-				const skills = [{ index: 'initiative', name: 'Initiative', url: '' }, ...s.results];
-				setSkills(skills);
-			});
+		.then(s => {
+			const skills = [{ index: 'initiative', name: 'Initiative', url: '' }, ...s.results];
+			setSkills(skills);
+		});
 	}
 
 	function loadPlayerOptions() {
-		getCharacters(params.sessionid, { filters: [{ field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player }], logic: LogicType.And })
-			.then(c => {
-				const withAll: Character[] = [{ creature_id: EMPTY_GUID, name: "All Players", initiative: 0, hit_points: [], role: CharacterType.Player, conditions: [], monster: '' }];
-				withAll.push(...c)
-				setPlayerOptions(withAll);
-			});
+		getCharacters(params.sessionid, { 
+			filters: [{ 
+				field: FieldType.Role, 
+				operator: OperatorType.Equals, 
+				value: CharacterType.Player 
+			}], 
+			logic: LogicType.And 
+		})
+		.then(c => {
+			const withAll: Character[] = [{ 
+				creature_id: EMPTY_GUID, 
+				name: "All Players", 
+				initiative: 0, hit_points: [], 
+				role: CharacterType.Player, 
+				conditions: [], 
+				monster: '' 
+			}];
+			withAll.push(...c)
+			setPlayerOptions(withAll);
+		});
 	}
 
 	function calculateHP(character: Character): string {
@@ -156,10 +169,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 		else
 			return HpBoundaryOptions.find(x => x.id == 100)!.name;
 	}
-
-	const Item = styled(Box)(({ theme }) => ({
-		padding: theme.spacing(1),
-	}));
 
 	return (
 		<>
@@ -183,15 +192,15 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 						<Box>
 							<Grid container spacing={2}>
 								<Grid item xs={12} sm={4}>
-									<Item>{order.name}</Item>
+									<Box className="item">{order.name}</Box>
 								</Grid>
 								<Grid item xs={6} sm={3}>
-									<Item>{calculateHP(order)}</Item>
+									<Box className="item">{calculateHP(order)}</Box>
 								</Grid>
 								<Grid item xs={6} sm={5}>
-									<Item>{order.conditions.map(c =>
+									<Box className="item">{order.conditions.map(c =>
 										<ConditionItem conditionId={c} conditionOptions={conditionOptions} />)}
-									</Item>
+									</Box>
 								</Grid>
 							</Grid>
 						</Box>

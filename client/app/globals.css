@@ -48,3 +48,11 @@
   font-weight: 400;
   margin-left: 10px;
 }
+
+.item {
+  padding: 8px;
+}
+
+.bold-label {
+  font-weight: 800;
+}

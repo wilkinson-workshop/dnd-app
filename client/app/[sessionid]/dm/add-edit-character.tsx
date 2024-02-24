@@ -302,7 +302,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
                     Close
                 </Button>
-
             </Box>
         </Box>
     </>
