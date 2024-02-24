@@ -34,5 +34,5 @@ jobs:
           fetch-depth: 1
       - name: Deploy to Remote Host
         env:
-          SSH_PUB_KEY: ${{ secrets.SSH_PUB_KEY }}
+          SSH_PUB_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: fab deploy
