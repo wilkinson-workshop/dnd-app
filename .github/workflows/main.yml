@@ -1,0 +1,42 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install fabric
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Install local files
+        run: echo ${{ secrets.SSH_PRIVATE_KEY }} > ~/.ssh/id_rsa
+      - name: Deploy to Remote Host
+        env:
+          REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
+          REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
+          APPLICATION_PATH: ${{ secrets.APPLICATION_PATH }}
+          SERVICE_NAME_BACKEND: ${{ secrets.SERVICE_NAME_BACKEND }}
+          SERVICE_NAME_FRONTEND: ${{ secrets.SERVICE_NAME_FRONTEND }}
+
+        run: fab deploy
