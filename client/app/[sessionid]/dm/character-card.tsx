@@ -1,5 +1,5 @@
 import type { Identifier, XYCoord } from 'dnd-core'
-import type { FC, VoidFunctionComponent } from 'react'
+import type { FC } from 'react'
 import { memo, useRef, useState } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { ItemTypes } from './item-types'
@@ -10,12 +10,10 @@ import { Box, Button, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
-import DoneIcon from '@mui/icons-material/Done';
 import { getMonster } from '@/app/_apis/dnd5eApi'
 import { Monster } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
 import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
-import { Gradient, GradientTwoTone } from '@mui/icons-material'
 
 const style = {
 	border: '1px solid lightgray',
