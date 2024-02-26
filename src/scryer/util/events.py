@@ -95,6 +95,9 @@ class RequestPlayerInput(EventBody):
     client_uuids: list[UUID]
     reason:       str
 
+class NewCurrentOrder(EventBody):
+    creature_uuid: str
+
 
 class PlayerInput(EventBody):
     """

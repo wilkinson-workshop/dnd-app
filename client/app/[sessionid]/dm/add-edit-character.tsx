@@ -297,7 +297,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Add
+                    Save
                 </Button>
                 <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
                     Close
