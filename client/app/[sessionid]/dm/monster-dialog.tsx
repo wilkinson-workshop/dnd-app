@@ -25,9 +25,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		switch(ac.type){
 			case 'armor': {
 				const armor = ac as ArmorAC
-				let text = '';
 				if(armor.armor){
-					text = armor.armor.map(a => `${a.name}: ${armor.value}`).toString();
+					return `${armor.armor.map(a => `${a.name}: ${armor.value}`).join(', ')}`;
 				} else {
 					return `${armor.type}: ${armor.value}`
 				}
