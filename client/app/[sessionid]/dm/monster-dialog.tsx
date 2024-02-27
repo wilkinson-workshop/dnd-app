@@ -173,36 +173,61 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 									/>}
 							</Grid>
 							<Grid item xs={7}>
-								<Box><span className="bold-label">Size:</span> {monsterInfo.size}</Box>
-								<Box><span className="bold-label">Type:</span> {monsterInfo.type}</Box>
-								<Box><span className="bold-label">Alignment:</span> {monsterInfo.alignment}</Box>
-								<Box><span className="bold-label">Languages:</span> {monsterInfo.languages}</Box>
-								<Box><span className="bold-label">Speed:</span> {showSpeed(monsterInfo.speed)}</Box>
-								<Box><span className="bold-label">Senses:</span> {showSenses(monsterInfo.senses)}</Box>
+								<Box><span className="bold-label">Size: </span>{monsterInfo.size}</Box>
+								<Box><span className="bold-label">Type: </span>{monsterInfo.type}</Box>
+								<Box><span className="bold-label">Alignment: </span>{monsterInfo.alignment}</Box>
+								<Box><span className="bold-label">Languages: </span>{monsterInfo.languages}</Box>
+								<Box><span className="bold-label">Speed: </span>{showSpeed(monsterInfo.speed)}</Box>
+								<Box><span className="bold-label">Senses: </span>{showSenses(monsterInfo.senses)}</Box>
 							</Grid>
 						</Grid>
 						<Box>{monsterInfo.desc}</Box>
 						<Grid sx={{paddingTop: 1}} container spacing={2}>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Strength:</span> {monsterInfo.strength}</Box>
-								<Box><span className="bold-label">Dexterity:</span> {monsterInfo.dexterity}</Box>
+								<Box><span className="bold-label">Strength: </span>{monsterInfo.strength}</Box>
+								<Box><span className="bold-label">Dexterity: </span>{monsterInfo.dexterity}</Box>
 							</Grid>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Constution:</span> {monsterInfo.constitution}</Box>
-								<Box><span className="bold-label">Intelligence:</span> {monsterInfo.intelligence}</Box>
+								<Box><span className="bold-label">Constution: </span>{monsterInfo.constitution}</Box>
+								<Box><span className="bold-label">Intelligence: </span>{monsterInfo.intelligence}</Box>
 							</Grid>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Wisdom:</span> {monsterInfo.wisdom}</Box>
-								<Box><span className="bold-label">Charisma:</span> {monsterInfo.charisma}</Box>
+								<Box><span className="bold-label">Wisdom: </span>{monsterInfo.wisdom}</Box>
+								<Box><span className="bold-label">Charisma: </span>{monsterInfo.charisma}</Box>
 							</Grid>
-						</Grid>
-						<Box><span className="bold-label">Damage Vulnerabilities:</span> {monsterInfo.damage_vulnerabilities.join(', ')}</Box>
-						<Box><span className="bold-label">Damage Resistances:</span> {monsterInfo.damage_resistances.join(', ')}</Box>
-						<Box><span className="bold-label">Damage Immunities:</span> {monsterInfo.damage_immunities.join(', ')}</Box>
-						<Box><span className="bold-label">Condition Immunities:</span> {monsterInfo.condition_immunities.map(ci => ci.name).join(', ')}</Box>
-						<Box><span className="bold-label">Armor Class:</span> {showAC(monsterInfo.armor_class[0])}</Box>
-						<Box><span className="bold-label">Proficiency Bonus:</span> {monsterInfo.proficiency_bonus}</Box>
-						<Box><span className="bold-label">Proficiencies:</span> {monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')}</Box>
+						</Grid>						
+						<Box><span className="bold-label">Damage Vulnerabilities: </span> 
+							{monsterInfo.damage_vulnerabilities.length > 0 ? 
+								monsterInfo.damage_vulnerabilities.join(', ')
+								:'None'
+							}
+						</Box>
+						<Box><span className="bold-label">Damage Resistances: </span> 
+							{monsterInfo.damage_resistances.length > 0 ? 
+								monsterInfo.damage_resistances.join(', ')
+								:'None'
+							}
+						</Box>						
+						<Box><span className="bold-label">Damage Immunities: </span> 
+							{monsterInfo.damage_immunities.length > 0 ? 
+								monsterInfo.damage_immunities.join(', ')
+								:'None'
+							}
+						</Box>							
+						<Box><span className="bold-label">Condition Immunities: </span> 
+							{monsterInfo.condition_immunities.length > 0 ? 
+								monsterInfo.condition_immunities.map(ci => ci.name).join(', ')
+								:'None'
+							}
+						</Box>
+						<Box><span className="bold-label">Armor Class: </span>{showAC(monsterInfo.armor_class[0])}</Box>
+						<Box><span className="bold-label">Proficiency Bonus: </span>{monsterInfo.proficiency_bonus}</Box>
+						<Box><span className="bold-label">Proficiencies: </span> 
+							{monsterInfo.proficiencies.length > 0 ?
+								monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')
+								: 'None'
+							}
+						</Box>
 						<Accordion>
 							<AccordionSummary
 								expandIcon={<ExpandMoreIcon />}
