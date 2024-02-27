@@ -56,7 +56,7 @@ class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     conditions:  list[str]
     creature_id: UUID
     hit_points:  HitPoints
-    initiative:  int
+    initiative:  float
     name:        str | None = None
     role:        Role = Role.NON_PLAYER
     monster:     str | None = None
