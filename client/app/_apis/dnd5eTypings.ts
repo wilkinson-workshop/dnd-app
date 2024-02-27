@@ -114,10 +114,16 @@ interface Proficiency {
     proficiency: APIReference
 }
 
-interface ActionType {
+export interface ActionType {
     action_name: string
     count: number
     type: 'melee' | 'ranged' | 'ability' | 'magic'
+}
+
+export interface Attack {
+    name: string
+    dc: DC
+    damage: Damage
 }
 
 export interface Action {
@@ -129,11 +135,7 @@ export interface Action {
     multiattack_type: string,
     attack_bonus: number,
     dc: DC,
-    attacks: {
-        name: string    
-        dc: DC    
-        damage: Damage
-    }[],
+    attacks: Attack[],
     damage: Damage[]
 }
 
@@ -174,12 +176,12 @@ export interface Monster {
     proficiencies: Proficiency[] //A list of proficiencies of a monster.
     reactions: Action[] //A list of reactions that is available to the monster to take during combat.
     senses: Senses //Monsters typically have a passive perception but they might also have other senses to detect players.
-    special_abilities: SpecialAbilities[] //A list of the monster's special abilities.     
+    special_abilities: SpecialAbility[] //A list of the monster's special abilities.     
     speed: Speed //Speed for a monster determines how fast it can move per turn.
     xp: number //The number of experience points (XP) a monster is worth is based on its challenge rating.    
 }
 
-export interface SpecialAbilities {
+export interface SpecialAbility {
     name: string
     desc: string
     attack_bonus: number
@@ -195,22 +197,20 @@ export interface SpecialAbilities {
         // {
         //     //[string]: number
         // }
-        spells: SpecialAbilitySpells[]
+        spells: SpecialAbilitySpell[]
     }
-    usage: {
-        type: 'at will' | 'per day' | 'recharge after rest' | 'recharge on roll'
-        rest_types: string[]
-        times: number
-    }
+    usage: Usage
 }
 
-export interface SpecialAbilitySpells {
+export interface Usage {
+    type: 'at will' | 'per day' | 'recharge after rest' | 'recharge on roll'
+    rest_types: string[]
+    times: number
+}
+
+export interface SpecialAbilitySpell {
     name: string
     level: number
     url: string
-    usage: {
-        type: 'at will' | 'per day' | 'recharge after rest' | 'recharge on roll'
-        rest_types: string[]
-        times: number
-    }
+    usage: Usage
 }
