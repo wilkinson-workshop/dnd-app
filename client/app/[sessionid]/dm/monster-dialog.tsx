@@ -1,5 +1,5 @@
-import { Action, ActionType, ArmorAC, ArmorClass, Attack, ConditionAC, DC, Damage, Monster, Senses, SpecialAbility, Speed, SpellAC } from '@/app/_apis/dnd5eTypings';
-import { Box, Button, DialogActions, DialogContent, DialogTitle, Grid, IconButton } from '@mui/material';
+import { Action, ActionType, ArmorAC, ArmorClass, ArrayOptionsSet, Attack, Choice, ConditionAC, DC, Damage, EquipmentCategoryOptionsSet, Monster, OptionSet, OptionsArrayOption, ReferenceListOptionsSet, Senses, SpecialAbility, SpecialAbilitySpell, Speed, SpellAC, Spellcasting, Usage, abiltyBonusOptionType, abiltyMinOptionType, actionOptionType, alignmentsOptionType, choiceOptionType, countOptionType, damageDcOptionType, damageOptionType, itemOptionType, multipleOptionType, stringOptionType } from '@/app/_apis/dnd5eTypings';
+import { Box, DialogContent, DialogTitle, Grid, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import Dialog from '@mui/material/Dialog';
 import { FC } from 'react';
@@ -7,6 +7,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { SpellItem } from './spell-item';
 
 const apiBaseUrl = 'https://www.dnd5eapi.co';
 
@@ -101,8 +102,9 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				))}</Box>)
 				:''
 			}
-			{action.action_options ? 
-				(<Box><span className="bold-label">Action Options:</span><pre>{JSON.stringify(action.action_options, undefined, 1)}</pre></Box>)
+			{/* Manticore example */}
+			{action.multiattack_type == 'action_options' ?
+				showActionOptions(action.action_options)
 				:''
 			}
 			{action.options ? 
@@ -110,7 +112,84 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				:''
 			}
 		</Box>);
+	}
 
+	function showActionOptions(choice: Choice) {
+		return (<Box>
+			{choice.desc}
+			Choose {choice.choose}:
+			{showOptionSet(choice.from)}
+		</Box>)
+	}
+
+	function showOptionSet(optionSet: OptionSet){
+		switch(optionSet.option_set_type){
+			case 'options_array': {
+				const set = optionSet as ArrayOptionsSet;
+				return set.options.map(o => (<Box sx={{marginBottom: 1, border: 'solid'}}>{showOptionsArrayOption(o)}</Box>));			
+			}
+			case 'equipment_category': {
+				const set = optionSet as EquipmentCategoryOptionsSet;
+				return `${set.equipment_category.name}`
+			}
+			case 'reference_list': {
+				const set = optionSet as ReferenceListOptionsSet;
+				return `${set.reference_list}`
+			}			
+		}
+	}
+
+	function showOptionsArrayOption(set: OptionsArrayOption): any{
+		switch(set.option_type){
+			case 'action': {
+				const type = set as actionOptionType;
+				return (<Box>{showActionType(type)}</Box>);
+			}
+			case 'multiple': {
+				const type = set as multipleOptionType;
+				return (<Box>{type.items.map(i => (<Box>{showOptionsArrayOption(i)}</Box>))}</Box>)
+			}
+			// case 'item': {//unknown option type value
+			// 	const type = set as itemOptionType;
+			// 	return type.item.name;
+			// }
+			// case 'choice': { //unknown option type value
+			// 	const type = set as choiceOptionType;
+			// 	return showActionOptions(type.choice);
+			// }
+			// case 'string': {
+			// 	const type = set as stringOptionType;
+			// 	return type.string;
+			// }
+			// case 'alignments': {
+			// 	const type = set as alignmentsOptionType;
+			// 	return (<Box>
+			// 		{type.desc}
+			// 		{type.alignments.map(a => a.name).join(',')}
+			// 	</Box>);
+			// }
+			// case 'count': {
+			// 	const type = set as countOptionType;
+			// 	return `${type.count} ${type.of.name}`;
+			// }
+			// case 'abilitymin': {
+			// 	const type = set as abiltyMinOptionType;
+			// 	return `${type.ability_score.name} Minimum: ${type.minimus_score}`;
+			// }
+			// case 'abilitybonus': {
+			// 	const type = set as abiltyBonusOptionType;
+			// 	return `${type.ability_score.name} Bonus: ${type.bonus}`;
+			// }
+			// case 'damagedc': {
+			// 	const type = set as damageDcOptionType;
+			// 	return `${type.name} ${showDC(type.dc)} ${type.damage.map(d => showDamage(d))}`;
+			// }
+			// case 'damage': {
+			// 	const type = set as damageOptionType;
+			// 	return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
+			// }
+		}
+		return (<pre>{JSON.stringify(set, undefined, 1)}</pre>)
 	}
 
 	function showSpecialAbilities(ability: SpecialAbility) {
@@ -119,8 +198,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			<Box><span className="bold-label">Description:</span> {ability.desc}</Box>
 			{ability.dc ? (<Box><span className="bold-label">DC:</span> {showDC(ability.dc)}</Box>): ''}
 			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {ability.attack_bonus}</Box>): ''}
-			{ability.damage ? 
-				(<Box><span className="bold-label">Damage:</span>{showDamage(ability.damage)}</Box>)
+			{ability.damage && ability.damage.length > 0 ? 
+				(<Box><span className="bold-label">Damage:</span>{ability.damage.map(d => showDamage(d))}</Box>)
 				: ''
 			}
 			{ability.usage ? 
@@ -130,10 +209,47 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				</Box>)
 			: ''}
 			{ability.spellcasting ? 
-				(<Box><span className="bold-label">Spellcasting:</span><pre>{JSON.stringify(ability.spellcasting, undefined, 1)}</pre></Box>)
+				(<Box><span className="bold-label">Spellcasting:</span>{showSpellcasting(ability.spellcasting)}</Box>)
 				:''
 			}
 		</Box>);
+	}
+
+	function showSlots(slots: any){
+		let ret: {level: string, count: number}[] = [];
+		for (var key in slots) { 
+			if (slots.hasOwnProperty(key)) { 
+				ret.push({level: key, count: slots[key]})
+			} 
+		}
+
+		return ret.map(r => (<Box>{`${r.level}: ${r.count}`}</Box>));
+	}
+
+	function showSpells(spells: SpecialAbilitySpell[]){
+		return spells.map(s => (<Box>
+			{`${s.level}:`} <SpellItem spell={s} /> {`${s.usage ? showSpellUsage(s.usage): ''}`}
+		</Box>))
+	}
+
+	function showSpellUsage(usage: Usage){
+		const count = usage.times ? `${usage.times} time(s) ` : '';
+
+		return `${count}${usage.type} ${usage.rest_types.join(', ')}`
+	}
+
+	//archmage example
+	function showSpellcasting(spellcasting: Spellcasting){
+		return (<Box sx={{marginLeft: 2}}>
+			<Box><span className="bold-label">Level: </span>{spellcasting.level}</Box>
+			<Box><span className="bold-label">Ability: </span>{spellcasting.ability.name}</Box>
+			<Box><span className="bold-label">DC: </span>{spellcasting.dc}</Box>
+			<Box><span className="bold-label">Modifier: </span>{spellcasting.modifier}</Box>
+			<Box><span className="bold-label">Components Required: </span>{spellcasting.components_required.join(', ')}</Box>
+			<Box><span className="bold-label">School: </span>{spellcasting.school}</Box>
+			<Box><span className="bold-label">Slots: </span>{showSlots(spellcasting.slots)}</Box>
+			<Box><span className="bold-label">Spells: </span>{showSpells(spellcasting.spells)}</Box>
+		</Box>)
 	}
 
 	return (
@@ -264,6 +380,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							</AccordionSummary>
 							<AccordionDetails>
 								{monsterInfo.special_abilities.map(a => showSpecialAbilities(a))}
+							</AccordionDetails>
+						</Accordion>) : ''}
+						{monsterInfo.reactions && monsterInfo.reactions.length > 0 ? 
+						(<Accordion>
+							<AccordionSummary
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="reactions-content"
+								id="reactions-header"
+							>
+							<span className="bold-label">Reactions</span>
+							</AccordionSummary>
+							<AccordionDetails>
+								{monsterInfo.reactions.map(a => showAction(a))}
 							</AccordionDetails>
 						</Accordion>) : ''}
 					</DialogContent>

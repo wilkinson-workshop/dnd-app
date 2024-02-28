@@ -1,3 +1,5 @@
+//https://www.dnd5eapi.co/docs/#get-/api/monsters/-index-
+
 export interface GetAll {
     count: number,
     results: APIReference[]
@@ -33,13 +35,74 @@ export interface OptionSet {
 
 export interface ArrayOptionsSet extends OptionSet {
     option_set_type: 'options_array',
-    options_array: OptionsArrayOption[]
+    options: OptionsArrayOption[]
 }
 
 export interface OptionsArrayOption {
-    option_type: string
+    option_type: string,
     //additional properties based on option type
 }
+
+export interface itemOptionType extends OptionsArrayOption {
+    //option_type:'item'?,
+    item: APIReference
+}
+
+export interface actionOptionType extends OptionsArrayOption, ActionType {
+    option_type: 'action',
+}
+
+export interface multipleOptionType extends OptionsArrayOption {
+    option_type: 'multiple',
+    items:  OptionsArrayOption[]
+}
+
+export interface choiceOptionType extends OptionsArrayOption {
+    //option_type: 'choice'?,
+    choice:  Choice
+}
+
+export interface stringOptionType extends OptionsArrayOption {
+    //option_type: 'string'?,
+    string:  string
+}
+
+export interface alignmentsOptionType extends OptionsArrayOption {
+    //option_type: 'alignments'?,
+    desc: string,
+    alignments: APIReference[]
+}
+
+export interface countOptionType extends OptionsArrayOption {
+    //option_type: 'count'?,
+    count: number,
+    of: APIReference
+}
+
+export interface abiltyMinOptionType extends OptionsArrayOption {
+    //option_type: 'abilitymin'?,
+    minimus_score: number,
+    ability_score: APIReference
+}
+
+export interface abiltyBonusOptionType extends OptionsArrayOption {
+    //option_type: 'abilitybonus'?,
+    bonus: number,
+    ability_score: APIReference
+}
+
+export interface damageDcOptionType extends OptionsArrayOption {
+    //option_type: 'damagedc'?,
+    name: string,
+    dc: DC,
+    damage: Damage[]
+}
+
+export interface damageOptionType extends OptionsArrayOption, Damage {
+    //option_type: 'damage'?,
+    notes: string
+}
+
 
 export interface EquipmentCategoryOptionsSet extends OptionSet {
     option_set_type: 'equipment_category',
@@ -181,24 +244,27 @@ export interface Monster {
     xp: number //The number of experience points (XP) a monster is worth is based on its challenge rating.    
 }
 
+export interface Spellcasting {
+    level: number
+    ability: APIReference
+    dc: number
+    modifier: number
+    components_required: string[]
+    school: string
+    slots: any
+    // {
+    //     //["spell level"]: number //number of spells at that level
+    // }
+    spells: SpecialAbilitySpell[]
+}
+
 export interface SpecialAbility {
     name: string
     desc: string
     attack_bonus: number
-    damage: Damage
+    damage: Damage[]
     dc: DC
-    spellcasting: {
-        ability: APIReference
-        dc: number
-        modifier: number
-        components_required: string[]
-        school: string
-        slots: any
-        // {
-        //     //[string]: number
-        // }
-        spells: SpecialAbilitySpell[]
-    }
+    spellcasting: Spellcasting
     usage: Usage
 }
 
