@@ -59,7 +59,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 					return;
 				}
 				case EventType.ReceiveOrderUpdate: {
-					setAlert({ type: 'info', message: 'New creatures have appeared!' });
+					setAlert({ type: 'info', message: 'Initiative order updates.' });
 
 					getLatestInitiativeOrder();
 					loadPlayerOptions();
@@ -145,15 +145,18 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 			logic: LogicType.And 
 		})
 		.then(c => {
-			const withAll: Character[] = [{ 
-				creature_id: EMPTY_GUID, 
-				name: "All Players", 
-				initiative: 0, hit_points: [], 
-				role: CharacterType.Player, 
-				conditions: [], 
-				monster: '' 
-			}];
-			withAll.push(...c)
+			const withAll: Character[] = [];
+			if(c && c.length){      
+				withAll.push({ 
+					creature_id: EMPTY_GUID, 
+					name: "All Players", 
+					initiative: 0, hit_points: [], 
+					role: CharacterType.Player, 
+					conditions: [], 
+					monster: '' 
+				});
+			  withAll.push(...c)
+			}
 			setPlayerOptions(withAll);
 		});
 	}

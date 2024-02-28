@@ -1,11 +1,12 @@
 import update from 'immutability-helper'
 import type { FC } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card } from './character-card'
 import { Character, CharacterType, EMPTY_GUID, LogicType } from '@/app/_apis/character'
 import { addCharacter, addMultipleCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { AddCharacter } from './add-edit-character';
 import { AddRandomCharacter } from './add-random-character'
+import { updateInitiativeTop } from '@/app/_apis/sessionApi'
 
 const style = {
 	minHeight: '30px',
@@ -25,16 +26,27 @@ export interface ContainerProps {
 
 export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
 
-	const [cards, setCards] = useState<Character[] | null>(null);
+	const [cards, setCards] = useState<Character[]>([]);
 	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
-	if (cards == null || reload) {
-		reloadDone(); //TODO fix this implementation
+	const cardsRef = useRef<Character[]>([]);
+
+	cardsRef.current = cards;
+
+	useEffect(() => {
 		reloadList();
-	}
+	},[]);
+
+	useEffect(() => {
+		if(reload){
+			reloadList();
+			reloadDone();
+		}
+	}, [reload])
+
 
 	const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
-		setCards((prevCards: Character[] | null) =>
+		setCards((prevCards: Character[]) =>
 			update(prevCards, {
 				$splice: [
 					[dragIndex, 1],
@@ -42,24 +54,42 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 				],
 			}),
 		)
-	}, [])
+	}, [setCards])
+
+	function dropCard(index: number, character: Character) {
+		return; //for now
+
+		//check to make sure character was moved to the end of the order.
+		if(cardsRef.current.length -1 == index){
+			updateCurrentInOrder(cardsRef.current[1]);
+		}
+	}
+
+	function markDone(){
+		updateCurrentInOrder(cardsRef.current[1]);
+	}
+
+	function updateCurrentInOrder(character: Character){
+		updateInitiativeTop(sessionId, character.creature_id)
+		.then(_ => reloadList());
+	}
 
 	function onDelete(character: Character) {
 		deleteCharacter(sessionId, character.creature_id)
-			.then(_ => reloadList());
+		.then(_ => reloadList());
 	}
 
 	function updateCharacter(character: Character) {
 		saveCharacter(sessionId, character)
-			.then(_ => reloadList());
+		.then(_ => reloadList());
 	}
 
 	function reloadList() {
 		getCharacters(sessionId, { filters: [], logic: LogicType.Or })
-			.then(c => {
-				setCharacterEdit(null);
-				setCards(c);
-			});
+		.then(c => {
+			setCharacterEdit(null);
+			setCards(c);
+		});
 	}
 
 	function handleAddCharacter(character: Character) {
@@ -85,7 +115,9 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 					index={index}
 					character={card}
 					moveCard={moveCard}
+					dropCard={dropCard}
 					updateCharacter={updateCharacter}
+					markDone={markDone}
 					updateCharacterButton={(c: Character) => setCharacterEdit(c)}
 					deleteCharacter={onDelete}
 				/>

@@ -48,6 +48,22 @@ export async function createSession(newSession: Session): Promise<string> {
   return res.json()
 }
 
+export async function updateInitiativeTop(sessionId: string, characterId: string): Promise<string> {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative-order`, {
+    method: 'POST',
+    body: JSON.stringify({creature_uuid: characterId}),
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+}
+
 export async function endSession(sessionId: string) {
   const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
     method: 'DELETE',
