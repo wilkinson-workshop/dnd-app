@@ -79,7 +79,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 	}
 
 	function showAction(action: Action) {
-		return (<Box sx={{marginBottom: 1}}>
+		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box><span className="bold-label">Name:</span> {action.name}</Box>
 			<Box><span className="bold-label">Description:</span> {action.desc}</Box>
 			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
@@ -115,9 +115,9 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 	}
 
 	function showActionOptions(choice: Choice) {
-		return (<Box>
+		return (<Box sx={{marginLeft: 1}}>
 			{choice.desc}
-			Choose {choice.choose}:
+			<span className="bold-label">Choose {choice.choose} Group:</span>
 			{showOptionSet(choice.from)}
 		</Box>)
 	}
@@ -126,7 +126,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		switch(optionSet.option_set_type){
 			case 'options_array': {
 				const set = optionSet as ArrayOptionsSet;
-				return set.options.map(o => (<Box sx={{marginBottom: 1, border: 'solid'}}>{showOptionsArrayOption(o)}</Box>));			
+				return set.options.map(o => (<Box sx={{marginBottom: 1, border: '1px solid lightgrey',}}>{showOptionsArrayOption(o)}</Box>));			
 			}
 			case 'equipment_category': {
 				const set = optionSet as EquipmentCategoryOptionsSet;
@@ -193,7 +193,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 	}
 
 	function showSpecialAbilities(ability: SpecialAbility) {
-		return (<Box sx={{marginBottom: 1}}>
+		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box><span className="bold-label">Name:</span> {ability.name}</Box>
 			<Box><span className="bold-label">Description:</span> {ability.desc}</Box>
 			{ability.dc ? (<Box><span className="bold-label">DC:</span> {showDC(ability.dc)}</Box>): ''}
