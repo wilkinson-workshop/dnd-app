@@ -1,12 +1,12 @@
 import type { Identifier, XYCoord } from 'dnd-core'
 import type { FC } from 'react'
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { ItemTypes } from './item-types'
 import { Character, CharacterType } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './character-conditions'
-import { Box, Grid, IconButton, styled } from "@mui/material";
+import { Box, Button, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
@@ -24,6 +24,8 @@ export interface CardProps {
 	character: Character,
 	index: number,
 	moveCard: (dragIndex: number, hoverIndex: number) => void,
+	dropCard: (index: number, character: Character) => void,
+	markDone: () => void,
 	updateCharacter: (character: Character) => void,
 	updateCharacterButton: (character: Character) => void,
 	deleteCharacter: (character: Character) => void
@@ -31,11 +33,10 @@ export interface CardProps {
 
 interface DragItem {
 	index: number
-	id: string
-	type: string
+	character: Character
 }
 
-export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter, updateCharacterButton, deleteCharacter }) => {
+export const Card: FC<CardProps> = memo(function Card({ character, index, moveCard, dropCard, markDone, updateCharacter, updateCharacterButton, deleteCharacter }) {
 	const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
 	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
 	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
@@ -101,6 +102,9 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 			// to avoid expensive index searches.
 			item.index = hoverIndex
 		},
+		drop(item: DragItem, monitor) {
+			dropCard(item.index, item.character);
+		}
 	});
 
 	const [{ isDragging }, drag] = useDrag({
@@ -198,6 +202,12 @@ export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacte
 						</Grid>
 					</Grid>
 				</Box>
+				{index == 0 ? 
+				(<Box>
+					<Button fullWidth aria-label="done" variant='contained' color='primary' onClick={() => markDone()}>
+						Next Character
+					</Button>
+				</Box>): ''}
 			</div>
 		</>);
-}
+})

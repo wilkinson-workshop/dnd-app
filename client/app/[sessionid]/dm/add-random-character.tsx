@@ -50,7 +50,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
     }
 
     function generateMonster(monsterInfo: Monster) {
-                const monster = {
+        const monster = {
             creature_id: EMPTY_GUID,
             initiative: generateInitiative(monsterInfo),
             name: monsterInfo.name, 
