@@ -202,12 +202,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				(<Box><span className="bold-label">Damage:</span>{ability.damage.map(d => showDamage(d))}</Box>)
 				: ''
 			}
-			{ability.usage ? 
-				(<Box>
-					<span className="bold-label">Usage: </span> 
-					{`${ability.usage.times ? ability.usage.times : '1'} time(s) ${ability.usage.type}. Rest Type: ${ability.usage.rest_types.map(rt => rt).join(', ')}`}
-				</Box>)
-			: ''}
+			{ability.usage ? showUsage(ability.usage): ''}
 			{ability.spellcasting ? 
 				(<Box><span className="bold-label">Spellcasting:</span>{showSpellcasting(ability.spellcasting)}</Box>)
 				:''
@@ -228,14 +223,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showSpells(spells: SpecialAbilitySpell[]){
 		return spells.map(s => (<Box>
-			{`${s.level}:`} <SpellItem spell={s} /> {`${s.usage ? showSpellUsage(s.usage): ''}`}
+			{`${s.level}:`} <SpellItem spell={s} /> {`${s.usage ? showUsage(s.usage): ''}`}
 		</Box>))
 	}
 
-	function showSpellUsage(usage: Usage){
-		const count = usage.times ? `${usage.times} time(s) ` : '';
+	function showUsage(usage: Usage){
+		const restType = usage.rest_types.length > 0 ?
+			`Rest Type: ${usage.rest_types.join(', ')}`
+			: '';
 
-		return `${count}${usage.type} ${usage.rest_types.join(', ')}`
+		return (<Box>
+				<span className="bold-label">Usage: </span> 
+				{`${usage.times ? usage.times : '1'} time(s) ${usage.type}. ${restType}`}
+			</Box>)
 	}
 
 	//archmage example
