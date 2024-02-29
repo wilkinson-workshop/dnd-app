@@ -488,7 +488,7 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
         found = await session.characters.locate(request_uuid(event.client_uuid))
         if found:
             ch = found[0][1] #type: ignore
-            ch.initiative = event.value
+            ch.initiative = float(event.value)
             await _character_make(
                 session_uuid, 
                 ch, 
