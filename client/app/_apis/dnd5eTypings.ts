@@ -199,7 +199,8 @@ export interface Action {
     attack_bonus: number,
     dc: DC,
     attacks: Attack[],
-    damage: Damage[]
+    damage: Damage[],
+    usage: Usage
 }
 
 export interface Monster {
