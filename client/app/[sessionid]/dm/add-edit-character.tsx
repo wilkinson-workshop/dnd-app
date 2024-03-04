@@ -276,7 +276,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
+                <TextField disabled={existingCharacter?.role == CharacterType.Player} sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
             {existingCharacter ? '' 
             : (<Box>
