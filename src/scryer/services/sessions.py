@@ -26,7 +26,7 @@ from scryer.util.events import (
     SessionJoinBody,
     dump_event
 )
-from scryer.util.filters import FilterStatement
+from scryer.util.filters import FilterStatement, LogicalOp
 
 # Special types used only in `Session` specific
 # implementations.
@@ -389,6 +389,14 @@ class CombatSession[C: SessionSocket](Session[C]):
 
         if body["role"] == Role.DUNGEON_MASTER:
             return client_uuid
+        
+        statement: FilterStatement = {
+            'filters': [{ 
+				'field': 'name', 
+				'operator': LogicalOp.EQ, 
+				'value': body['name'] 
+			}], 
+			'logic': LogicalOp.AND }        
 
         if (found := await self.characters.locate(client_uuid)): #type: ignore
             ch: CreatureV2
@@ -396,16 +404,24 @@ class CombatSession[C: SessionSocket](Session[C]):
             ch.creature_id = client_uuid
             await self.characters.modify(client_uuid, ch) #type: ignore
         else:
-            # Pylance is refusing to admit
-            await self.characters.create(
-                conditions=[], # type: ignore
-                hit_points=[100, 100], # type: ignore
-                creature_id=client_uuid, # type: ignore
-                initiative=0, # type: ignore
-                role=body["role"], # type: ignore
-                name=body["name"], # type: ignore
-                monster=None #type: ignore
-            )
+            # additionally attempt to match the character name on rejoin and remove any old versions to prevent duplicates
+            if (found_name := await self.characters.locate(statement=statement)):
+                ch: CreatureV2
+                _, ch = found_name[0]                
+                await self.characters.delete(ch.creature_id)
+                ch.creature_id = client_uuid
+                await self.characters.create(ch)
+            else:
+                # Pylance is refusing to admit
+                await self.characters.create(
+                    conditions=[], # type: ignore
+                    hit_points=[100, 100], # type: ignore
+                    creature_id=client_uuid, # type: ignore
+                    initiative=0, # type: ignore
+                    role=body["role"], # type: ignore
+                    name=body["name"], # type: ignore
+                    monster=None #type: ignore
+                )
 
         return client_uuid
 

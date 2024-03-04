@@ -4,8 +4,8 @@ import { addSessionInput, getSingleSession } from "@/app/_apis/sessionApi";
 import { useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
 import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
-import { Box, Grid, styled, Alert, AlertTitle } from "@mui/material";
-import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { Box, Grid } from "@mui/material";
+import useWebSocket from 'react-use-websocket';
 import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
 import { PlayerMessage, RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerMessage } from "../chat/send-player-message";
@@ -13,7 +13,7 @@ import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
 import { ConditionItem } from "./condition-item";
 import { SkillRequest } from "./skill-request";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
-import { getClientId, setClientId, setName } from "@/app/_apis/sessionStorage";
+import { getClientId, getName, setClientId } from "@/app/_apis/sessionStorage";
 import { Session } from "@/app/_apis/session";
 import { ChatBox } from "../chat/chat-box";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ import { AlertInfo, Alerts } from "../alert/alerts";
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
-export default function PlayerPage({ params }: { params: { sessionid: string, playerName: string } }) {
+export default function PlayerPage({ params }: { params: { sessionid: string } }) {
 
 	const [initiativeOrder, setInitiativeOrder] = useState<Character[]>([]);
 	const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
@@ -78,14 +78,19 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 					const body: any = lastJsonMessage.event_body;
 					if (!getClientId()) {
 						setClientId(body["client_uuid"]);
-						setName(decodeURI(params.playerName));
 					}
+
+					if(!getName()){
+						router.push(`/${params.sessionid}`);
+						return;
+					}
+
 					sendJsonMessage({
 						event_type: SubscriptionEventType.JoinSession,
 						event_body: {
 							session_uuid: params.sessionid,
 							role: CharacterType.Player,
-							name: decodeURI(params.playerName),
+							name: getName(),
 							client_uuid: getClientId()
 						}
 					});
@@ -112,7 +117,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 			value: rollValue,
 			client_uuid: getClientId(),
 			reason: requestRollBody.reason,
-			name: decodeURI(params.playerName)
+			name: getName()
 		})
 		.then();
 	}
@@ -202,7 +207,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string, pl
 								</Grid>
 								<Grid item xs={6} sm={5}>
 									<Box className="item">{order.conditions.map(c =>
-										<ConditionItem conditionId={c} conditionOptions={conditionOptions} />)}
+										<ConditionItem key={c} conditionId={c} conditionOptions={conditionOptions} />)}
 									</Box>
 								</Grid>
 							</Grid>
