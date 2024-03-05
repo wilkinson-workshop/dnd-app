@@ -36,7 +36,7 @@ jobs:
       - name: Install Known Hosts
         run: ssh-keyscan -H ${{ secrets.REMOTE_HOSTNAME }} >> ~/.ssh/known_hosts
       - name: Deploy Build to Remote
-        run: fab deploy
+        run: ssh ${{ secrets.REMOTE_USERNAME}}@${{ secrets.REMOTE_HOSTNAME }}
         env:
           REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
           REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
