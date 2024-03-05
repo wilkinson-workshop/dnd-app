@@ -30,7 +30,7 @@ class CharacterV2(CreatureV2):
     @property
     def is_player(self):
         raise NotImplemented("TODO: impelment `is_player`")
-    
+
+
 class MutlipleCharactersV2(BaseModel):
     characters: list[CharacterV2]
-

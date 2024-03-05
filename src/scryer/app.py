@@ -142,7 +142,7 @@ APP_SERIVCES: typing.Mapping[str, Service] = {
 # Initialize the application config in static
 # space.
 app = FastAPI(
-    # root_path="/api/",
+    root_path="/api/",
     title="Scryer",
     version="1.0.0",
     description="Interactive D&D combat companion REST API."
@@ -456,7 +456,7 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
     if(event.reason == "Initiative"):
         found = await session.characters.locate(request_uuid(event.client_uuid))
         if found:
-            ch = found[0][1] #type: ignore
+            _, ch = found[0] #type: ignore
             ch.initiative = event.value
             await _character_make(
                 session_uuid, 
