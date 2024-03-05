@@ -269,7 +269,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>)}
             {existingCharacter ? '' 
             : (<Box>
-                Initiative Bonus: {calculatedMonsterInfo.initiativeAdd}               
+                Initiative Bonus: {calculatedMonsterInfo.initiativeAdd}
             </Box>)}
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />

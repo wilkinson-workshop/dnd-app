@@ -90,15 +90,15 @@ export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretIn
                 </Select>
             </FormControl>
             <Box sx={{overflowY: 'auto', maxHeight: 500, border: 1, borderColor: 'lightgrey'}}>
-                {threadMessages.map(m => {
+                {threadMessages.map((m, i) => {
                     return m.sender == getName() ? 
-                        (<div className="message-line self">
+                        (<div key={i} className="message-line self">
                             <div className="message self">
                                 {m.message}
                             </div>
                             
                         </div>): 
-                        (<div className="message-line">
+                        (<div key={i} className="message-line">
                             <div className="sender">
                                 {m.sender}
                             </div>
