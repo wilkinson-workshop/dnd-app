@@ -41,5 +41,5 @@ jobs:
           APPLICATION_PATH: ${{ secrets.APPLICATION_PATH }}
           REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
           REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
-          SERVICE_NAME_FRONTEND: ${{ secrets.SERVICE_NAME_FRONTEND }}
-          SERVICE_NAME_BACKEND: ${{ secrets.SERVICE_NAME_BACKEND }}
+          SERVICE_NAME_FRONTEND: scryer-test-client.service
+          SERVICE_NAME_BACKEND: scryer-test.service
