@@ -1,7 +1,6 @@
 import os
 
-from fabric import Connection
-
+from fabric import Connection, task
 
 class Config:
     hostname              = os.getenv("REMOTE_HOSTNAME")
@@ -15,7 +14,8 @@ def systemctl_run_userlevel(conn: Connection, name: str, command: str):
     conn.run(f"systemctl --user {command} {name}")
 
 
-def deploy():
+@task
+def deploy(_):
     with Connection(Config.hostname, Config.username) as c:
         with c.cd(Config.application_path):
             c.run("git pull")
