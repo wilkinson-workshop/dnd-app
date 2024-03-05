@@ -11,6 +11,7 @@ import { HpAdjust } from "./hp-adjust";
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { AlertInfo, Alerts } from "../alert/alerts";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -48,12 +49,13 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [monster, setMonster] = useState('')
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
-    const [initiative, setInitiative] = useState(1);
+    const [initiative, setInitiative] = useState('1');
     const [name, setName] = useState('Creature');
     const [conditions, setConditions] = useState<string[]>([]);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
+    const [alert, setAlert] = useState<AlertInfo | null>(null);
     
 
     const conditionOptions = useContext(ConditionsContext);
@@ -80,7 +82,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         if(existingCharacter != null){
             setCurrentHp(existingCharacter.hit_points[0]);
             setMaxHp(existingCharacter.hit_points[1])
-            setInitiative(existingCharacter.initiative);
+            setInitiative(existingCharacter.initiative.toString());
             setName(existingCharacter.name);
             setConditions(existingCharacter.conditions);
             onEdit(true);
@@ -114,10 +116,12 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             return;
         }
 
+        const newInit = Number.parseFloat(initiative ? initiative : '0')
+
         //onEdit(false);
         onAddClick({
             creature_id:  existingCharacter ? existingCharacter.creature_id : EMPTY_GUID,
-            initiative: initiative,
+            initiative: newInit,
             name: name, 
             hit_points: [currentHp, maxHp],
             conditions: conditions,
@@ -139,7 +143,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     function generateInitiative(): void {
         const add = calculatedMonsterInfo.initiativeAdd;
         const init = randomNumber(1, 20);
-        setInitiative(init + add);
+        setInitiative((init + add).toString());
     }
 
     function calculateHp(monsterInfo: Monster): number[] {
@@ -179,13 +183,14 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     }
 
     function resetForm(){
-        setInitiative(1);
+        setInitiative('1');
         setCurrentHp(1);
         setMaxHp(1);
         setName('Creature');
         setMonster('')
         setConditions([]);
         setMonsterInfo(null);
+        setAlert(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
@@ -200,19 +205,26 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
     function updateExistingCurrentHp(newHp: number) {
         if(newHp < 0){
+            setAlert({ type: 'warning', message: 'Cant set HP less then 0' });
             setCurrentHp(0);
             return;
         }
 
-        setCurrentHp(newHp > maxHp ? maxHp : newHp);
+        if(newHp > maxHp){
+            setAlert({ type: 'warning', message: `Cant set HP greater than the set max (${maxHp})` });
+            setCurrentHp(maxHp);
+            return;
+        }
+
+        setCurrentHp(newHp);
         return;       
     }
 
     const hpEdit =  () => {
         if(existingCharacter == null){
            return (<>
-                <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
-                <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
+                <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
                 <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
             </>);
         } else if(isPlayer){
@@ -235,6 +247,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
     if(edit){ return (
     <>
+        <Alerts info={alert} />
         <Box sx={{width: '100%'}}>
             <h2>{existingCharacter ? `Edit ${existingCharacter.name}`: 'Add New Character'} </h2>
             {existingCharacter ? '' 
@@ -259,7 +272,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                 Initiative Bonus: {calculatedMonsterInfo.initiativeAdd}               
             </Box>)}
             <Box sx={{margin: '10px 0'}}>
-                <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(Number.parseInt(x.target.value? x.target.value : '0'))} />
+                <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />
                 <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
@@ -297,7 +310,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Add
+                    Save
                 </Button>
                 <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
                     Close

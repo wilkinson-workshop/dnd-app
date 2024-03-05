@@ -38,6 +38,7 @@ from scryer.services import (
 )
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
+from scryer.util.events import NewCurrentOrder
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -236,26 +237,38 @@ ASGI_APP_MOUNTS = (
     ("/static", StaticFiles(directory=APPLICATION_ROOT / "static", html=True)),
 )
 
+async def session_order_current(session: CombatSession, ordered_list: list[CharacterV2]):
+    current_top = session.session_current_character
+    if(current_top == None and len(ordered_list) > 0):
+        #set default if it isn't set
+        current_top = ordered_list[0].creature_uuid
+        session.set_current_character(current_top)        
+    elif(len(ordered_list) == 0):
+        return ordered_list
 
-@APP_ROUTERS["character"].get("/")
+    _, current_character = (await session.characters.locate(current_top))[0]
+    current_index = ordered_list.index(current_character)
+    current_after = [ordered_list[i] for i in range(current_index, len(ordered_list))]
+    current_pre = [ordered_list[i] for i in range(0, current_index)]
+    return [*current_after, *current_pre]
+
+
 @APP_ROUTERS["character"].get("/{session_uuid}")
 async def characters_find(
-        session_uuid: UUID | None = None, 
+        session_uuid: UUID, 
         query: str = Query("")):
     """List current characters on the field."""
 
     statement = json.loads(query) if query else None #type: ignore
-    found = await _sessions_find(session_uuid)
-    data  = {
-        sxn.session_uuid: [
-            c for _,c in await sxn.characters.locate(statement=statement)]
-        for _,sxn in found
-    }
+    _, session = (await _sessions_find(session_uuid))[0]
+    data  =  [c for _, c in await session.characters.locate(statement=statement)]
 
-    if session_uuid:
-        data = data[session_uuid]
+    ordered_list = sorted(data, key=lambda c: c.initiative, reverse=True) #type: ignore
+    
+    if(statement['filters'] and statement['filters'][0]['value'] == 'player'):
+        return ordered_list
 
-    return sorted(data, key=lambda c: c.initiative, reverse=True) #type: ignore
+    return await session_order_current(session, ordered_list)
 
 
 @APP_ROUTERS["character"].get("/{session_uuid}/player")
@@ -267,7 +280,9 @@ async def characters_find_player(session_uuid: UUID):
     """
 
     _, session = (await _sessions_find(session_uuid))[0]
-    return sorted(session.characters, key=lambda c: c.initiative, reverse=True) #type: ignore
+    ordered = sorted(session.characters, key=lambda c: c.initiative, reverse=True) #type: ignore
+
+    return await session_order_current(session, ordered)
 
 
 @APP_ROUTERS["character"].post("/{session_uuid}")
@@ -425,6 +440,22 @@ async def sessions_stop(session_uuid: UUID):
 
     await sessions.delete(session_uuid)
 
+@APP_ROUTERS["session"].post("/{session_uuid}/initiative-order")
+async def sessions_player_input_send(session_uuid: UUID, body: NewCurrentOrder):
+    """
+    Update the current character in the initiative order for the session.
+    """
+
+    session: CombatSession
+
+    _, session  = (await _sessions_find(session_uuid))[0]
+    session.set_current_character(request_uuid(body.creature_uuid))
+
+    await _broadcast_pc_event(
+        request_uuid(session_uuid),
+        events.ReceiveOrderUpdate, #type: ignore
+        body = events.EventBody())
+
 
 @APP_ROUTERS["session"].get("/{session_uuid}/player-input")
 async def sessions_player_input_find(session_uuid: UUID):
@@ -456,8 +487,8 @@ async def sessions_player_input_send(session_uuid: UUID, event: events.PlayerInp
     if(event.reason == "Initiative"):
         found = await session.characters.locate(request_uuid(event.client_uuid))
         if found:
-            _, ch = found[0] #type: ignore
-            ch.initiative = event.value
+            ch = found[0][1] #type: ignore
+            ch.initiative = float(event.value)
             await _character_make(
                 session_uuid, 
                 ch, 

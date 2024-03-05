@@ -322,6 +322,7 @@ class CombatSession[C: SessionSocket](Session[C]):
     _session_uuid:        UUID
     _session_name:        str | None
     _session_description: str | None
+    _session_current_character: UUID | None
 
     _characters:          Broker[UUID, Creature]
     _events:              Broker[UUID, Event]
@@ -332,12 +333,14 @@ class CombatSession[C: SessionSocket](Session[C]):
             name: str,
             client_broker: SocketBroker,
             event_broker: EventBroker,
-            description: str | None = None) -> typing.Self:
+            description: str | None = None,
+            current_character: UUID | None = None) -> typing.Self:
 
         inst = cls()
         inst._session_description = description
         inst._session_uuid = request_uuid()
         inst._session_name = name
+        inst._session_current_character = current_character
 
         inst._clients      = client_broker
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
@@ -364,6 +367,10 @@ class CombatSession[C: SessionSocket](Session[C]):
     @property
     def session_uuid(self) -> UUID:
         return self._session_uuid
+    
+    @property
+    def session_current_character(self) -> UUID | None:
+        return self._session_current_character
     
     @property
     def status(self) -> ServiceStatus:
@@ -405,6 +412,9 @@ class CombatSession[C: SessionSocket](Session[C]):
     async def owned_events(self):
         statement: FilterStatement = _filter_statement_event(self) #type: ignore
         return (await self.events.locate(statement=statement))
+    
+    def set_current_character(self, new_current_character: UUID):
+        self._session_current_character = new_current_character
 
 
 class SessionMemoryBroker(MemoryBroker[UUID, Session]):

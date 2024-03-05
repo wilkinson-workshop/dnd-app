@@ -1,5 +1,5 @@
-import { ArmorAC, ArmorClass, ConditionAC, Monster, Senses, Speed, SpellAC } from '@/app/_apis/dnd5eTypings';
-import { Box, Button, DialogActions, DialogContent, DialogTitle, Grid, IconButton, Skeleton } from '@mui/material';
+import { Action, ActionType, ArmorAC, ArmorClass, ArrayOptionsSet, Attack, Choice, ConditionAC, DC, Damage, EquipmentCategoryOptionsSet, Monster, OptionSet, OptionsArrayOption, ReferenceListOptionsSet, Senses, SpecialAbility, SpecialAbilitySpell, Speed, SpellAC, Spellcasting, Usage, abiltyBonusOptionType, abiltyMinOptionType, actionOptionType, alignmentsOptionType, choiceOptionType, countOptionType, damageDcOptionType, damageOptionType, itemOptionType, multipleOptionType, stringOptionType } from '@/app/_apis/dnd5eTypings';
+import { Box, DialogContent, DialogTitle, Grid, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import Dialog from '@mui/material/Dialog';
 import { FC } from 'react';
@@ -7,6 +7,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { SpellItem } from './spell-item';
 
 const apiBaseUrl = 'https://www.dnd5eapi.co';
 
@@ -24,18 +25,22 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 	function showAC(ac: ArmorClass): string {
 		switch(ac.type){
 			case 'armor': {
-				const armor = ac as ArmorAC				
-				return `${armor.armor[0].name}: ${armor.value}`;
+				const armor = ac as ArmorAC
+				if(armor.armor){
+					return `${armor.armor.map(a => `${a.name}: ${armor.value}`).join(', ')}`;
+				} else {
+					return `${armor.type}: ${armor.value}`
+				}
 			}
-			case 'armor': {
+			case 'spell': {
 				const spell = ac as SpellAC				
 				return `${spell.spell.name}: ${spell.value}`;
 			}
-			case 'armor': {
+			case 'condition': {
 				const con = ac as ConditionAC				
 				return `${con.condition.name}: ${con.value}`;
 			}
-			default: return  `${ac.type}: ${ac.value}`
+			default: return `${ac.type}: ${ac.value}`
 		}
 	}
 
@@ -55,6 +60,196 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			sensesArray.push(`${key.replace('_', ' ')}: ${senses[key]}`);
 		}
 		return sensesArray.join(', ');
+	}
+
+	function showDC(dc: DC): string {
+		return `${dc.dc_type.name} save of ${dc.dc_value}. Effects of save: ${dc.success_type}`
+	}
+
+	function showDamage(damage: Damage): string {
+		return `${damage.damage_dice} of ${damage.damage_type.name}`
+	}
+
+	function showAttack(attack: Attack): string {
+		return `${attack.name}: ${showDC(attack.dc)} - ${showDamage(attack.damage)}`;
+	}
+
+	function showActionType(actionType: ActionType): string {
+		return `(${actionType.type}) ${actionType.count} ${actionType.action_name}.`
+	}
+
+	function showAction(action: Action) {
+		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
+			<Box><span className="bold-label">Name:</span> {action.name}</Box>
+			<Box><span className="bold-label">Description:</span> {action.desc}</Box>
+			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
+			{action.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {action.attack_bonus}</Box>): ''}
+			{action.damage ? 
+				(<Box><span className="bold-label">Damage:</span>{action.damage.map(d => (
+					<Box>{showDamage(d)}</Box>
+				))}</Box>)
+				: ''
+			}
+			{action.attacks ? 
+				(<Box><span className="bold-label">Attack:</span>{action.attacks.map(a => (
+					<Box>{showAttack(a)}</Box>
+				))}</Box>)
+				:''
+			}
+			{action.multiattack_type == 'actions' ?
+				(<Box>{action.actions.map(a => (
+					<Box>{showActionType(a)}</Box>
+				))}</Box>)
+				:''
+			}
+			{/* Manticore example */}
+			{action.multiattack_type == 'action_options' ?
+				showActionOptions(action.action_options)
+				:''
+			}
+			{action.options ? 
+				(<Box><span className="bold-label">Options:</span><pre>{JSON.stringify(action.options, undefined, 1)}</pre></Box>)
+				:''
+			}
+		</Box>);
+	}
+
+	function showActionOptions(choice: Choice) {
+		return (<Box sx={{marginLeft: 1}}>
+			{choice.desc}
+			<span className="bold-label">Choose {choice.choose} Group:</span>
+			{showOptionSet(choice.from)}
+		</Box>)
+	}
+
+	function showOptionSet(optionSet: OptionSet){
+		switch(optionSet.option_set_type){
+			case 'options_array': {
+				const set = optionSet as ArrayOptionsSet;
+				return set.options.map(o => (<Box sx={{marginBottom: 1, border: '1px solid lightgrey',}}>{showOptionsArrayOption(o)}</Box>));			
+			}
+			case 'equipment_category': {
+				const set = optionSet as EquipmentCategoryOptionsSet;
+				return `${set.equipment_category.name}`
+			}
+			case 'reference_list': {
+				const set = optionSet as ReferenceListOptionsSet;
+				return `${set.reference_list}`
+			}			
+		}
+	}
+
+	function showOptionsArrayOption(set: OptionsArrayOption): any{
+		switch(set.option_type){
+			case 'action': {
+				const type = set as actionOptionType;
+				return (<Box>{showActionType(type)}</Box>);
+			}
+			case 'multiple': {
+				const type = set as multipleOptionType;
+				return (<Box>{type.items.map(i => (<Box>{showOptionsArrayOption(i)}</Box>))}</Box>)
+			}
+			// case 'item': {//unknown option type value
+			// 	const type = set as itemOptionType;
+			// 	return type.item.name;
+			// }
+			// case 'choice': { //unknown option type value
+			// 	const type = set as choiceOptionType;
+			// 	return showActionOptions(type.choice);
+			// }
+			// case 'string': {
+			// 	const type = set as stringOptionType;
+			// 	return type.string;
+			// }
+			// case 'alignments': {
+			// 	const type = set as alignmentsOptionType;
+			// 	return (<Box>
+			// 		{type.desc}
+			// 		{type.alignments.map(a => a.name).join(',')}
+			// 	</Box>);
+			// }
+			// case 'count': {
+			// 	const type = set as countOptionType;
+			// 	return `${type.count} ${type.of.name}`;
+			// }
+			// case 'abilitymin': {
+			// 	const type = set as abiltyMinOptionType;
+			// 	return `${type.ability_score.name} Minimum: ${type.minimus_score}`;
+			// }
+			// case 'abilitybonus': {
+			// 	const type = set as abiltyBonusOptionType;
+			// 	return `${type.ability_score.name} Bonus: ${type.bonus}`;
+			// }
+			// case 'damagedc': {
+			// 	const type = set as damageDcOptionType;
+			// 	return `${type.name} ${showDC(type.dc)} ${type.damage.map(d => showDamage(d))}`;
+			// }
+			// case 'damage': {
+			// 	const type = set as damageOptionType;
+			// 	return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
+			// }
+		}
+		return (<pre>{JSON.stringify(set, undefined, 1)}</pre>)
+	}
+
+	function showSpecialAbilities(ability: SpecialAbility) {
+		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
+			<Box><span className="bold-label">Name:</span> {ability.name}</Box>
+			<Box><span className="bold-label">Description:</span> {ability.desc}</Box>
+			{ability.dc ? (<Box><span className="bold-label">DC:</span> {showDC(ability.dc)}</Box>): ''}
+			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {ability.attack_bonus}</Box>): ''}
+			{ability.damage && ability.damage.length > 0 ? 
+				(<Box><span className="bold-label">Damage:</span>{ability.damage.map(d => showDamage(d))}</Box>)
+				: ''
+			}
+			{ability.usage ? showUsage(ability.usage): ''}
+			{ability.spellcasting ? 
+				(<Box><span className="bold-label">Spellcasting:</span>{showSpellcasting(ability.spellcasting)}</Box>)
+				:''
+			}
+		</Box>);
+	}
+
+	function showSlots(slots: any){
+		let ret: {level: string, count: number}[] = [];
+		for (var key in slots) { 
+			if (slots.hasOwnProperty(key)) { 
+				ret.push({level: key, count: slots[key]})
+			} 
+		}
+
+		return ret.map(r => (<Box>{`${r.level}: ${r.count}`}</Box>));
+	}
+
+	function showSpells(spells: SpecialAbilitySpell[]){
+		return spells.map(s => (<Box>
+			{`${s.level}:`} <SpellItem spell={s} /> {`${s.usage ? showUsage(s.usage): ''}`}
+		</Box>))
+	}
+
+	function showUsage(usage: Usage){
+		const restType = usage.rest_types.length > 0 ?
+			`Rest Type: ${usage.rest_types.join(', ')}`
+			: '';
+
+		return (<Box>
+				<span className="bold-label">Usage: </span> 
+				{`${usage.times ? usage.times : '1'} time(s) ${usage.type}. ${restType}`}
+			</Box>)
+	}
+
+	//archmage example
+	function showSpellcasting(spellcasting: Spellcasting){
+		return (<Box sx={{marginLeft: 2}}>
+			<Box><span className="bold-label">Level: </span>{spellcasting.level}</Box>
+			<Box><span className="bold-label">Ability: </span>{spellcasting.ability.name}</Box>
+			<Box><span className="bold-label">DC: </span>{spellcasting.dc}</Box>
+			<Box><span className="bold-label">Modifier: </span>{spellcasting.modifier}</Box>
+			<Box><span className="bold-label">Components Required: </span>{spellcasting.components_required.join(', ')}</Box>
+			<Box><span className="bold-label">School: </span>{spellcasting.school}</Box>
+			<Box><span className="bold-label">Slots: </span>{showSlots(spellcasting.slots)}</Box>
+			<Box><span className="bold-label">Spells: </span>{showSpells(spellcasting.spells)}</Box>
+		</Box>)
 	}
 
 	return (
@@ -94,36 +289,61 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 									/>}
 							</Grid>
 							<Grid item xs={7}>
-								<Box><span className="bold-label">Size:</span> {monsterInfo.size}</Box>
-								<Box><span className="bold-label">Type:</span> {monsterInfo.type}</Box>
-								<Box><span className="bold-label">Alignment:</span> {monsterInfo.alignment}</Box>
-								<Box><span className="bold-label">Languages:</span> {monsterInfo.languages}</Box>
-								<Box><span className="bold-label">Speed:</span> {showSpeed(monsterInfo.speed)}</Box>
-								<Box><span className="bold-label">Senses:</span> {showSenses(monsterInfo.senses)}</Box>
+								<Box><span className="bold-label">Size: </span>{monsterInfo.size}</Box>
+								<Box><span className="bold-label">Type: </span>{monsterInfo.type}</Box>
+								<Box><span className="bold-label">Alignment: </span>{monsterInfo.alignment}</Box>
+								<Box><span className="bold-label">Languages: </span>{monsterInfo.languages}</Box>
+								<Box><span className="bold-label">Speed: </span>{showSpeed(monsterInfo.speed)}</Box>
+								<Box><span className="bold-label">Senses: </span>{showSenses(monsterInfo.senses)}</Box>
 							</Grid>
 						</Grid>
 						<Box>{monsterInfo.desc}</Box>
 						<Grid sx={{paddingTop: 1}} container spacing={2}>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Strength:</span> {monsterInfo.strength}</Box>
-								<Box><span className="bold-label">Dexterity:</span> {monsterInfo.dexterity}</Box>
+								<Box><span className="bold-label">Strength: </span>{monsterInfo.strength}</Box>
+								<Box><span className="bold-label">Dexterity: </span>{monsterInfo.dexterity}</Box>
 							</Grid>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Constution:</span> {monsterInfo.constitution}</Box>
-								<Box><span className="bold-label">Intelligence:</span> {monsterInfo.intelligence}</Box>
+								<Box><span className="bold-label">Constution: </span>{monsterInfo.constitution}</Box>
+								<Box><span className="bold-label">Intelligence: </span>{monsterInfo.intelligence}</Box>
 							</Grid>
 							<Grid item xs={4}>
-								<Box><span className="bold-label">Wisdom:</span> {monsterInfo.wisdom}</Box>
-								<Box><span className="bold-label">Charisma:</span> {monsterInfo.charisma}</Box>
+								<Box><span className="bold-label">Wisdom: </span>{monsterInfo.wisdom}</Box>
+								<Box><span className="bold-label">Charisma: </span>{monsterInfo.charisma}</Box>
 							</Grid>
-						</Grid>
-						<Box><span className="bold-label">Damage Vulnerabilities:</span> {monsterInfo.damage_vulnerabilities.join(', ')}</Box>
-						<Box><span className="bold-label">Damage Resistances:</span> {monsterInfo.damage_resistances.join(', ')}</Box>
-						<Box><span className="bold-label">Damage Immunities:</span> {monsterInfo.damage_immunities.join(', ')}</Box>
-						<Box><span className="bold-label">Condition Immunities:</span> {monsterInfo.condition_immunities.map(ci => ci.name).join(', ')}</Box>
-						<Box><span className="bold-label">Armor Class:</span> {showAC(monsterInfo.armor_class[0])}</Box>
-						<Box><span className="bold-label">Proficiency Bonus:</span> {monsterInfo.proficiency_bonus}</Box>
-						<Box><span className="bold-label">Proficiencies:</span> {monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')}</Box>
+						</Grid>						
+						<Box><span className="bold-label">Damage Vulnerabilities: </span> 
+							{monsterInfo.damage_vulnerabilities.length > 0 ? 
+								monsterInfo.damage_vulnerabilities.join(', ')
+								:'None'
+							}
+						</Box>
+						<Box><span className="bold-label">Damage Resistances: </span> 
+							{monsterInfo.damage_resistances.length > 0 ? 
+								monsterInfo.damage_resistances.join(', ')
+								:'None'
+							}
+						</Box>						
+						<Box><span className="bold-label">Damage Immunities: </span> 
+							{monsterInfo.damage_immunities.length > 0 ? 
+								monsterInfo.damage_immunities.join(', ')
+								:'None'
+							}
+						</Box>							
+						<Box><span className="bold-label">Condition Immunities: </span> 
+							{monsterInfo.condition_immunities.length > 0 ? 
+								monsterInfo.condition_immunities.map(ci => ci.name).join(', ')
+								:'None'
+							}
+						</Box>
+						<Box><span className="bold-label">Armor Class: </span>{showAC(monsterInfo.armor_class[0])}</Box>
+						<Box><span className="bold-label">Proficiency Bonus: </span>{monsterInfo.proficiency_bonus}</Box>
+						<Box><span className="bold-label">Proficiencies: </span> 
+							{monsterInfo.proficiencies.length > 0 ?
+								monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')
+								: 'None'
+							}
+						</Box>
 						<Accordion>
 							<AccordionSummary
 								expandIcon={<ExpandMoreIcon />}
@@ -133,10 +353,11 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Actions</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								<pre>{JSON.stringify(monsterInfo.actions, undefined, 1)}</pre>
+								{monsterInfo.actions.map(a => showAction(a))}
 							</AccordionDetails>
 						</Accordion>
-						<Accordion>
+						{monsterInfo.legendary_actions && monsterInfo.legendary_actions.length > 0 ? 
+						(<Accordion>
 							<AccordionSummary
 								expandIcon={<ExpandMoreIcon />}
 								aria-controls="legendary-actions-content"
@@ -145,10 +366,11 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Legendary Actions</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								<pre>{JSON.stringify(monsterInfo.legendary_actions, undefined, 1)}</pre>
+								{monsterInfo.legendary_actions.map(a => showAction(a))}
 							</AccordionDetails>
-						</Accordion>
-						<Accordion>
+						</Accordion>): ''}
+						{monsterInfo.special_abilities && monsterInfo.special_abilities.length > 0 ? 
+						(<Accordion>
 							<AccordionSummary
 								expandIcon={<ExpandMoreIcon />}
 								aria-controls="special-abilities-content"
@@ -157,9 +379,22 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Special Abilities</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								<pre>{JSON.stringify(monsterInfo.special_abilities, undefined, 1)}</pre>
+								{monsterInfo.special_abilities.map(a => showSpecialAbilities(a))}
 							</AccordionDetails>
-						</Accordion>
+						</Accordion>) : ''}
+						{monsterInfo.reactions && monsterInfo.reactions.length > 0 ? 
+						(<Accordion>
+							<AccordionSummary
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="reactions-content"
+								id="reactions-header"
+							>
+							<span className="bold-label">Reactions</span>
+							</AccordionSummary>
+							<AccordionDetails>
+								{monsterInfo.reactions.map(a => showAction(a))}
+							</AccordionDetails>
+						</Accordion>) : ''}
 					</DialogContent>
 				</Dialog>)}
 		</>
