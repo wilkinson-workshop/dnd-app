@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install local files
-        run: echo ${{ secrets.SSH_PRIVATE_KEY }} > ~/.ssh/id_rsa
+        run: echo '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/id_rsa
       - name: Deploy to Remote Host
         env:
           REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
