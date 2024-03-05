@@ -38,5 +38,8 @@ jobs:
       - name: Deploy Build to Remote
         run: fab deploy
         env:
+          APPLICATION_PATH: ${{ secrets.APPLICATION_PATH }}
           REMOTE_HOSTNAME: ${{ secrets.REMOTE_HOSTNAME }}
           REMOTE_USERNAME: ${{ secrets.REMOTE_USERNAME }}
+          SERVICE_NAME_FRONTEND: ${{ secrets.SERVICE_NAME_FRONTEND }}
+          SERVICE_NAME_BACKEND: ${{ secrets.SERVICE_NAME_BACKEND }}
