@@ -9,6 +9,7 @@ __all__ = (
     "Event",
     "ClientUUID",
     "Message",
+    "JoinSession",
     "ReceiveClientUUID",
     "ReceiveOrderUpdate",
     "ReceiveRoll",
@@ -154,6 +155,8 @@ def NewEvent(
 def Message(body: EventBody, **kwds):
     return NewEvent(EventType.MESSAGE, body, **kwds)
 
+def JoinSession(body: EventBody, **kwds):
+    return NewEvent(EventType.JOIN_SESSION, body, **kwds)
 
 def ReceiveClientUUID(body: EventBody, **kwds):
     return NewEvent(EventType.RECEIVE_CLIENT_UUID, body, **kwds)

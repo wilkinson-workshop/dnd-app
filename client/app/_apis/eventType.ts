@@ -4,7 +4,8 @@ export enum EventType{
     ReceiveMessage = 'receive_message',
     ReceiveOrderUpdate = 'receive_order_update',
     ReceiveClientId = 'receive_client_uuid',
-    EndSession = 'end_session'
+    EndSession = 'end_session',
+    JoinSession = 'join_session'
 }
 
 export enum SubscriptionEventType{

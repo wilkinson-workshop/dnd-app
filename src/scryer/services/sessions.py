@@ -384,19 +384,33 @@ class CombatSession[C: SessionSocket](Session[C]):
             return ServiceStatus.FAILING
         return ServiceStatus.OFFLINE
 
-    async def attach_client(self, client: C, body: SessionJoinBody) -> UUID:        
-        client_uuid = await super().attach_client(client, body)
+    async def attach_client(self, client: C, body: SessionJoinBody) -> UUID:
+        body['client_uuid'] = request_uuid()
 
-        if body["role"] == Role.DUNGEON_MASTER:
-            return client_uuid
-        
         statement: FilterStatement = {
             'filters': [{ 
 				'field': 'name', 
 				'operator': LogicalOp.EQ, 
 				'value': body['name'] 
+			},{ 
+				'field': 'role', 
+				'operator': LogicalOp.EQ, 
+				'value': body['role'] 
 			}], 
-			'logic': LogicalOp.AND }        
+			'logic': LogicalOp.AND }
+        
+        # attempt to match the character name on rejoin 
+        # this does not work for DM as they are not in the character list
+        if (found_name := await self.characters.locate(statement=statement)):
+            ch: CreatureV2
+            _, ch = found_name[0]
+            body["client_uuid"] = ch.creature_id
+
+
+        client_uuid = await super().attach_client(client, body)
+
+        if body["role"] == Role.DUNGEON_MASTER:
+            return client_uuid    
 
         if (found := await self.characters.locate(client_uuid)): #type: ignore
             ch: CreatureV2
@@ -404,24 +418,16 @@ class CombatSession[C: SessionSocket](Session[C]):
             ch.creature_id = client_uuid
             await self.characters.modify(client_uuid, ch) #type: ignore
         else:
-            # additionally attempt to match the character name on rejoin and remove any old versions to prevent duplicates
-            if (found_name := await self.characters.locate(statement=statement)):
-                ch: CreatureV2
-                _, ch = found_name[0]                
-                await self.characters.delete(ch.creature_id)
-                ch.creature_id = client_uuid
-                await self.characters.create(ch)
-            else:
-                # Pylance is refusing to admit
-                await self.characters.create(
-                    conditions=[], # type: ignore
-                    hit_points=[100, 100], # type: ignore
-                    creature_id=client_uuid, # type: ignore
-                    initiative=0, # type: ignore
-                    role=body["role"], # type: ignore
-                    name=body["name"], # type: ignore
-                    monster=None #type: ignore
-                )
+            # Pylance is refusing to admit
+            await self.characters.create(
+                conditions=[], # type: ignore
+                hit_points=[100, 100], # type: ignore
+                creature_id=client_uuid, # type: ignore
+                initiative=0, # type: ignore
+                role=body["role"], # type: ignore
+                name=body["name"], # type: ignore
+                monster=None #type: ignore
+            )
 
         return client_uuid
 

@@ -69,9 +69,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 					endSessionEvent();
 					return;
 				}
-				case EventType.ReceiveClientId: {
-					const body: any = lastJsonMessage.event_body;
-					setClientId(body["client_uuid"]);
+				case EventType.JoinSession: {
 					setName("DM");
 					sendJsonMessage({
 						event_type: SubscriptionEventType.JoinSession,
@@ -82,6 +80,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 							client_uuid: getClientId()
 						}
 					});
+				}
+				case EventType.ReceiveClientId: {
+					const body: any = lastJsonMessage.event_body;
+					setClientId(body["client_uuid"]);
+
 				}
 			}
 		}

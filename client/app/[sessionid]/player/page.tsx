@@ -74,12 +74,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 					endSession();
 					return;
 				}
-				case EventType.ReceiveClientId: {
-					const body: any = lastJsonMessage.event_body;
-					if (!getClientId()) {
-						setClientId(body["client_uuid"]);
-					}
-
+				case EventType.JoinSession: {
 					if(!getName()){
 						router.push(`/${params.sessionid}`);
 						return;
@@ -91,9 +86,14 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 							session_uuid: params.sessionid,
 							role: CharacterType.Player,
 							name: getName(),
-							client_uuid: getClientId()
+							client_uuid: EMPTY_GUID
 						}
 					});
+				}
+				case EventType.ReceiveClientId: {
+					const body: any = lastJsonMessage.event_body;
+
+					setClientId(body["client_uuid"]);
 				}
 			}
 		}
