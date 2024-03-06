@@ -30,7 +30,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
     const [edit, onEdit] = useState(false);
     const [requestDiceType, setRequestDiceType] = useState(20);
     const [recipients, setRecipient] = useState<string[]>([]);
-    const [reason, setReason] = useState('');
+    const [reason, setReason] = useState<string | null>(null);
     const [rollOptions, setRollOptions] = useState<APIReference[]>([]);
     const [description, setDescription] = useState<string[]>([]);
 
@@ -39,7 +39,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
     }, []);
 
     useEffect(() => {
-        if(reason != ''){
+        if(reason != null){
             let index = rollOptions.find(x => x.name == reason)?.index;
             if(index){
                 getDescription(index);
@@ -69,6 +69,9 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
     }
 
     function handleClickRequestRoll() {
+        if(reason == null || recipients.length == 0) 
+            return;
+
         onEdit(false);
 
         let actualRecipients = recipients;
@@ -116,10 +119,10 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                             onChange={(e, v) =>
                                 setReason(v!)}
                             options={rollOptions.map((option) => option.name)}
-                            renderInput={(params) => <TextField {...params} label="Reason" size="small" variant="outlined" />}
+                            renderInput={(params) => <TextField {...params} error={reason == null} label="Reason" size="small" variant="outlined" />}
                         />  
                     </Box>
-                    <Box>{description.join('/n')}</Box>
+                    <Box sx={{whiteSpace: 'pre-wrap'}}>{description.join('/n')}</Box>
                     <Box sx={{margin: '10px 0'}}>
                         <FormControl sx={{ width: 300 }}>
                             <InputLabel id="recipient">Recipient</InputLabel>
@@ -157,7 +160,7 @@ export const RequestPlayerInput:FC<RequestPlayerInputProps> = ({sessionId, recip
                         </FormControl> 
                     </Box>
                     <Box sx={{margin: '10px 0'}}>
-                        <Button variant="contained" aria-label="Request Roll" onClick={handleClickRequestRoll}>
+                        <Button variant="contained" disabled={reason == null || recipients.length == 0} aria-label="Request Roll" onClick={handleClickRequestRoll}>
                             Request Roll
                         </Button>
                         <Button variant="contained" aria-label="cancel" onClick={_ => onEdit(false)}>
