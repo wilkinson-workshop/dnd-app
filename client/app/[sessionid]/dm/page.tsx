@@ -6,7 +6,7 @@ import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Paper } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
@@ -134,9 +134,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 			});
 	}
 
-	return (
-		<div>
-			<div>
+	return (<>
+		<Box sx={{pb: '60px'}}>
+			<Box>
 				<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
 					End Session
 				</Button>
@@ -147,18 +147,21 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 					(<a href={playerJoinUrl} target='_blank'>
 						Player Join
 					</a>) : ''}
-			</div>
+			</Box>
 			<ConditionsContext.Provider value={conditions}>
 				<DndProvider backend={HTML5Backend}>
 					<Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
 				</DndProvider>
 			</ConditionsContext.Provider>
 			<Box sx={{ margin: '20px 0' }}>
-				<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
 				<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
 				{inputs.length > 0 ? <PlayerInputList playerInputs={inputs} handleClickClearResults={handleClearPlayerInput} /> : ''}
 			</Box>
-		</div>
+		</Box>
+		<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+			<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
+		</Paper>
+	</>
 	)
 }
 

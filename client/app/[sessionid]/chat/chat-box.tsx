@@ -1,9 +1,11 @@
-import { Box, Button, TextField, FormControl, InputLabel, Select, SelectChangeEvent, MenuItem } from "@mui/material";
+import { Box, Button, TextField, FormControl, InputLabel, Select, SelectChangeEvent, MenuItem, Paper, IconButton } from "@mui/material";
 import { FC, useEffect, useRef, useState } from "react";
 import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { getName } from "@/app/_apis/sessionStorage";
 import { PlayerMessage } from "@/app/_apis/playerInput";
 import { Character } from "@/app/_apis/character";
+import CloseIcon from '@mui/icons-material/Close';
+import ChatIcon from "@mui/icons-material/Chat";
 
 export interface ThreadOptions {
     ids: string,
@@ -14,10 +16,10 @@ export interface ChatBoxProps {
     sessionId: string,
     recipientOptions: Character[],
     secretInfo: PlayerMessage,
-    setIsShowSecret: (isShow: boolean) => void
 }
 
-export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretInfo, setIsShowSecret}) => {
+export const ChatBox: FC<ChatBoxProps> = ({ sessionId, recipientOptions, secretInfo }) => {
+    const [isVisible, setIsVisible] = useState(false);
     const [message, setMessage] = useState('');
     const messages = useRef<PlayerMessage[]>([]);
     const [threadMessages, setThreadMessages] = useState<PlayerMessage[]>([]);
@@ -26,20 +28,19 @@ export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretIn
 
     //handle new messages incoming
     useEffect(() => {
-        messages.current.push(secretInfo);
-        const threadIds = secretInfo.client_uuids.join(',');
+        if(secretInfo){
+            messages.current.push(secretInfo);
+            const threadIds = secretInfo.client_uuids.join(',');
+            setIsVisible(true);
 
-        //add message thread
-        if(!threads.find(x => x.ids == threadIds)){
-            setThreads([...threads, {ids: threadIds, names: returnNamesFromIds(secretInfo.client_uuids).join(',')}]);
+            //add message thread
+            if (!threads.find(x => x.ids == threadIds)) {
+                setThreads([...threads, { ids: threadIds, names: returnNamesFromIds(secretInfo.client_uuids).join(',') }]);
+            }
+
+            switchThreads(threadIds);
         }
-
-        switchThreads(threadIds);
     }, [secretInfo]);
-
-    function handleCloseMessages(){
-        setIsShowSecret(false);
-    }
 
     function handleClickSendMessage() {
         sendPlayerMessageApi(sessionId, {
@@ -50,12 +51,12 @@ export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretIn
         setMessage('');
     }
 
-    function switchThreads(currentThread: string){
+    function switchThreads(currentThread: string) {
         const filteredMessages: PlayerMessage[] = [];
 
-        for(let m of messages.current){
+        for (let m of messages.current) {
             const threadName = m.client_uuids.join(',');
-            if(threadName ==  currentThread){
+            if (threadName == currentThread) {
                 filteredMessages.push(m);
             }
         }
@@ -64,60 +65,74 @@ export const ChatBox: FC<ChatBoxProps> = ({sessionId, recipientOptions, secretIn
         setCurrentThread(currentThread);
     }
 
-    function returnNamesFromIds(ids: string[]): string[]{
+    function returnNamesFromIds(ids: string[]): string[] {
         return recipientOptions
-        .filter(x => ids.includes(x.creature_id))
-        .map(o => o.name);
+            .filter(x => ids.includes(x.creature_id))
+            .map(o => o.name);
     }
 
-    function handleThreadChange(event: SelectChangeEvent){
+    function handleThreadChange(event: SelectChangeEvent) {
         const threadName = event.target.value as string
         switchThreads(threadName);
     }
 
-    return (<>
-        <Box sx={{maxWidth: 400}}>
-            <FormControl fullWidth>
-                <InputLabel id="threads-label">Conversation</InputLabel>
-                <Select
-                    labelId="threads-label"
-                    id="threads-select"
-                    value={currentThread}
-                    label="Conversation"
-                    onChange={handleThreadChange}
-                >
-                    {threads.map(t => <MenuItem key={t.ids} value={t.ids}>{t.names}</MenuItem>)}
-                </Select>
-            </FormControl>
-            <Box sx={{overflowY: 'auto', maxHeight: 500, border: 1, borderColor: 'lightgrey'}}>
-                {threadMessages.map((m, i) => {
-                    return m.sender == getName() ? 
-                        (<div key={i} className="message-line self">
-                            <div className="message self">
-                                {m.message}
-                            </div>
-                            
-                        </div>): 
-                        (<div key={i} className="message-line">
-                            <div className="sender">
-                                {m.sender}
-                            </div>
-                            <div className="message other">
-                                {m.message}
-                            </div>                        
-                        </div>)
-                    }
-                )}
-            </Box>          
-        </Box>
-        <Box sx={{padding: 1}}>
-            <Box sx={{display: 'inline-block'}}>
-                <TextField multiline sx={{maxWidth: '80%'}} value={message} onChange={e => setMessage(e.target.value)} label="Message" size="small" variant="outlined" />
-                <Button variant="contained" aria-label="Send" onClick={handleClickSendMessage}>
-                    Send
-                </Button>
-            </Box>
-        </Box>
+    return (
+    <>
+        {isVisible ?(
+        <Paper sx={{ maxHeigh: 400, width: 400, position: 'fixed', bottom: 60, right: 0 }}>
+            <Box>
+                <IconButton sx={{float: 'right'}} aria-label="add comment" onClick={_ => setIsVisible(false)}>
+                    <CloseIcon />
+                </IconButton>
+                <Box>
+                    <FormControl fullWidth>
+                        <InputLabel id="threads-label">Conversation</InputLabel>
+                        <Select
+                            labelId="threads-label"
+                            id="threads-select"
+                            value={currentThread}
+                            label="Conversation"
+                            onChange={handleThreadChange}
+                        >
+                            {threads.map(t => <MenuItem key={t.ids} value={t.ids}>{t.names}</MenuItem>)}
+                        </Select>
+                    </FormControl>
+                    <Box sx={{ overflowY: 'auto', maxHeight: 500, border: 1, borderColor: 'lightgrey' }}>
+                        {threadMessages.map((m, i) => {
+                            return m.sender == getName() ?
+                                (<div key={i} className="message-line self">
+                                    <div className="message self">
+                                        {m.message}
+                                    </div>
 
+                                </div>) :
+                                (<div key={i} className="message-line">
+                                    <div className="sender">
+                                        {m.sender}
+                                    </div>
+                                    <div className="message other">
+                                        {m.message}
+                                    </div>
+                                </div>)
+                        }
+                        )}
+                    </Box>
+                </Box>
+                <Box sx={{ padding: 1 }}>
+                    <Box sx={{ display: 'inline-block' }}>
+                        <TextField multiline sx={{ width: '300px' }} value={message} onChange={e => setMessage(e.target.value)} label="Message" size="small" variant="outlined" />
+                        <Button variant="contained" aria-label="Send" onClick={handleClickSendMessage}>
+                            Send
+                        </Button>
+                    </Box>
+                </Box>
+            </Box>
+        </Paper>):(
+            <Box sx={{ margin: '10px 0', float: "right"}}>
+                <IconButton aria-label="add comment" onClick={_ => setIsVisible(true)}>
+                    <ChatIcon />
+                </IconButton>
+            </Box>
+        )}
     </>);
 }
