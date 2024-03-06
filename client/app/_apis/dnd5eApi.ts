@@ -52,7 +52,7 @@ export async function getAllConditions(): Promise<GetAll> {
     return res.json()
   } 
 
-  export async function getSkil(skill: string): Promise<Skill> {
+  export async function getSkill(skill: string): Promise<Skill> {
     const res = await fetch(`${apiBaseUrl}/skills/${skill}`, {
       headers:{
         'Content-Type': 'application/json',

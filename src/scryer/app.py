@@ -113,15 +113,17 @@ async def _sessions_find(session_uuid: UUID | str | None = None):
         raise HTTPException(404, f"No session at {session_uuid}")
     return found
 
-async def join_session(sock, data):
+async def join_session(sock, data) -> UUID:
     body: SessionJoinBody = data['event_body']
     _, session  = (await _sessions_find(body['session_uuid']))[0]
-    await session.attach_client(sock, body)
+    client_uuid = await session.attach_client(sock, body)
     if body['role'] == 'player':
         await _broadcast_session_event(
             request_uuid(session.session_uuid),
             events.ReceiveOrderUpdate, #type: ignore
             body = events.EventBody())
+    
+    return client_uuid
 
 
 # -----------------------------------------------
@@ -246,7 +248,15 @@ async def session_order_current(session: CombatSession, ordered_list: list[Chara
     elif(len(ordered_list) == 0):
         return ordered_list
 
-    _, current_character = (await session.characters.locate(current_top))[0]
+    found_Current_character = await session.characters.locate(current_top)
+    if(len(found_Current_character) == 0):
+        # There are situations when the curent position was deleted. 
+        # In that case reset the current position
+        current_top = ordered_list[0].creature_uuid # TODO look for a better default if the current position was deleted. The next in position?
+        session.set_current_character(current_top)
+        found_Current_character = await session.characters.locate(current_top)
+
+    _, current_character = found_Current_character[0]
     current_index = ordered_list.index(current_character)
     current_after = [ordered_list[i] for i in range(current_index, len(ordered_list))]
     current_pre = [ordered_list[i] for i in range(0, current_index)]
@@ -368,8 +378,10 @@ async def healthcheck(service_name: str | None = None):
 async def sessions_join(sock: WebSocket, session_uuid: typing.Annotated[str, Path()]):
 
     """
-    Join an active session. Passes in some
-    arbitrary `client_uuid`.
+    Join an active session. This worflow works similar to an auth workflow.
+    First initiate a connection which sends back a confirmation event.
+    That triggers the UI to send info needed to join the session.
+    This triggers the websocket to sent a client id back to the UI to be used for identification
     """
 
     session: CombatSession
@@ -378,18 +390,22 @@ async def sessions_join(sock: WebSocket, session_uuid: typing.Annotated[str, Pat
 
     await sock.accept()
 
-    client_uuid = request_uuid()
-
     await send_event_action(
         sock,
-        ReceiveClientUUID(ClientUUID(client_uuid=str(client_uuid))))
+        events.JoinSession(events.EventBody()))
         
     try:
         while True:
             data: Event = await sock.receive_json()
             match data['event_type']:
-                case events.EventType.JOIN_SESSION:
-                    await join_session(sock, data)                   
+                case events.EventType.JOIN_SESSION:                    
+                    current_client_uuid = await join_session(sock, data)
+                    await send_event_action(
+                        sock,
+                        events.ReceiveClientUUID(
+                            ClientUUID(client_uuid=str(current_client_uuid))
+                        )   
+                    )                 
 
     except (WebSocketDisconnect, RuntimeError):
         #remove the socket from all groups

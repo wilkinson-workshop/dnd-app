@@ -5,7 +5,7 @@ import { FC } from 'react';
 
 export interface ResponseDialogInfo {
     title: string,
-    message: string
+    message: string[]
 }
 
 export interface ResponseDialogProps {
@@ -37,7 +37,7 @@ export const ResponseDialog: FC<ResponseDialogProps> = ({ onClose, info, open })
           <CloseIcon />
         </IconButton>
         <DialogContent>
-            {info.message}
+            {info.message.map((m, i) => (<Box key={i}>{m}</Box>))}
         </DialogContent>
         <DialogActions>
             <Button variant="contained" aria-label="add" onClick={() => handleClose(true)}>

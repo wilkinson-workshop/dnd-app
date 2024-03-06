@@ -26,7 +26,7 @@ from scryer.util.events import (
     SessionJoinBody,
     dump_event
 )
-from scryer.util.filters import FilterStatement
+from scryer.util.filters import FilterStatement, LogicalOp
 
 # Special types used only in `Session` specific
 # implementations.
@@ -384,11 +384,33 @@ class CombatSession[C: SessionSocket](Session[C]):
             return ServiceStatus.FAILING
         return ServiceStatus.OFFLINE
 
-    async def attach_client(self, client: C, body: SessionJoinBody) -> UUID:        
+    async def attach_client(self, client: C, body: SessionJoinBody) -> UUID:
+        body['client_uuid'] = request_uuid()
+
+        statement: FilterStatement = {
+            'filters': [{ 
+				'field': 'name', 
+				'operator': LogicalOp.EQ, 
+				'value': body['name'] 
+			},{ 
+				'field': 'role', 
+				'operator': LogicalOp.EQ, 
+				'value': body['role'] 
+			}], 
+			'logic': LogicalOp.AND }
+        
+        # attempt to match the character name on rejoin 
+        # this does not work for DM as they are not in the character list
+        if (found_name := await self.characters.locate(statement=statement)):
+            ch: CreatureV2
+            _, ch = found_name[0]
+            body["client_uuid"] = ch.creature_id
+
+
         client_uuid = await super().attach_client(client, body)
 
         if body["role"] == Role.DUNGEON_MASTER:
-            return client_uuid
+            return client_uuid    
 
         if (found := await self.characters.locate(client_uuid)): #type: ignore
             ch: CreatureV2

@@ -6,7 +6,7 @@ import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Container } from "./character-container";
-import { Box, Button } from "@mui/material";
+import { Box, Button, IconButton, Paper } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
@@ -19,6 +19,7 @@ import { createContext } from 'react';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
 import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
+import ChatIcon from "@mui/icons-material/Chat";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -69,9 +70,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 					endSessionEvent();
 					return;
 				}
-				case EventType.ReceiveClientId: {
-					const body: any = lastJsonMessage.event_body;
-					setClientId(body["client_uuid"]);
+				case EventType.JoinSession: {
 					setName("DM");
 					sendJsonMessage({
 						event_type: SubscriptionEventType.JoinSession,
@@ -82,6 +81,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 							client_uuid: getClientId()
 						}
 					});
+				}
+				case EventType.ReceiveClientId: {
+					const body: any = lastJsonMessage.event_body;
+					setClientId(body["client_uuid"]);
+
 				}
 			}
 		}
@@ -118,12 +122,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 				setInputs(si.map(si => si.event_body)))
 	}
 
-	function handleClearPlayerInput() {
-		clearSessionInput(params.sessionid)
-			.then(_ =>
-				setInputs([]))
-	}
-
 	function handleEndSession() {
 		endSession(params.sessionid)
 			.then(_ => {
@@ -131,31 +129,39 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 			});
 	}
 
-	return (
-		<div>
-			<div>
+	return (<>
+		<Box sx={{ pb: '60px' }}>
+			<Box>
 				<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
 					End Session
 				</Button>
-				<a href={`${playerJoinUrl}/qr`} target='_blank'>
-					Show QR code
-				</a>
-				{showDeveloperUI ?
-					(<a href={playerJoinUrl} target='_blank'>
-						Player Join
-					</a>) : ''}
-			</div>
+				<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
+				<PlayerInputList playerInputs={inputs} sessionId={params.sessionid} />
+				<div>
+					<a href={`${playerJoinUrl}/qr`} target='_blank'>
+						Show QR code
+					</a>
+					{showDeveloperUI ?
+						(<a href={playerJoinUrl} target='_blank'>
+							Player Join
+						</a>) : ''}
+				</div>
+			</Box>
 			<ConditionsContext.Provider value={conditions}>
 				<DndProvider backend={HTML5Backend}>
 					<Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
 				</DndProvider>
 			</ConditionsContext.Provider>
-			<Box sx={{ margin: '20px 0' }}>
-				<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
-				<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
-				{inputs.length > 0 ? <PlayerInputList playerInputs={inputs} handleClickClearResults={handleClearPlayerInput} /> : ''}
+		</Box>
+		<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+			<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
+			<Box sx={{ margin: '10px 0', float: "right" }}>
+				<IconButton aria-label="placeholder">
+					<ChatIcon />
+				</IconButton>
 			</Box>
-		</div>
+		</Paper>
+	</>
 	)
 }
 

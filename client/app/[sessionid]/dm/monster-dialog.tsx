@@ -81,12 +81,12 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 	function showAction(action: Action) {
 		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box><span className="bold-label">Name:</span> {action.name}</Box>
-			<Box><span className="bold-label">Description:</span> {action.desc}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description:</span> {action.desc}</Box>
 			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
 			{action.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {action.attack_bonus}</Box>): ''}
 			{action.damage ? 
 				(<Box><span className="bold-label">Damage:</span>{action.damage.map(d => (
-					<Box>{showDamage(d)}</Box>
+					<Box>{d.hasOwnProperty('from') ? showActionOptions(d as Choice): showDamage(d as Damage)}</Box>
 				))}</Box>)
 				: ''
 			}
@@ -107,15 +107,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				showActionOptions(action.action_options)
 				:''
 			}
+			{/*Adult Silver Dragon*/}
 			{action.options ? 
-				(<Box><span className="bold-label">Options:</span><pre>{JSON.stringify(action.options, undefined, 1)}</pre></Box>)
+				showActionOptions(action.options)
 				:''
+			}
+			{
+				action.usage ? showUsage(action.usage) : ''
 			}
 		</Box>);
 	}
 
 	function showActionOptions(choice: Choice) {
-		return (<Box sx={{marginLeft: 1}}>
+		return (<Box sx={{marginLeft: 1, whiteSpace: 'pre-wrap'}}>
 			{choice.desc}
 			<span className="bold-label">Choose {choice.choose} Group:</span>
 			{showOptionSet(choice.from)}
@@ -149,6 +153,12 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				const type = set as multipleOptionType;
 				return (<Box>{type.items.map(i => (<Box>{showOptionsArrayOption(i)}</Box>))}</Box>)
 			}
+			//Adult silver Dragon
+			case 'breath': {
+				const type = set as damageDcOptionType;
+				const damage = type.damage ? type.damage.map(d => showDamage(d)) : '';
+				return `${type.name} ${showDC(type.dc)} ${damage}`;
+			}
 			// case 'item': {//unknown option type value
 			// 	const type = set as itemOptionType;
 			// 	return type.item.name;
@@ -163,7 +173,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			// }
 			// case 'alignments': {
 			// 	const type = set as alignmentsOptionType;
-			// 	return (<Box>
+			// 	return (<Box sx={{whiteSpace: 'pre-wrap'}}>
 			// 		{type.desc}
 			// 		{type.alignments.map(a => a.name).join(',')}
 			// 	</Box>);
@@ -180,31 +190,27 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			// 	const type = set as abiltyBonusOptionType;
 			// 	return `${type.ability_score.name} Bonus: ${type.bonus}`;
 			// }
-			// case 'damagedc': {
-			// 	const type = set as damageDcOptionType;
-			// 	return `${type.name} ${showDC(type.dc)} ${type.damage.map(d => showDamage(d))}`;
-			// }
-			// case 'damage': {
-			// 	const type = set as damageOptionType;
-			// 	return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
-			// }
+			case 'damage': {
+				const type = set as damageOptionType;
+				return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
+			}
 		}
 		return (<pre>{JSON.stringify(set, undefined, 1)}</pre>)
 	}
 
 	function showSpecialAbilities(ability: SpecialAbility) {
 		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
-			<Box><span className="bold-label">Name:</span> {ability.name}</Box>
-			<Box><span className="bold-label">Description:</span> {ability.desc}</Box>
-			{ability.dc ? (<Box><span className="bold-label">DC:</span> {showDC(ability.dc)}</Box>): ''}
-			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {ability.attack_bonus}</Box>): ''}
+			<Box><span className="bold-label">Name: </span>{ability.name}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description: </span>{ability.desc}</Box>
+			{ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
+			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus: </span>{ability.attack_bonus}</Box>): ''}
 			{ability.damage && ability.damage.length > 0 ? 
-				(<Box><span className="bold-label">Damage:</span>{ability.damage.map(d => showDamage(d))}</Box>)
+				(<Box><span className="bold-label">Damage: </span>{ability.damage.map(d => showDamage(d))}</Box>)
 				: ''
 			}
 			{ability.usage ? showUsage(ability.usage): ''}
 			{ability.spellcasting ? 
-				(<Box><span className="bold-label">Spellcasting:</span>{showSpellcasting(ability.spellcasting)}</Box>)
+				(<Box><span className="bold-label">Spellcasting: </span>{showSpellcasting(ability.spellcasting)}</Box>)
 				:''
 			}
 		</Box>);
@@ -223,18 +229,23 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showSpells(spells: SpecialAbilitySpell[]){
 		return spells.map(s => (<Box>
-			{`${s.level}:`} <SpellItem spell={s} /> {`${s.usage ? showUsage(s.usage): ''}`}
+			{`${s.level}:`} <SpellItem spell={s} /> {s.usage ? showUsage(s.usage): ''}
 		</Box>))
 	}
 
 	function showUsage(usage: Usage){
-		const restType = usage.rest_types.length > 0 ?
+		const restType = usage.rest_types && usage.rest_types.length > 0 ?
 			`Rest Type: ${usage.rest_types.join(', ')}`
 			: '';
 
+		let times = '';
+		if(usage.type == 'per day'){
+			times = `${usage.times ? usage.times: '1'} times`;
+		}
+
 		return (<Box>
 				<span className="bold-label">Usage: </span> 
-				{`${usage.times ? usage.times : '1'} time(s) ${usage.type}. ${restType}`}
+				{`${times} ${usage.type}. ${restType}`}
 			</Box>)
 	}
 
@@ -273,7 +284,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 					</IconButton>
 					<DialogContent sx={{paddingTop: 1}}>
 						<Grid container spacing={1}>
-							<Grid item xs={5}>
+							<Grid item xs={12} sm={5}>
 								{monsterInfo.image ?
 									(<img
 										src={`${apiBaseUrl}${monsterInfo.image}`}
@@ -288,7 +299,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 										width={200}
 									/>}
 							</Grid>
-							<Grid item xs={7}>
+							<Grid item xs={12} sm={7}>
 								<Box><span className="bold-label">Size: </span>{monsterInfo.size}</Box>
 								<Box><span className="bold-label">Type: </span>{monsterInfo.type}</Box>
 								<Box><span className="bold-label">Alignment: </span>{monsterInfo.alignment}</Box>
@@ -297,7 +308,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 								<Box><span className="bold-label">Senses: </span>{showSenses(monsterInfo.senses)}</Box>
 							</Grid>
 						</Grid>
-						<Box>{monsterInfo.desc}</Box>
+						<Box sx={{whiteSpace: 'pre-wrap'}}>{monsterInfo.desc}</Box>
 						<Grid sx={{paddingTop: 1}} container spacing={2}>
 							<Grid item xs={4}>
 								<Box><span className="bold-label">Strength: </span>{monsterInfo.strength}</Box>

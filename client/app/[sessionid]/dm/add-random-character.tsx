@@ -19,11 +19,9 @@ const MenuProps = {
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
-    onCancelClick: () => void
 }
 
-export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCancelClick}) => {
-    const [edit, onEdit] = useState(false);
+export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => {
     const monsters = useRef<Character[]>([]);
     const [count, setCount] = useState(1);
     const [challengeRatings, setChallengeRatings] = useState<string>('');
@@ -62,7 +60,6 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
 
         monsters.current.push(monster);
         if(monsters.current.length == count){
-            //onEdit(false);
             onAddClick(monsters.current);
             resetForm();
         }
@@ -128,12 +125,6 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
         return [0]
     }
 
-    function handleCancel(): void {
-        onEdit(false);
-        resetForm();
-        onCancelClick();
-    }
-
     function resetForm(){
         setCount(1);
         monsters.current = [];
@@ -142,10 +133,9 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
         setMonster('');
     }
 
-    if(edit){ return (
+    return (
     <>
         <Box sx={{width: '100%'}}>
-            <h2>Add Random New Creature(s)</h2>
             <Box>
                 <Autocomplete
                     id="monster"
@@ -162,7 +152,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
                 -OR-
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <TextField sx={{ width: 300 }} size="small" label="Challenge Ratings" value={challengeRatings} variant="outlined" onChange={x => setChallengeRatings(x.target.value)} />
+                <TextField sx={{ width: 300 }} size="small" helperText="Comma separated list" label="Challenge Ratings" value={challengeRatings} variant="outlined" onChange={x => setChallengeRatings(x.target.value)} />
             </Box>
             <Box>
                 <TextField sx={{ width: 300 }} size="small" label="Count" value={count} variant="outlined" onChange={x => setCount(Number.parseInt(x.target.value))} />
@@ -182,20 +172,8 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick, onCa
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
                     Add
                 </Button>
-                <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
-                    Close
-                </Button>
             </Box>
         </Box>
     </>
-    )
-    } else {
-        return (
-            <>
-                <Button variant="contained" endIcon={<AddIcon />} onClick={_ => onEdit(true)}>
-                    Add Random
-                </Button>
-            </>
-        )
-    }    
+    )   
 }
