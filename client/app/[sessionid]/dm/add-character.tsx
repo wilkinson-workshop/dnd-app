@@ -1,17 +1,14 @@
 import { FC, FormEvent, useContext, useEffect, useState } from "react";
 import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
 import { Autocomplete, Box, Button, TextField } from "@mui/material";
-import AddIcon from '@mui/icons-material/PersonAdd'
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { HpAdjust } from "./hp-adjust";
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-import { AlertInfo, Alerts } from "../alert/alerts";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -39,13 +36,10 @@ const DEFAULT_CALC_MONSTER_INFO: CalculatedMonsterInfo = {
 }
 
 export interface AddCharacterProps{
-    existingCharacter: Character | null,
     onAddClick: (character: Character) => void
-    onCancelClick: () => void
 }
 
-export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClick, onCancelClick}) => {
-    const [edit, onEdit] = useState(false);
+export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [monster, setMonster] = useState('')
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
@@ -55,12 +49,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
-    const [alert, setAlert] = useState<AlertInfo | null>(null);
-    
 
     const conditionOptions = useContext(ConditionsContext);
-
-    const isPlayer = existingCharacter ? existingCharacter.role == CharacterType.Player : false;
 
     useEffect(() => {
         getMonsterOptions();
@@ -77,17 +67,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             }
         }
     },[monster]);
-
-    useEffect(() => {
-        if(existingCharacter != null){
-            setCurrentHp(existingCharacter.hit_points[0]);
-            setMaxHp(existingCharacter.hit_points[1])
-            setInitiative(existingCharacter.initiative.toString());
-            setName(existingCharacter.name);
-            setConditions(existingCharacter.conditions);
-            onEdit(true);
-        }
-    }, [existingCharacter]);
 
     function getMonsterOptions(){
         getAllMonsters([])
@@ -118,15 +97,14 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
 
         const newInit = Number.parseFloat(initiative ? initiative : '0')
 
-        //onEdit(false);
         onAddClick({
-            creature_id:  existingCharacter ? existingCharacter.creature_id : EMPTY_GUID,
+            creature_id: EMPTY_GUID,
             initiative: newInit,
             name: name, 
             hit_points: [currentHp, maxHp],
             conditions: conditions,
-            role: existingCharacter ? existingCharacter.role : CharacterType.NonPlayer,
-            monster: existingCharacter ? existingCharacter.monster : monsterInfo!.index
+            role: CharacterType.NonPlayer,
+            monster: monsterInfo!.index
         });
         resetForm();
     }
@@ -176,12 +154,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         setMaxHp(maxHp);
     } 
 
-    function handleCancel(): void {
-        onEdit(false);
-        resetForm();
-        onCancelClick();
-    }
-
     function resetForm(){
         setInitiative('1');
         setCurrentHp(1);
@@ -190,7 +162,6 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         setMonster('')
         setConditions([]);
         setMonsterInfo(null);
-        setAlert(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
@@ -203,55 +174,18 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
         );  
     }; 
 
-    function updateExistingCurrentHp(newHp: number) {
-        if(newHp < 0){
-            setAlert({ type: 'warning', message: 'Cant set HP less then 0' });
-            setCurrentHp(0);
-            return;
-        }
-
-        if(newHp > maxHp){
-            setAlert({ type: 'warning', message: `Cant set HP greater than the set max (${maxHp})` });
-            setCurrentHp(maxHp);
-            return;
-        }
-
-        setCurrentHp(newHp);
-        return;       
-    }
-
     const hpEdit =  () => {
-        if(existingCharacter == null){
-           return (<>
-                <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-                <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-                <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
-            </>);
-        } else if(isPlayer){
-            return (
-                <Select
-                    labelId="label"
-                    id="select"
-                    value={currentHp}
-                    label="HP"
-                    onChange={(x) => setCurrentHp(Number.parseInt(x.target.value.toString()))}
-              >
-                {HpBoundaryOptions.map(o => <MenuItem key={o.id} value={o.id}>{o.name}</MenuItem>)}
-                
-              </Select>
-            )
-        } else {
-            return (<HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />);
-        }
+        return (<>
+            <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
+            <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
+            <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
+        </>)
     }
 
-    if(edit){ return (
+   return (
     <>
-        <Alerts info={alert} />
         <Box sx={{width: '100%'}}>
-            <h2>{existingCharacter ? `Edit ${existingCharacter.name}`: 'Add New Character'} </h2>
-            {existingCharacter ? '' 
-            : (<Box>
+            <Box>
                 <Autocomplete
                     id="monster"
                     autoSelect
@@ -266,22 +200,20 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
                     options={monsterOptions.map((option) => option.name)}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
-            </Box>)}
-            {existingCharacter ? '' 
-            : (<Box>
+            </Box>
+            <Box>
                 Initiative Bonus: {calculatedMonsterInfo.initiativeAdd}
-            </Box>)}
+            </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />
                 <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <TextField disabled={existingCharacter?.role == CharacterType.Player} sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
+                <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
-            {existingCharacter ? '' 
-            : (<Box>
+            <Box>
                 Hit Points Roll: {monsterInfo?.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
-            </Box>)}
+            </Box>
             <Box sx={{margin: '10px 0'}}>
                 {hpEdit()}
             </Box>
@@ -310,22 +242,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({existingCharacter, onAddClic
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <Button variant="contained" aria-label="add" onClick={handleSubmit}>
-                    Save
-                </Button>
-                <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
-                    Close
+                    Add
                 </Button>
             </Box>
         </Box>
     </>
     )
-    } else {
-        return (
-            <>
-                <Button variant="contained" endIcon={<AddIcon />} onClick={_ => onEdit(true)}>
-                    Add
-                </Button>
-            </>
-        )
-    }    
 }

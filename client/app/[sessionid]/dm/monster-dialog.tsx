@@ -86,7 +86,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			{action.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {action.attack_bonus}</Box>): ''}
 			{action.damage ? 
 				(<Box><span className="bold-label">Damage:</span>{action.damage.map(d => (
-					<Box>{showDamage(d)}</Box>
+					<Box>{d.hasOwnProperty('from') ? showActionOptions(d as Choice): showDamage(d as Damage)}</Box>
 				))}</Box>)
 				: ''
 			}
@@ -190,10 +190,10 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			// 	const type = set as abiltyBonusOptionType;
 			// 	return `${type.ability_score.name} Bonus: ${type.bonus}`;
 			// }
-			// case 'damage': {
-			// 	const type = set as damageOptionType;
-			// 	return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
-			// }
+			case 'damage': {
+				const type = set as damageOptionType;
+				return `${type.notes} ${showDamage({damage_type: type.damage_type, damage_dice: type.damage_dice})}`;
+			}
 		}
 		return (<pre>{JSON.stringify(set, undefined, 1)}</pre>)
 	}

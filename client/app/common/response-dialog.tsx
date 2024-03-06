@@ -37,7 +37,7 @@ export const ResponseDialog: FC<ResponseDialogProps> = ({ onClose, info, open })
           <CloseIcon />
         </IconButton>
         <DialogContent>
-            {info.message.map(m => (<Box>{m}</Box>))}
+            {info.message.map((m, i) => (<Box key={i}>{m}</Box>))}
         </DialogContent>
         <DialogActions>
             <Button variant="contained" aria-label="add" onClick={() => handleClose(true)}>

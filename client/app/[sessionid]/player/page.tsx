@@ -217,7 +217,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 						</div>
 					))}
 				</Box>
-				{isGetDiceRoll ? <SkillRequest skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} /> : ''}
+				<SkillRequest isOpen={isGetDiceRoll} skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} />
 			</Box>
 			<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
 				<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />

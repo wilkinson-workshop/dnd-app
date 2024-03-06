@@ -2,11 +2,11 @@ import update from 'immutability-helper'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Card } from './character-card'
-import { Character, CharacterType, EMPTY_GUID, LogicType } from '@/app/_apis/character'
-import { addCharacter, addMultipleCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { AddCharacter } from './add-edit-character';
-import { AddRandomCharacter } from './add-random-character'
+import { Character, EMPTY_GUID, LogicType } from '@/app/_apis/character'
+import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
+import { EditCharacter } from './edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
+import { AddCharacterDialog } from './add-character-dialog'
 
 const style = {
 	minHeight: '30px',
@@ -92,18 +92,8 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 		});
 	}
 
-	function handleAddCharacter(character: Character) {
-		if (character.creature_id == EMPTY_GUID) {
-			addCharacter(sessionId, character)
-				.then(_ => reloadList());
-		} else {
-			saveCharacter(sessionId, character)
-				.then(_ => reloadList());
-		}
-	}
-
-	function handleAddMultipleCharacters(characters: Character[]) {
-		addMultipleCharacter(sessionId, { characters })
+	function handleEditCharacter(character: Character) {
+		saveCharacter(sessionId, character)
 			.then(_ => reloadList());
 	}
 
@@ -128,6 +118,7 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 
 	return (
 		<>
+			<AddCharacterDialog sessionId={sessionId} closeDialog={reloadList} />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(
@@ -135,8 +126,7 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 				)
 			}
 			</div>
-			<AddCharacter existingCharacter={characterEdit} onAddClick={handleAddCharacter} onCancelClick={() => setCharacterEdit(null)} />
-			<AddRandomCharacter onAddClick={handleAddMultipleCharacters} onCancelClick={() => setCharacterEdit(null)} />
+			<EditCharacter existingCharacter={characterEdit} onSaveClick={handleEditCharacter} onCancelClick={() => setCharacterEdit(null)} />
 		</>
 	)
 }

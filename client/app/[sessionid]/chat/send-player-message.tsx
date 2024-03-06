@@ -8,6 +8,7 @@ import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
 import { getClientId, getName } from "@/app/_apis/sessionStorage";
 import AddCommentIcon from "@mui/icons-material/AddComment";
+import CloseIcon from '@mui/icons-material/Close';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -67,6 +68,9 @@ export const SendPlayerMessage: FC<SendPlayerMessageProps> = ({ sessionId, recip
         return (
             <Paper sx={{maxHeigh: 400, width: 400, position: 'fixed',  bottom: 60, right: 0}}>
                 <Box sx={{ width: '100%' }}>
+                <IconButton sx={{float: 'right'}} aria-label="close" onClick={_ => onEdit(false)}>
+                    <CloseIcon />
+                </IconButton>
                     <h2>New Conversation</h2>
                     <Box sx={{ margin: '10px 0' }}>
                         <FormControl sx={{ width: 300 }}>

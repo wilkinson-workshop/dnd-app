@@ -81,7 +81,7 @@ export const ChatBox: FC<ChatBoxProps> = ({ sessionId, recipientOptions, secretI
         {isVisible ?(
         <Paper sx={{ maxHeigh: 400, width: 400, position: 'fixed', bottom: 60, right: 0 }}>
             <Box>
-                <IconButton sx={{float: 'right'}} aria-label="add comment" onClick={_ => setIsVisible(false)}>
+                <IconButton sx={{float: 'right'}} aria-label="close" onClick={_ => setIsVisible(false)}>
                     <CloseIcon />
                 </IconButton>
                 <Box>
