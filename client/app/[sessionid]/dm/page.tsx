@@ -137,6 +137,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 				</Button>
 				<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
 				<PlayerInputList playerInputs={inputs} sessionId={params.sessionid} />
+				<Button variant="contained" aria-label="end session" onClick={() => router.push(`/${params.sessionid}/dm/groups`)}>
+					Groups
+				</Button>
 				<div>
 					<a href={`${playerJoinUrl}/qr`} target='_blank'>
 						Show QR code
@@ -148,9 +151,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 				</div>
 			</Box>
 			<ConditionsContext.Provider value={conditions}>
-				<DndProvider backend={HTML5Backend}>
-					<Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
-				</DndProvider>
+				<Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
 			</ConditionsContext.Provider>
 		</Box>
 		<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>

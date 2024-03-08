@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { Session } from "./_apis/session";
-import { EMPTY_GUID } from "./_apis/character";
 import { CreateSession } from "./create-session";
 
 export default function HomePage() {

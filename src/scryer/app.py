@@ -39,6 +39,7 @@ from scryer.services import (
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
 from scryer.util.events import NewCurrentOrder
+from scryer.util.session_group import SessionGroup, SessionGroupApi
 
 # Root directory appliction is being executed
 # from. Will be used for creating and
@@ -101,6 +102,20 @@ async def _character_make(
     _, session = (await _sessions_find(session_uuid))[0] #type: ignore
     character_uuid = character_uuid or character.creature_uuid
     await session.characters.modify(character_uuid, character)
+    return character_uuid
+
+async def _group_character_make(
+        session_uuid: UUID | str,
+        group_uuid: UUID | str,
+        character: CharacterV2,
+        character_uuid: UUID | None = None):
+
+    session: CombatSession
+
+    _, session = (await _sessions_find(session_uuid))[0] #type: ignore
+    _, group = (await session.groups.locate(group_uuid))[0] #type: ignore
+    character_uuid = character_uuid or character.creature_uuid
+    await group.characters.modify(character_uuid, character)
     return character_uuid
 
 
@@ -222,6 +237,9 @@ APP_ROUTERS = {
     # Define character/creature manipulation
     # endpoints.
     "character": APIRouter(prefix="/characters"),
+    # Define session group manipulation
+    # endpoints.
+    "group": APIRouter(prefix="/groups"),
     # Defines the routes available for clients
     "client": APIRouter(prefix="/clients"),
     # Defines the routes available to managing
@@ -350,6 +368,118 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
+    
+
+
+
+@APP_ROUTERS["group"].get("/{session_uuid}", description="Get all session groups.")
+#@APP_ROUTERS["group"].get("/{session_uuid}/{group_uuid}", description="Get a specific, session group.")
+async def get_groups(
+    session_uuid: UUID):
+    """Attempt to fetch session(s)."""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    found  = await session.groups.locate()
+
+    def mapper(sxn: SessionGroup): 
+        return SessionGroupApi( 
+            group_uuid=sxn.group_uuid, 
+            group_name=sxn.group_name) 
+    return [mapper(sxn) for _, sxn in found]
+
+
+@APP_ROUTERS["group"].post("/{session_uuid}")
+async def group_make(
+    session_uuid: UUID,
+    group: SessionGroupApi):
+    """
+    Create a new group. Returns new
+    `group_uuid`.
+    """
+
+    _, session = (await _sessions_find(session_uuid))[0]
+
+    return (await session.groups.create(
+        group.group_name, #type: ignore
+        ))[0] #type: ignore
+
+
+@APP_ROUTERS["group"].delete("/{session_uuid}/{group_uuid}")
+async def group_delete(
+    session_uuid: UUID,
+    group_uuid: UUID):
+    """Ends an active session."""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+
+    await session.groups.delete(group_uuid)
+
+
+
+@APP_ROUTERS["group"].get("/{session_uuid}/{group_uuid}")
+async def get_group_characters(
+        session_uuid: UUID,
+        group_uuid: UUID):
+    """List current characters in the group"""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    _, group  =  (await session.groups.locate(group_uuid))[0]
+    data  =  [c for _, c in await group.characters.locate()]
+
+    ordered_list = sorted(data, key=lambda c: c.initiative, reverse=True) #type: ignore
+    return ordered_list
+
+
+@APP_ROUTERS["group"].post("/{session_uuid}/{group_uuid}")
+async def group_characters_make(
+    session_uuid: UUID, 
+    group_uuid: UUID,
+    character: CharacterV2):
+    """Create a new character"""
+
+    character.creature_id = request_uuid()
+    await _group_character_make(session_uuid, group_uuid, character)
+
+        
+@APP_ROUTERS["group"].post("/{session_uuid}/{group_uuid}/multiple")
+async def characters_make(
+    session_uuid: UUID, 
+    group_uuid: UUID,
+    body: MutlipleCharactersV2):
+    """Create a new character"""
+
+    for character in body.characters:
+        character.creature_id = request_uuid()
+        await _group_character_make(session_uuid, group_uuid, character)  
+
+
+@APP_ROUTERS["group"].patch("/{session_uuid}/{group_uuid}/{character_uuid}")
+async def characters_push(
+    session_uuid: UUID,
+    group_uuid: UUID,
+    character_uuid: UUID,
+    character: CharacterV2):
+    """Update the specified character."""
+
+    await _group_character_make(session_uuid, group_uuid, character, character_uuid)
+
+
+
+@APP_ROUTERS["group"].delete("/{session_uuid}/{group_uuid}/{character_uuid}")
+async def characters_kill(
+    session_uuid: UUID, 
+    group_uuid: UUID,
+    character_uuid: UUID):
+    """Delete the specified character."""
+
+    session: CombatSession
+    _, session = (await _sessions_find(session_uuid))[0]
+    _, group  =  (await session.groups.locate(group_uuid))[0]
+    await group.characters.delete(character_uuid)
+
+
+
+
 
 @APP_ROUTERS["admin"].get("/healthcheck")
 @APP_ROUTERS["admin"].get("/healthcheck/{service_name}", description="Ping a specific service.")
