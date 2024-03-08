@@ -1,10 +1,9 @@
-import { PlayerInput, RequestPlayerInput, PlayerMessage, SessionInput } from "./playerInput";
-import { Session } from "./session";
+import { JoinSessionRequest, PlayerInput, RequestPlayerInput, PlayerSecret } from "./playerInput";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/sessions`;
 
-export async function getSessions(): Promise<Session[]> {
+export async function getSessions(): Promise<any[]> {
   const res = await fetch(apiBaseUrl, {
     headers:{
       'Content-Type': 'application/json',
@@ -18,40 +17,9 @@ export async function getSessions(): Promise<Session[]> {
   return res.json()
 }
 
-export async function getSingleSession(sessionId: string): Promise<Session[]> {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}`, {
-    headers:{
-      'Content-Type': 'application/json',
-    } 
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
-  }
-  
-  return res.json()
-}
-
-export async function createSession(newSession: Session): Promise<string> {
+export async function createSession() {
   const res = await fetch(`${apiBaseUrl}/`, {
     method: 'POST',
-    body: JSON.stringify(newSession),
-    headers:{
-      'Content-Type': 'application/json',
-    } 
-  });
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch data')
-  }
-  
-  return res.json()
-}
-
-export async function updateInitiativeTop(sessionId: string, characterId: string): Promise<string> {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative-order`, {
-    method: 'POST',
-    body: JSON.stringify({creature_uuid: characterId}),
     headers:{
       'Content-Type': 'application/json',
     } 
@@ -79,7 +47,7 @@ export async function endSession(sessionId: string) {
   return res.json()
 }
 
-export async function getAllSessionInput(sessionId: string): Promise<SessionInput[]> {
+export async function getAllSessionInput(sessionId: string): Promise<PlayerInput[]> {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/player-input`, {
     headers:{
       'Content-Type': 'application/json',
@@ -140,8 +108,8 @@ export async function requestPlayerInput(sessionId: string, input: RequestPlayer
   return res.json()
 }
 
-export async function sendPlayerMessageApi(sessionId: string, input: PlayerMessage) {
-  const res = await fetch(`${apiBaseUrl}/${sessionId}/message`, {
+export async function sharePlayerSecret(sessionId: string, input: PlayerSecret) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/secret`, {
     method: 'POST',
     body: JSON.stringify(input),
     headers:{

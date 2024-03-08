@@ -1,34 +1,33 @@
 'use client'
 
 import { FC, useState } from "react";
-import { UpdateHp } from "./update-hp";
+import { UpdateInitiative } from "./update-initiative";
 import { Character } from "../../_apis/character";
 import { Box, IconButton } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
-import LinearWithValueLabel from "./progress-label";
 
-export interface CharacterHpProps{character: Character, updateCharacter: any}
+export interface CharacterInitiativeProps{character: Character, updateCharacter: any}
 
-export const CharacterHp:FC<CharacterHpProps> = ({character, updateCharacter}) => {
+export const CharacterInitiative:FC<CharacterInitiativeProps> = ({character, updateCharacter}) => {
     const [edit, onEdit] = useState(false);
 
-    function updatedNpc(currentHp: number): Character{
+    function updatedNpc(initiative: number): Character{
         let updatedCharacter = {...character}
-        updatedCharacter.hit_points = [currentHp, updatedCharacter.hit_points[1]];
+        updatedCharacter.initiative = initiative;
         return updatedCharacter;
     }
 
     if(edit){
-        return <UpdateHp id={character.creature_id} currentHp={character.hit_points[0]} onUpdateClick={(id: string, currentHp:number) => {
+        return <UpdateInitiative id={character.creature_id} currentInitiative={character.initiative} onUpdateClick={(id: string, initiative:number) => {
             onEdit(false);
-            updateCharacter(updatedNpc(currentHp));
+            updateCharacter(updatedNpc(initiative));
         }} />
     } else {
         return (
             <>    
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', mr: 1 }}>
-                    <LinearWithValueLabel value={character.hit_points[0]} maxValue={character.hit_points[1]}/>
+                    {character.initiative}
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
                     <IconButton aria-label="edit" onClick={x => onEdit(true)}>

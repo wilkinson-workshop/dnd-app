@@ -1,18 +1,8 @@
 import { CharacterType } from "./character"
-import { EventType } from "./eventType";
 
 export interface PlayerInput {
     value: number,
-    client_uuid: string,
-    name: string,
-    reason: string
-}
-
-export interface SessionInput {
-    session_uuid: string,
-    event_body: PlayerInput,
-    event_type: EventType 
-    
+    name: string
 }
 
 export const DiceTypes = [4,6,8,10,12,20,100];
@@ -23,10 +13,9 @@ export interface JoinSessionRequest {
     role: CharacterType
 }
 
-export interface PlayerMessage {
-    sender: string,
+export interface PlayerSecret {
     client_uuids: string[],
-    message: string
+    secret: string
 }
 
 export interface RequestPlayerInput {
