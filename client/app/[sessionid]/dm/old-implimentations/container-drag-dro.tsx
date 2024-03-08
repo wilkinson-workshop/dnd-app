@@ -1,16 +1,21 @@
+import update from 'immutability-helper'
 import type { FC } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Card } from './character-card'
+import { Card } from './card-drag-drop'
 import { Character, LogicType } from '@/app/_apis/character'
 import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { EditCharacter } from './edit-character';
+import { EditCharacter } from './../edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
-import { AddCharacterDialog } from './add-character-dialog'
+import { AddCharacterDialog } from './../add-character-dialog'
 
 const style = {
 	minHeight: '30px',
 	border: '#ebebeb solid 1px',
 	margin: '10px 0'
+}
+
+export interface ContainerState {
+	cards: Character[]
 }
 
 export interface ContainerProps {
@@ -19,7 +24,7 @@ export interface ContainerProps {
 	reloadDone: () => void
 }
 
-export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
+const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
 	const [cards, setCards] = useState<Character[]>([]);
 	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
@@ -37,6 +42,27 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 			reloadDone();
 		}
 	}, [reload])
+
+
+	const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
+		setCards((prevCards: Character[]) =>
+			update(prevCards, {
+				$splice: [
+					[dragIndex, 1],
+					[hoverIndex, 0, prevCards![dragIndex] as Character],
+				],
+			}),
+		)
+	}, [setCards])
+
+	function dropCard(index: number, character: Character) {
+		return; //for now
+
+		//check to make sure character was moved to the end of the order.
+		if(cardsRef.current.length -1 == index){
+			updateCurrentInOrder(cardsRef.current[1]);
+		}
+	}
 
 	function markDone(){
 		updateCurrentInOrder(cardsRef.current[1]);
@@ -72,6 +98,8 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 					key={card.creature_id}
 					index={index}
 					character={card}
+					moveCard={moveCard}
+					dropCard={dropCard}
 					updateCharacter={updateCharacter}
 					markDone={markDone}
 					updateCharacterButton={(c: Character) => setCharacterEdit(c)}

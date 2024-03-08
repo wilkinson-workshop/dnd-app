@@ -27,6 +27,7 @@ from scryer.util.events import (
     dump_event
 )
 from scryer.util.filters import FilterStatement, LogicalOp
+from scryer.util.session_group import SessionGroup, SessionGroupMemoryBroker
 
 # Special types used only in `Session` specific
 # implementations.
@@ -324,6 +325,7 @@ class CombatSession[C: SessionSocket](Session[C]):
     _session_description: str | None
     _session_current_character: UUID | None
 
+    _groups:              Broker[UUID, SessionGroup]
     _characters:          Broker[UUID, Creature]
     _events:              Broker[UUID, Event]
 
@@ -343,6 +345,7 @@ class CombatSession[C: SessionSocket](Session[C]):
         inst._session_current_character = current_character
 
         inst._clients      = client_broker
+        inst._groups       = SessionGroupMemoryBroker(SessionGroup)
         inst._characters   = CreaturesMemoryBroker(CharacterV2)
         inst._events       = event_broker
         return inst
@@ -350,6 +353,10 @@ class CombatSession[C: SessionSocket](Session[C]):
     @property
     def characters(self) -> Broker[UUID, Creature]:
         return self._characters
+    
+    @property
+    def groups(self) -> Broker[UUID, SessionGroup]:
+        return self._groups
 
     @property
     def events(self) -> Broker[UUID, Event]:

@@ -2,24 +2,23 @@
 
 import { FC, useState } from "react";
 import { Box, Button, TextField } from "@mui/material";
-import { Session } from "./_apis/session";
-import { EMPTY_GUID } from "./_apis/character";
+import { EMPTY_GUID } from "@/app/_apis/character";
+import { SessionGroup } from "@/app/_apis/sesssionGroup";
 
-export interface CreateSessionProps {
-    onAddClick: (session: Session) => void
+export interface CreateGroupProps {
+    onAddClick: (session: SessionGroup) => void
 }
 
-export const CreateSession: FC<CreateSessionProps> = ({onAddClick}) => {
+export const CreateGroup: FC<CreateGroupProps> = ({onAddClick}) => {
     const [edit, onEdit] = useState(false);
-    const [name, setName] = useState(new Date().toLocaleDateString());
-    const [description, setDescription] = useState(`Session on ${new Date().toDateString()}`);
+    const [name, setName] = useState('');
 
     function handleSubmit(): void {
         onEdit(false);
         onAddClick({
-            session_name: name, 
-            session_description: description,
-            session_uuid: EMPTY_GUID
+            group_name: name,
+            characters: [],
+            group_uuid: EMPTY_GUID
         });
         resetForm();
     }
@@ -31,7 +30,6 @@ export const CreateSession: FC<CreateSessionProps> = ({onAddClick}) => {
 
     function resetForm(){
         setName('');
-        setDescription('');
     }
 
     if(edit){ return (
@@ -41,16 +39,12 @@ export const CreateSession: FC<CreateSessionProps> = ({onAddClick}) => {
                     <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
                 </Box>
                 <Box sx={{margin: '10px 0'}}>
-                    <TextField sx={{ width: 300 }} size="small" multiline label="Description" value={description} variant="outlined" onChange={x => setDescription(x.target.value)} />
-                </Box>
-                <Box sx={{margin: '10px 0'}}>
                     <Button variant="contained" aria-label="add" onClick={handleSubmit}>
                         Save
                     </Button>
                     <Button variant="contained" aria-label="cancel" onClick={handleCancel}>
                         Cancel
-                    </Button>
-    
+                    </Button>    
                 </Box>
             </Box>
         </>

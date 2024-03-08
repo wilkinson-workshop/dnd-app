@@ -1,24 +1,24 @@
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
 import { Box, Button, DialogActions, DialogContent, DialogTitle, Fab, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/PersonAdd'
 import Dialog from '@mui/material/Dialog';
 import { FC, useState } from 'react';
-import { AddRandomCharacter } from './add-random-character';
+import { AddRandomCharacter } from './../add-random-character';
 import { Character } from '@/app/_apis/character';
-import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
-import { AlertInfo, Alerts } from '../alert/alerts';
-import { AddCharacter } from './add-character';
+import { AlertInfo, Alerts } from '../../alert/alerts';
+import { AddCharacter } from './../add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
+import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';
 
 export interface AddCharacterDialogProps {
     sessionId: string,
+    groupId: string,
     closeDialog: () => void
 }
 
-export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, closeDialog }) => {
+export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, groupId, closeDialog }) => {
     const [open, setOpen] = useState(false);
     const [value, setValue] = useState(0);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
@@ -33,13 +33,13 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, clo
     }
 
     function handleAddMultipleCharacters(characters: Character[]) {
-        addMultipleCharacter(sessionId, { characters })
+        addGroupMultipleCharacter(sessionId, groupId, { characters })
             .then(_ =>
                 setAlert({ type: 'success', message: `${characters.length} creature(s) added!` }));
     }
 
     function handleAddCharacter(character: Character) {
-        addCharacter(sessionId, character)
+        addGroupCharacter(sessionId, groupId, character)
             .then(_ =>
                 setAlert({ type: 'success', message: `${character.name} added!` })
             );

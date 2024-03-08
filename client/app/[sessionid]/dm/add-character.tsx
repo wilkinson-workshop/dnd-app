@@ -158,10 +158,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         setInitiative('1');
         setCurrentHp(1);
         setMaxHp(1);
-        setName('Creature');
-        setMonster('')
+        //setName('Creature');
+        //setMonster('')
         setConditions([]);
-        setMonsterInfo(null);
+        //setMonsterInfo(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
