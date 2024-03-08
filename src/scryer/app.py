@@ -595,7 +595,8 @@ async def sessions_player_input_send(session_uuid: UUID, body: NewCurrentOrder):
     session: CombatSession
 
     _, session  = (await _sessions_find(session_uuid))[0]
-    session.set_current_character(request_uuid(body.creature_uuid))
+    new_current = request_uuid(body.creature_uuid) if body.creature_uuid != None else None
+    session.set_current_character(new_current)
 
     await _broadcast_pc_event(
         request_uuid(session_uuid),

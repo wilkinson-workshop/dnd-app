@@ -97,7 +97,7 @@ class RequestPlayerInput(EventBody):
     reason:       str
 
 class NewCurrentOrder(EventBody):
-    creature_uuid: str
+    creature_uuid: str | None
 
 
 class PlayerInput(EventBody):

@@ -48,7 +48,7 @@ export async function createSession(newSession: Session): Promise<string> {
   return res.json()
 }
 
-export async function updateInitiativeTop(sessionId: string, characterId: string): Promise<string> {
+export async function updateInitiativeTop(sessionId: string, characterId: string | null): Promise<string> {
   const res = await fetch(`${apiBaseUrl}/${sessionId}/initiative-order`, {
     method: 'POST',
     body: JSON.stringify({creature_uuid: characterId}),

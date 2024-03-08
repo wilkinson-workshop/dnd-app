@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useReducer, useState } from 'react';
-import { clearSessionInput, endSession, getAllSessionInput } from "@/app/_apis/sessionApi";
+import { clearSessionInput, endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -129,18 +129,28 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 			});
 	}
 
+	function handleResetInitiative() {
+		updateInitiativeTop(params.sessionid, null)
+			.then(_ => setIsLoadCharacter(true));
+	}
+
 	return (<>
 		<Box sx={{ pb: '60px' }}>
 			<Box>
 				<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
 					End Session
 				</Button>
-				<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
-				<PlayerInputList playerInputs={inputs} sessionId={params.sessionid} />
-				<Button variant="contained" aria-label="end session" onClick={() => router.push(`/${params.sessionid}/dm/groups`)}>
-					Groups
-				</Button>
-				<div>
+				<Box>
+					<Button variant="contained" aria-label="end session" onClick={() => router.push(`/${params.sessionid}/dm/groups`)}>
+						Groups
+					</Button>
+					<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
+					<PlayerInputList playerInputs={inputs} sessionId={params.sessionid} />
+					<Button variant="contained" aria-label="end session" onClick={handleResetInitiative}>
+						Reset Initiative
+					</Button>
+				</Box>
+				<Box>
 					<a href={`${playerJoinUrl}/qr`} target='_blank'>
 						Show QR code
 					</a>
@@ -148,7 +158,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 						(<a href={playerJoinUrl} target='_blank'>
 							Player Join
 						</a>) : ''}
-				</div>
+				</Box>
 			</Box>
 			<ConditionsContext.Provider value={conditions}>
 				<Container sessionId={params.sessionid} reload={isLoadCharacter} reloadDone={() => setIsLoadCharacter(false)} />
