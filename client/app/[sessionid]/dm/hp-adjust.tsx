@@ -25,6 +25,9 @@ export const HpAdjust: FC<HpAdjustProps> = ({hp,  updateHp}) => {
         <IconButton sx={quickEdit} onClick={() => updateHp(hp + hpChange)}>
             <AddIcon/>
         </IconButton>
+        <Button variant="contained" onClick={() => updateHp(0)}>
+            Knock Out
+        </Button>
     </>
     );
 }

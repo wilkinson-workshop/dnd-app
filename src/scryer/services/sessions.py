@@ -442,7 +442,7 @@ class CombatSession[C: SessionSocket](Session[C]):
         statement: FilterStatement = _filter_statement_event(self) #type: ignore
         return (await self.events.locate(statement=statement))
     
-    def set_current_character(self, new_current_character: UUID):
+    def set_current_character(self, new_current_character: UUID | None):
         self._session_current_character = new_current_character
 
 
