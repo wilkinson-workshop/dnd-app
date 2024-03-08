@@ -1,17 +1,6 @@
 import enum, math, typing
 
 
-class Condition(typing.NamedTuple):
-    """
-    A condition, or status effect, applicable to a
-    creature.
-    """
-
-    name:        str
-    description: str
-    color:       int
-
-
 class HitPoints(typing.NamedTuple):
     """
     Integer alias to represent **Hit Points**
@@ -38,13 +27,13 @@ class HitPoints(typing.NamedTuple):
     def __add__(self, other: Other) -> Self:
         change = HitPoints._parse_other_value(other)
         max_hp = self.try_maximum()
-        return self._new(min(self.current + change, max_hp), max_hp)
+        return self._new(min(self.current + change, max_hp), max_hp) #type: ignore
 
     def __sub__(self, other: Other) -> Self:
         change = HitPoints._parse_other_value(other)
         min_hp = 0
         max_hp = self.maximum
-        return self._new(max(self.current - change, min_hp), max_hp)
+        return self._new(max(self.current - change, min_hp), max_hp) #type: ignore
 
     @classmethod
     def _new(cls, current: int, maximum: int) -> Self:
@@ -54,7 +43,7 @@ class HitPoints(typing.NamedTuple):
     def _parse_other_value(other: Other) -> int | float:
         if isinstance(other, HitPoints):
             return other.current
-        return other
+        return other #type: ignore
 
 
 class Role(enum.StrEnum):
