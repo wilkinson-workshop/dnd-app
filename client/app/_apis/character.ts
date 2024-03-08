@@ -4,12 +4,7 @@ export interface Character {
     initiative: number,
     hit_points: number[],
     role: CharacterType,
-    conditions: string[],
-    monster: string | null
-}
-
-export interface MultipleCharacters {
-    characters: Character[]
+    conditions: ConditionType[]
 }
 
 export enum CharacterType{
@@ -18,16 +13,35 @@ export enum CharacterType{
     DungeonMaster = 'dungeon_master'
 }
 
+export enum ConditionType {
+    BardicInspiration,
+    Stunned,
+    Burned,
+    Poisoned,
+    KnockedOut,
+    KnockedProne,
+    Charmed,
+    Asleep,
+    Petrified,
+    Scared,
+} 
+
 export const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
-export interface KeyValueItem {id: number, name: string}
+export interface ConditionTypeItem {id: number, name: string}
 
-export const HpBoundaryOptions: KeyValueItem[] = [
-    {id: 0, name: "Knocked Out"},
-    {id: 9, name: "Looks weakened"},
-    {id: 49, name: "Starting to wear out"},
-    {id: 100, name: "Seems very alive"}
-]
+export const ConditionOptions: ConditionTypeItem[] = [
+    {id: 0, name: "Bardic Inspiration"},
+    {id: 1, name: "Stunned"},
+    {id: 2, name: "Burned"},
+    {id: 3, name: "Poisoned"},
+    {id: 4, name: "Knocked Out"},
+    {id: 5, name: "Knocked Prone"},
+    {id: 6, name: "Charmed"},
+    {id: 7, name: "Asleep"},
+    {id: 8, name: "Petrified"},
+    {id: 9, name: "Scared"}
+];
 
 export interface RootFilter {
     filters: Filter[],

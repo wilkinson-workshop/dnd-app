@@ -1,13 +1,6 @@
 export enum EventType{
     RequestRoll = 'request_roll',
     ReceiveRoll = 'receive_roll',
-    ReceiveMessage = 'receive_message',
-    ReceiveOrderUpdate = 'receive_order_update',
-    ReceiveClientId = 'receive_client_uuid',
-    EndSession = 'end_session',
-    JoinSession = 'join_session'
-}
-
-export enum SubscriptionEventType{
-    JoinSession = 'join_session',
+    ReceiveSecret = 'receive_secret',
+    ReceiveOrderUpdate = 'receive_order_update'
 }
