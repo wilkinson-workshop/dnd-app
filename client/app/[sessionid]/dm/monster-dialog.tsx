@@ -78,27 +78,27 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		return `(${actionType.type}) ${actionType.count} ${actionType.action_name}.`
 	}
 
-	function showAction(action: Action) {
-		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
+	function showAction(action: Action, index: number) {
+		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box><span className="bold-label">Name:</span> {action.name}</Box>
 			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description:</span> {action.desc}</Box>
 			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
 			{action.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {action.attack_bonus}</Box>): ''}
 			{action.damage ? 
-				(<Box><span className="bold-label">Damage:</span>{action.damage.map(d => (
-					<Box>{d.hasOwnProperty('from') ? showActionOptions(d as Choice): showDamage(d as Damage)}</Box>
+				(<Box><span className="bold-label">Damage:</span>{action.damage.map((d, i) => (
+					<Box key={i}>{d.hasOwnProperty('from') ? showActionOptions(d as Choice): showDamage(d as Damage)}</Box>
 				))}</Box>)
 				: ''
 			}
 			{action.attacks ? 
-				(<Box><span className="bold-label">Attack:</span>{action.attacks.map(a => (
-					<Box>{showAttack(a)}</Box>
+				(<Box><span className="bold-label">Attack:</span>{action.attacks.map((a, i) => (
+					<Box key={i}>{showAttack(a)}</Box>
 				))}</Box>)
 				:''
 			}
 			{action.multiattack_type == 'actions' ?
-				(<Box>{action.actions.map(a => (
-					<Box>{showActionType(a)}</Box>
+				(<Box>{action.actions.map((a, i) => (
+					<Box key={i}>{showActionType(a)}</Box>
 				))}</Box>)
 				:''
 			}
@@ -130,7 +130,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		switch(optionSet.option_set_type){
 			case 'options_array': {
 				const set = optionSet as ArrayOptionsSet;
-				return set.options.map(o => (<Box sx={{marginBottom: 1, border: '1px solid lightgrey',}}>{showOptionsArrayOption(o)}</Box>));			
+				return set.options.map((o, i) => (<Box key={i} sx={{marginBottom: 1, border: '1px solid lightgrey',}}>{showOptionsArrayOption(o)}</Box>));			
 			}
 			case 'equipment_category': {
 				const set = optionSet as EquipmentCategoryOptionsSet;
@@ -151,7 +151,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			}
 			case 'multiple': {
 				const type = set as multipleOptionType;
-				return (<Box>{type.items.map(i => (<Box>{showOptionsArrayOption(i)}</Box>))}</Box>)
+				return (<Box>{type.items.map((i, e) => (<Box key={e}>{showOptionsArrayOption(i)}</Box>))}</Box>)
 			}
 			//Adult silver Dragon
 			case 'breath': {
@@ -198,8 +198,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		return (<pre>{JSON.stringify(set, undefined, 1)}</pre>)
 	}
 
-	function showSpecialAbilities(ability: SpecialAbility) {
-		return (<Box sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
+	function showSpecialAbilities(ability: SpecialAbility, index: number) {
+		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box><span className="bold-label">Name: </span>{ability.name}</Box>
 			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description: </span>{ability.desc}</Box>
 			{ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
@@ -364,7 +364,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Actions</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								{monsterInfo.actions.map(a => showAction(a))}
+								{monsterInfo.actions.map((a, i) => showAction(a, i))}
 							</AccordionDetails>
 						</Accordion>
 						{monsterInfo.legendary_actions && monsterInfo.legendary_actions.length > 0 ? 
@@ -377,7 +377,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Legendary Actions</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								{monsterInfo.legendary_actions.map(a => showAction(a))}
+								{monsterInfo.legendary_actions.map((a, i) => showAction(a, i))}
 							</AccordionDetails>
 						</Accordion>): ''}
 						{monsterInfo.special_abilities && monsterInfo.special_abilities.length > 0 ? 
@@ -390,7 +390,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Special Abilities</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								{monsterInfo.special_abilities.map(a => showSpecialAbilities(a))}
+								{monsterInfo.special_abilities.map((a, i) => showSpecialAbilities(a, i))}
 							</AccordionDetails>
 						</Accordion>) : ''}
 						{monsterInfo.reactions && monsterInfo.reactions.length > 0 ? 
@@ -403,7 +403,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							<span className="bold-label">Reactions</span>
 							</AccordionSummary>
 							<AccordionDetails>
-								{monsterInfo.reactions.map(a => showAction(a))}
+								{monsterInfo.reactions.map((a, i) => showAction(a, i))}
 							</AccordionDetails>
 						</Accordion>) : ''}
 					</DialogContent>
