@@ -7,7 +7,7 @@ import { Box, Button, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
-import { getMonster } from '@/app/_apis/dnd5eApi'
+import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getMonster } from '@/app/_apis/dnd5eApi'
 import { Monster } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
 import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
@@ -54,6 +54,9 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 
 	function getMonsterInfo(monsterId: string) {
 		if (monsterInfo) {
+			setIsMonsterInfoOpen(true);
+		} else if(monsterId == CUSTOM_MONSTER_OPTION.index){
+			setMonsterInfo(CUSTOM_MONSTER);
 			setIsMonsterInfoOpen(true);
 		} else {
 			getMonster(monsterId)

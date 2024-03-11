@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -71,22 +71,26 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function getMonsterOptions(){
         getAllMonsters([])
         .then(m => {
-            setMonsterOptions(m.results);
+            setMonsterOptions([...m.results, CUSTOM_MONSTER_OPTION]);
         });
     }
 
-    function getMonsterInfo(monsterId: string){        
-        getMonster(monsterId)
-        .then(m => {
-            setMonsterInfo(m);
-            const hp = calculateHp(m);
-            setCalculatedMonsterInfo({
-                initiativeAdd: calculateInitiative(m),
-                minHp: hp[0],
-                maxHp: hp[1],                
-                averageHp: hp[2]
+    function getMonsterInfo(monsterId: string){   
+        if(monsterId == CUSTOM_MONSTER_OPTION.index){
+            setMonsterInfo(CUSTOM_MONSTER);
+        } else {
+            getMonster(monsterId)
+            .then(m => {
+                setMonsterInfo(m);
+                const hp = calculateHp(m);
+                setCalculatedMonsterInfo({
+                    initiativeAdd: calculateInitiative(m),
+                    minHp: hp[0],
+                    maxHp: hp[1],                
+                    averageHp: hp[2]
+                });
             });
-        });
+        }
     }
 
     function handleSubmit(): void {

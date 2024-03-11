@@ -157,19 +157,19 @@ export interface ConditionAC extends ArmorClass {
 }
 
 export interface Speed {
-    walk: string //All creatures have a walking speed, simply called the monster’s speed. Creatures that have no form of ground-based locomotion have a walking speed of 0 feet.        
-    burrow: string //A monster that has a burrowing speed can use that speed to move through sand, earth, mud, or ice. A monster can’t burrow through solid rock unless it has a special trait that allows it to do so.        
-    climb: string //A monster that has a climbing speed can use all or part of its movement to move on vertical surfaces. The monster doesn’t need to spend extra movement to climb.        
-    fly: string //A monster that has a flying speed can use all or part of its movement to fly.       
-    swim: string //A monster that has a swimming speed doesn’t need to spend extra movement to swim.        
+    walk?: string //All creatures have a walking speed, simply called the monster’s speed. Creatures that have no form of ground-based locomotion have a walking speed of 0 feet.        
+    burrow?: string //A monster that has a burrowing speed can use that speed to move through sand, earth, mud, or ice. A monster can’t burrow through solid rock unless it has a special trait that allows it to do so.        
+    climb?: string //A monster that has a climbing speed can use all or part of its movement to move on vertical surfaces. The monster doesn’t need to spend extra movement to climb.        
+    fly?: string //A monster that has a flying speed can use all or part of its movement to fly.       
+    swim?: string  //A monster that has a swimming speed doesn’t need to spend extra movement to swim.        
 }
 
 export interface Senses {
-    passive_perception: number //The monster's passive perception (wisdom) score.        
-    blindsight: string //A monster with blindsight can perceive its surroundings without relying on sight, within a specific radius.        
-    darkvision: string //A monster with darkvision can see in the dark within a specific radius.        
-    tremorsense: string //A monster with tremorsense can detect and pinpoint the origin of vibrations within a specific radius, provided that the monster and the source of the vibrations are in contact with the same ground or substance.        
-    truesight: string //A monster with truesight can, out to a specific range, see in normal and magical darkness, see invisible creatures and objects, automatically detect visual illusions and succeed on saving throws against them, and perceive the original form of a shapechanger or a creature that is transformed by magic. Furthermore, the monster can see into the Ethereal Plane within the same range.
+    passive_perception?: number //The monster's passive perception (wisdom) score.        
+    blindsight?: string  //A monster with blindsight can perceive its surroundings without relying on sight, within a specific radius.        
+    darkvision?: string  //A monster with darkvision can see in the dark within a specific radius.        
+    tremorsense?: string //A monster with tremorsense can detect and pinpoint the origin of vibrations within a specific radius, provided that the monster and the source of the vibrations are in contact with the same ground or substance.        
+    truesight?: string  //A monster with truesight can, out to a specific range, see in normal and magical darkness, see invisible creatures and objects, automatically detect visual illusions and succeed on saving throws against them, and perceive the original form of a shapechanger or a creature that is transformed by magic. Furthermore, the monster can see into the Ethereal Plane within the same range.
 }
 
 interface Proficiency {
@@ -214,7 +214,7 @@ export interface Monster {
     intelligence: number //The monster's ability to outsmart a player.
     strength: number //How hard a monster can hit a player.
     wisdom: number //A monster's ability to ascertain the player's plan.
-    image: string //The image url of the monster.
+    image?: string //The image url of the monster.
     size: 'Tiny' | 'Small' | 'Medium' | 'Large' | 'Huge' | 'Gargantuan'  //The size of the monster ranging from Tiny to Gargantuan."
     type: string //The type of monster.
     subtype: string //The sub-category of a monster used for classification of monsters."
