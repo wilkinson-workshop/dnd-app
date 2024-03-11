@@ -30,18 +30,18 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 	const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
 	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
 	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
-	const [responseDialogInfo, setResponseDialogInfo] = useState<ResponseDialogInfo>({title: 'Delete', message: ['Are you sure you want to delete this Creature? ']});
+	const [responseDialogInfo, setResponseDialogInfo] = useState<ResponseDialogInfo>({title: 'Delete', message: []});
 
 	function handleDelete(){
 		//extra caution deleting PC or creatures with hp left
 		if (character.hit_points[0] != 0 || character.role == CharacterType.Player) {
-			let message = [responseDialogInfo.message[0]];
+			let message = [`Are you sure you want to delete ${character.name}? `];
 			if(character.hit_points[0] != 0){
-				message.push("This creature still has hp left.");
+				message.push(`${character.name} still has hp left.`);
 			}
 
 			if(character.role == CharacterType.Player){
-				message.push("This is a player character.");
+				message.push(`${character.name} is a player character.`);
 			}
 
 			setResponseDialogInfo({title: responseDialogInfo.title, message: message});
