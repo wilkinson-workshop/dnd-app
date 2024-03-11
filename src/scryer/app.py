@@ -268,9 +268,9 @@ async def session_order_current(session: CombatSession, ordered_list: list[Chara
 
     found_Current_character = await session.characters.locate(current_top)
     if(len(found_Current_character) == 0):
-        # There are situations when the curent position was deleted. 
+        # backup case when the curent position was deleted but not updated
         # In that case reset the current position
-        current_top = ordered_list[0].creature_uuid # TODO look for a better default if the current position was deleted. The next in position?
+        current_top = ordered_list[0].creature_uuid
         session.set_current_character(current_top)
         found_Current_character = await session.characters.locate(current_top)
 
@@ -357,6 +357,21 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
 
     session: CombatSession
     _, session = (await _sessions_find(session_uuid))[0]
+
+
+    #if deleting the current character move to the next in order.
+    current_character_uuid = session.session_current_character
+    if(character_uuid == current_character_uuid):
+        _, current_character = (await session.characters.locate(current_character_uuid))[0]
+        ordered: list[CharacterV2] = sorted(session.characters, key=lambda c: c.initiative, reverse=True) #type: ignore
+        current_index = ordered.index(current_character)
+        if(current_index == (len(ordered) - 1)):
+            new_current = ordered[0].creature_uuid
+            session.set_current_character(new_current)
+        else:
+            new_current = ordered[current_index +1].creature_uuid
+            session.set_current_character(new_current)
+
     await session.characters.delete(character_uuid)
 
     # do we want to forcefully disconnect a player if their character is "killed"
