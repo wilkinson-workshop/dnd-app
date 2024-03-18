@@ -16,6 +16,11 @@
   }
 }
 
+img.autoImage {
+  max-width: 100%;
+  height: auto;
+}
+
 .char-section {
   display: inline-block;
   margin-right: 10px;

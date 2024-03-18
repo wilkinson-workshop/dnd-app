@@ -288,22 +288,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 								{monsterInfo.image ?
 									(<img
 										src={`${apiBaseUrl}${monsterInfo.image}`}
-										height={200}
-										width={200}
+										className='autoImage'
 										alt={monsterInfo.index}
 										loading="lazy"
 									/>) : 
-									<img
+									<img className='autoImage'
 										src='/No_image_available.png'
-										height={200}
-										width={200}
 									/>}
 							</Grid>
 							<Grid item xs={12} sm={7}>
 								<Box><span className="bold-label">Size: </span>{monsterInfo.size}</Box>
 								<Box><span className="bold-label">Type: </span>{monsterInfo.type}</Box>
 								<Box><span className="bold-label">Alignment: </span>{monsterInfo.alignment}</Box>
-								<Box><span className="bold-label">Languages: </span>{monsterInfo.languages}</Box>
+								<Box><span className="bold-label">Languages: </span>{monsterInfo.languages ? monsterInfo.languages : 'None'}</Box>
 								<Box><span className="bold-label">Speed: </span>{showSpeed(monsterInfo.speed)}</Box>
 								<Box><span className="bold-label">Senses: </span>{showSenses(monsterInfo.senses)}</Box>
 							</Grid>

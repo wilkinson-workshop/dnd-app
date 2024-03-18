@@ -9,7 +9,7 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { HpAdjust } from "./hp-adjust";
 import { ConditionsContext } from "./page";
 import { Monster } from "@/app/_apis/dnd5eTypings";
-import { getMonster } from "@/app/_apis/dnd5eApi";
+import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getMonster } from "@/app/_apis/dnd5eApi";
 import { AlertInfo, Alerts } from "../alert/alerts";
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
@@ -61,10 +61,14 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
     }, [existingCharacter]);
 
     function getMonsterInfo(monsterId: string) {
-        getMonster(monsterId)
-            .then(m => {
-                setMonsterInfo(m);
-            });
+        if(monsterId == CUSTOM_MONSTER_OPTION.index){
+            setMonsterInfo(CUSTOM_MONSTER);
+        } else {
+            getMonster(monsterId)
+                .then(m => {
+                    setMonsterInfo(m);
+                });
+        }
     }
 
     function handleSubmit(): void {
