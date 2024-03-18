@@ -91,6 +91,17 @@ async def _broadcast_pc_event(
         cls,
         body)
 
+async def _broadcast_pc_observer_event(
+        session_uuid: UUID,
+        cls: type[events.Event],
+        body: events.EventBody):
+
+    return await _broadcast_client_event(
+        session_uuid,
+        sessions.pc_observer_send_event_action,
+        cls,
+        body)
+
 
 async def _character_make(
         session_uuid: UUID | str,
@@ -319,7 +330,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
 
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
-    await _broadcast_pc_event(
+    await _broadcast_pc_observer_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
@@ -331,7 +342,7 @@ async def characters_make(session_uuid: UUID, body: MutlipleCharactersV2):
     for character in body.characters:
         character.creature_id = request_uuid()
         await _character_make(session_uuid, character)
-    await _broadcast_pc_event(
+    await _broadcast_pc_observer_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())    
@@ -345,7 +356,7 @@ async def characters_push(
     """Update the specified character."""
 
     await _character_make(session_uuid, character, character_uuid)
-    await _broadcast_pc_event(
+    await _broadcast_pc_observer_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
@@ -379,7 +390,7 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
         _, client = found[0] 
         await session.detach_client(client)
 
-    await _broadcast_pc_event(
+    await _broadcast_pc_observer_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
@@ -613,7 +624,7 @@ async def sessions_player_input_send(session_uuid: UUID, body: NewCurrentOrder):
     new_current = request_uuid(body.creature_uuid) if body.creature_uuid != None else None
     session.set_current_character(new_current)
 
-    await _broadcast_pc_event(
+    await _broadcast_pc_observer_event(
         request_uuid(session_uuid),
         events.ReceiveOrderUpdate, #type: ignore
         body = events.EventBody())

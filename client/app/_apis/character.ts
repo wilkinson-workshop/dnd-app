@@ -15,8 +15,11 @@ export interface MultipleCharacters {
 export enum CharacterType{
     NonPlayer = 'non_player',
     Player = 'player',
-    DungeonMaster = 'dungeon_master'
+    DungeonMaster = 'dungeon_master',
+    Observer = 'observer'
 }
+
+export const OBSERVER_NAME = 'Observer';
 
 export const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 

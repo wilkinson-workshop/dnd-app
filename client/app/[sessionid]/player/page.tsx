@@ -3,7 +3,7 @@
 import { addSessionInput, getSingleSession } from "@/app/_apis/sessionApi";
 import { useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
+import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OBSERVER_NAME, OperatorType } from "@/app/_apis/character";
 import { Box, Grid, Paper } from "@mui/material";
 import useWebSocket from 'react-use-websocket';
 import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
@@ -73,7 +73,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 					return;
 				}
 				case EventType.JoinSession: {
-					if (!getName()) {
+					const name = getName();
+					if (!name) {
 						router.push(`/${params.sessionid}`);
 						return;
 					}
@@ -82,8 +83,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 						event_type: SubscriptionEventType.JoinSession,
 						event_body: {
 							session_uuid: params.sessionid,
-							role: CharacterType.Player,
-							name: getName(),
+							role: name == OBSERVER_NAME ? CharacterType.Observer : CharacterType.Player,
+							name: name,
 							client_uuid: EMPTY_GUID
 						}
 					});
