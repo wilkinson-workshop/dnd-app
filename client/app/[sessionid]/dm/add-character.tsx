@@ -63,6 +63,11 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                 getMonsterInfo(index);
             } else {
                 setMonsterInfo(null);
+                setInitiative('1');
+                setCurrentHp(1);
+                setMaxHp(1);
+                setName('Creature');
+                setConditions([]);
                 setCalculatedMonsterInfo(DEFAULT_CALC_MONSTER_INFO);
             }
         }
@@ -83,12 +88,17 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             .then(m => {
                 setMonsterInfo(m);
                 const hp = calculateHp(m);
-                setCalculatedMonsterInfo({
+                
+                const c: CalculatedMonsterInfo = {
                     initiativeAdd: calculateInitiative(m),
                     minHp: hp[0],
                     maxHp: hp[1],                
                     averageHp: hp[2]
-                });
+                }
+                setCalculatedMonsterInfo(c);
+
+                generateHp(c);
+                generateInitiative(c);
             });
         }
     }
@@ -122,7 +132,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         return Math.floor((dex - 10)/2);
     }
 
-    function generateInitiative(): void {
+    function generateInitiative(calculatedMonsterInfo: CalculatedMonsterInfo): void {
         const add = calculatedMonsterInfo.initiativeAdd;
         const init = randomNumber(1, 20);
         setInitiative((init + add).toString());
@@ -149,9 +159,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     } 
 
 
-    function generateHp(): void {
+    function generateHp(calculatedMonsterInfo: CalculatedMonsterInfo): void {
         const min = calculatedMonsterInfo.minHp;
-        const max = calculatedMonsterInfo. maxHp;
+        const max = calculatedMonsterInfo.maxHp;
 
         const maxHp = randomNumber(min, max);
         setCurrentHp(maxHp);
@@ -159,10 +169,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     } 
 
     function resetForm(){
-        setInitiative('1');
-        setCurrentHp(1);
-        setMaxHp(1);
-        //setName('Creature');
+        generateInitiative(calculatedMonsterInfo!)
+        generateHp(calculatedMonsterInfo!);
+        setName(monsterInfo!.name);
         //setMonster('')
         setConditions([]);
         //setMonsterInfo(null);
@@ -178,11 +187,11 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         );  
     }; 
 
-    const hpEdit =  () => {
+    const hpCreate =  () => {
         return (<>
             <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
             <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-            <Button variant="contained" disabled={monster == ''} onClick={generateHp}>Generate HP</Button>
+            <Button variant="contained" disabled={monster == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
         </>)
     }
 
@@ -210,7 +219,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />
-                <Button variant="contained" disabled={monster == ''} onClick={generateInitiative}>Generate Initiative</Button>
+                <Button variant="contained" disabled={monster == ''} onClick={() => generateInitiative(calculatedMonsterInfo)}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
@@ -219,7 +228,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                 Hit Points Roll: {monsterInfo?.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                {hpEdit()}
+                {hpCreate()}
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <FormControl sx={{ width: 300 }}>  
@@ -245,7 +254,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                 </FormControl> 
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <Button variant="contained" aria-label="add" onClick={handleSubmit}>
+                <Button fullWidth variant="contained" aria-label="add" onClick={handleSubmit}>
                     Add
                 </Button>
             </Box>

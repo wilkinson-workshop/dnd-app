@@ -84,7 +84,7 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 
 	return (
 		<>
-			<AddCharacterDialog sessionId={sessionId} closeDialog={reloadList} />
+			<AddCharacterDialog sessionId={sessionId} />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(

@@ -330,7 +330,7 @@ async def characters_make(session_uuid: UUID, character: CharacterV2):
 
     character.creature_id = request_uuid()
     await _character_make(session_uuid, character)
-    await _broadcast_pc_observer_event(
+    await _broadcast_session_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
@@ -342,7 +342,7 @@ async def characters_make(session_uuid: UUID, body: MutlipleCharactersV2):
     for character in body.characters:
         character.creature_id = request_uuid()
         await _character_make(session_uuid, character)
-    await _broadcast_pc_observer_event(
+    await _broadcast_session_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())    

@@ -49,8 +49,16 @@ export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, rec
             } else {
                 setDescription([]);
             }
+        } else {
+            setDescription([]);
         }
+
     }, [reason]);
+
+    function closeDialog(){
+        setDescription([]);
+        setOpen(false);
+    }
 
     function getDescription(skillId: string) {
         if (skillId == 'initiative') {
@@ -75,7 +83,7 @@ export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, rec
         if (reason == null || recipients.length == 0)
             return;
 
-        setOpen(false);
+        closeDialog();
 
         let actualRecipients = recipients;
 
@@ -111,13 +119,13 @@ export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, rec
 
     if (open) {
         return (
-            <Dialog onClose={_ => setOpen(false)} open={open}>
+            <Dialog onClose={_ => closeDialog()} open={open}>
                 <DialogTitle sx={{ m: 0, p: 2 }}>
                     Player Input Request
                 </DialogTitle>
                 <IconButton
                     aria-label="close"
-                    onClick={_ => setOpen(false)}
+                    onClick={_ => closeDialog()}
                     sx={{
                         position: 'absolute',
                         right: 8,
@@ -127,7 +135,7 @@ export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, rec
                 >
                     <CloseIcon />
                 </IconButton>
-                <DialogContent>
+                <DialogContent sx={{pt:0}}>
                     <Box>
                         <Box sx={{ margin: '10px 0' }}>
                             <Autocomplete
@@ -184,7 +192,7 @@ export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, rec
                     <Button variant="contained" disabled={reason == null || recipients.length == 0} aria-label="Request Roll" onClick={handleClickRequestRoll}>
                         Request Roll
                     </Button>
-                    <Button variant="contained" aria-label="cancel" onClick={_ => setOpen(false)}>
+                    <Button variant="contained" aria-label="cancel" onClick={_ => closeDialog()}>
                         Cancel
                     </Button>
                 </DialogActions>

@@ -80,8 +80,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showAction(action: Action, index: number) {
 		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
-			<Box><span className="bold-label">Name:</span> {action.name}</Box>
-			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description:</span> {action.desc}</Box>
+			<Box className="bold-label">{action.name}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}>{action.desc}</Box>
 			{/* 
 			Description seems to have all this info already.
 			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
@@ -111,10 +111,10 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			{action.options ? 
 				showActionOptions(action.options)
 				:''
-			}
+			}*/}
 			{
 				action.usage ? showUsage(action.usage) : ''
-			} */}
+			}
 		</Box>);
 	}
 
@@ -200,8 +200,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showSpecialAbilities(ability: SpecialAbility, index: number) {
 		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
-			<Box><span className="bold-label">Name: </span>{ability.name}</Box>
-			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description: </span>{ability.desc}</Box>
+			<Box className="bold-label">{ability.name}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}>{ability.desc}</Box>
 			{ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
 			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus: </span>{ability.attack_bonus}</Box>): ''}
 			{ability.damage && ability.damage.length > 0 ? 
