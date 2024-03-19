@@ -466,6 +466,11 @@ async def group_characters_make(
     character.creature_id = request_uuid()
     await _group_character_make(session_uuid, group_uuid, character)
 
+    await _broadcast_dm_event(
+        session_uuid, 
+        events.ReceiveOrderUpdate, #type: ignore
+        )
+
         
 @APP_ROUTERS["group"].post("/{session_uuid}/{group_uuid}/multiple")
 async def characters_make(
@@ -476,7 +481,12 @@ async def characters_make(
 
     for character in body.characters:
         character.creature_id = request_uuid()
-        await _group_character_make(session_uuid, group_uuid, character)  
+        await _group_character_make(session_uuid, group_uuid, character)
+
+    await _broadcast_dm_event(
+        session_uuid, 
+        events.ReceiveOrderUpdate, #type: ignore
+        )
 
 
 @APP_ROUTERS["group"].patch("/{session_uuid}/{group_uuid}/{character_uuid}")
@@ -502,8 +512,6 @@ async def characters_kill(
     _, session = (await _sessions_find(session_uuid))[0]
     _, group  =  (await session.groups.locate(group_uuid))[0]
     await group.characters.delete(character_uuid)
-
-
 
 
 
@@ -624,7 +632,7 @@ async def sessions_player_input_send(session_uuid: UUID, body: NewCurrentOrder):
     new_current = request_uuid(body.creature_uuid) if body.creature_uuid != None else None
     session.set_current_character(new_current)
 
-    await _broadcast_pc_observer_event(
+    await _broadcast_session_event(
         request_uuid(session_uuid),
         events.ReceiveOrderUpdate, #type: ignore
         body = events.EventBody())
