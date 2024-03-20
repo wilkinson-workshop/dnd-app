@@ -1,18 +1,20 @@
 import { PlayerInput } from "@/app/_apis/playerInput"
 import { clearSessionInput } from "@/app/_apis/sessionApi"
 import { Box, Button, Grid, DialogActions, DialogContent, DialogTitle, IconButton } from "@mui/material"
-import { FC, useEffect, useState } from "react"
+import { FC, useContext, useEffect, useState } from "react"
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
+import { SessionContext } from "./session-context";
 
 export interface PlayerInputListProps {
     playerInputs: PlayerInput[],
-    sessionId: string
 }
 
-export const PlayerInputList: FC<PlayerInputListProps> = ({ playerInputs, sessionId }) => {
+export const PlayerInputList: FC<PlayerInputListProps> = ({ playerInputs }) => {
     const [open, setOpen] = useState(false);
     const [inputs, setInputs] = useState<PlayerInput[]>([]);
+
+    let sessionId = useContext(SessionContext);
 
     useEffect(() => {
         setInputs(playerInputs);

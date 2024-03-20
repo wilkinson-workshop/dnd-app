@@ -11,6 +11,7 @@ import { INIT_DESC, getAllSkills, getSkill } from "@/app/_apis/dnd5eApi";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
+import { SessionContext } from "./session-context";
 
 
 const ITEM_HEIGHT = 48;
@@ -25,17 +26,18 @@ const MenuProps = {
 };
 
 export interface RequestPlayerInputProps {
-    sessionId: string,
     recipientOptions: Character[]
 }
 
-export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ sessionId, recipientOptions }) => {
+export const RequestPlayerInput: FC<RequestPlayerInputProps> = ({ recipientOptions }) => {
     const [open, setOpen] = useState(false);
     const [requestDiceType, setRequestDiceType] = useState(20);
     const [recipients, setRecipient] = useState<string[]>([]);
     const [reason, setReason] = useState<string | null>(null);
     const [rollOptions, setRollOptions] = useState<APIReference[]>([]);
     const [description, setDescription] = useState<string[]>([]);
+
+    let sessionId = useContext(SessionContext);
 
     useEffect(() => {
         getSkillOptions();

@@ -3,7 +3,9 @@ import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { getAllMonsters, getMonster, getCustomMonster, getCustomMonsters } from "@/app/_apis/dnd5eApi";
+import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from "./session-context";
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
@@ -15,7 +17,9 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     const [challengeRatings, setChallengeRatings] = useState<string>('');
     const [conditions, setConditions] = useState(false);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
-    const [monster, setMonster] = useState('')
+    const [monster, setMonster] = useState('');
+
+    let sessionId = useContext(SessionContext);
 
     const conditionOptions = useContext(ConditionsContext);
 
@@ -24,7 +28,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }, []);
 
     function getMonsterOptions(){
-        Promise.all([getAllMonsters([]), getCustomMonsters()])        
+        Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
             setMonsterOptions([...m[0].results, ...m[1]]);
         });
@@ -33,7 +37,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     function getMonsterInfo(monsterId: string){  
         let getApi: Promise<Monster>;
         if(monsterId.startsWith('custom')){
-            getApi = getCustomMonster(monsterId)
+            getApi = getCustomMonster(sessionId, monsterId)
         } else {
             getApi = getMonster(monsterId)
         }

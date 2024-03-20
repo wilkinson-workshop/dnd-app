@@ -8,7 +8,9 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { getAllMonsters, getCustomMonster, getCustomMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from "./session-context";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -50,6 +52,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
 
+    let sessionId = useContext(SessionContext);
+
     const conditionOptions = useContext(ConditionsContext);
 
     useEffect(() => {
@@ -74,7 +78,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     },[monster]);
 
     function getMonsterOptions(){
-        Promise.all([getAllMonsters([]), getCustomMonsters()])        
+        Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
             setMonsterOptions([...m[0].results, ...m[1]]);
         });
@@ -83,7 +87,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function getMonsterInfo(monsterId: string){
         let getApi: Promise<Monster>;
         if(monsterId.startsWith('custom')){
-            getApi = getCustomMonster(monsterId)
+            getApi = getCustomMonster(sessionId, monsterId)
         } else {
             getApi = getMonster(monsterId)
         }
@@ -198,7 +202,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         return (<>
             <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
             <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-            <Button variant="contained" disabled={monster == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
+            <Button variant="contained" disabled={monster == '' || monsterInfo?.hit_points_roll == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
         </>)
     }
 
@@ -231,9 +235,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
-            <Box>
-                Hit Points Roll: {monsterInfo?.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
-            </Box>
+            {monsterInfo && monsterInfo.hit_points_roll ? (<Box>
+                Hit Points Roll: {monsterInfo.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
+            </Box>): 'Hit Points Static'}
             <Box sx={{margin: '10px 0'}}>
                 {hpCreate()}
             </Box>

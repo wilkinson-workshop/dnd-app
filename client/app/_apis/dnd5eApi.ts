@@ -54,29 +54,6 @@ export const CUSTOM_MONSTER: Monster = {
   reactions: []
 }
 
-let customMonsters: Monster[] = [];
-
-export async function addCustomMonster(monster: Monster): Promise<any> {
-  const count = customMonsters.length;
-  customMonsters.push({...monster, index: `custom${count}`});
-  
-  return Promise.resolve();
-}
-
-export async function getCustomMonster(monsterId: string): Promise<Monster>{
-  const monster = customMonsters.find(x => x.index == monsterId)!;
-  
-  return Promise.resolve(monster);
-}
-
-export async function getCustomMonsters(): Promise<APIReference[]>{
-  const customMonsterOptions = customMonsters.map<APIReference>(m => { return { name: m.name, index: m.index, url:'' };});
-
-
-  return Promise.resolve(customMonsterOptions);
-}
-
-
 export async function getAllConditions(): Promise<GetAll> {
     const res = await fetch(`${apiBaseUrl}/conditions`, {
       headers:{

@@ -1,11 +1,12 @@
 import { Box, Button, TextField, FormControl, InputLabel, Select, SelectChangeEvent, MenuItem, Paper, IconButton } from "@mui/material";
-import { FC, useEffect, useRef, useState } from "react";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { getName } from "@/app/_apis/sessionStorage";
 import { PlayerMessage } from "@/app/_apis/playerInput";
 import { Character } from "@/app/_apis/character";
 import CloseIcon from '@mui/icons-material/Close';
 import ChatIcon from "@mui/icons-material/Chat";
+import { SessionContext } from "../dm/session-context";
 
 export interface ThreadOptions {
     ids: string,
@@ -13,18 +14,19 @@ export interface ThreadOptions {
 }
 
 export interface ChatBoxProps {
-    sessionId: string,
     recipientOptions: Character[],
     secretInfo: PlayerMessage,
 }
 
-export const ChatBox: FC<ChatBoxProps> = ({ sessionId, recipientOptions, secretInfo }) => {
+export const ChatBox: FC<ChatBoxProps> = ({ recipientOptions, secretInfo }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [message, setMessage] = useState('');
     const messages = useRef<PlayerMessage[]>([]);
     const [threadMessages, setThreadMessages] = useState<PlayerMessage[]>([]);
     const [threads, setThreads] = useState<ThreadOptions[]>([]);
     const [currentThread, setCurrentThread] = useState<string>('');
+
+    let sessionId = useContext(SessionContext);
 
     //handle new messages incoming
     useEffect(() => {

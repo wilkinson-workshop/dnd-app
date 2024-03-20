@@ -251,6 +251,9 @@ APP_ROUTERS = {
     # Define session group manipulation
     # endpoints.
     "group": APIRouter(prefix="/groups"),
+    # Define session custom monster manipulation
+    # endpoints
+    "monster": APIRouter(prefix="/monsters"),
     # Defines the routes available for clients
     "client": APIRouter(prefix="/clients"),
     # Defines the routes available to managing
@@ -393,9 +396,7 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
     await _broadcast_pc_observer_event(
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
-        body=events.EventBody())
-    
-
+        body=events.EventBody()) 
 
 
 @APP_ROUTERS["group"].get("/{session_uuid}", description="Get all session groups.")
@@ -512,6 +513,59 @@ async def characters_kill(
     _, session = (await _sessions_find(session_uuid))[0]
     _, group  =  (await session.groups.locate(group_uuid))[0]
     await group.characters.delete(character_uuid)
+
+
+
+
+
+@APP_ROUTERS["monster"].get("/{session_uuid}", description="Get all session groups.")
+async def get_custom_monsters(
+    session_uuid: UUID):
+    """Attempt to fetch custom monsters."""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    found  = await session.custom_monsters.locate()
+
+    return [custom_monster.monster for _, custom_monster in found]
+
+
+@APP_ROUTERS["monster"].post("/{session_uuid}")
+async def custom_monster_make(
+    session_uuid: UUID,
+    monster: dict):
+    """
+    Create a new custom monster."""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+
+    await session.custom_monsters.create(
+        monster, #type: ignore
+        ) #type: ignore
+
+
+@APP_ROUTERS["monster"].delete("/{session_uuid}/{monster_index}")
+async def custom_monster_delete(
+    session_uuid: UUID,
+    monster_index: str):
+    """Deletes the custom monster."""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+
+    await session.custom_monsters.delete(monster_index)
+
+
+
+@APP_ROUTERS["monster"].get("/{session_uuid}/{monster_index}")
+async def get_custom_monster(
+        session_uuid: UUID,
+        monster_index: str):
+    """Returns a custom monster"""
+
+    _, session = (await _sessions_find(session_uuid))[0]
+    _, custom_monster  =  (await session.custom_monsters.locate(monster_index))[0]
+    return custom_monster.monster 
+
+
 
 
 

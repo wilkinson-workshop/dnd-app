@@ -13,6 +13,7 @@ import { AddGroupCharacterDialog } from "./add-group-character-dialog";
 import { AlertInfo, Alerts } from "../../alert/alerts";
 import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
 import { WebsocketContext } from "../websocket-context";
+import { SessionContext } from "../session-context";
 
 const style = {
     minHeight: '30px',
@@ -21,11 +22,10 @@ const style = {
 }
 
 export interface CreatureGroupsProps {
-    sessionId: string,
     backToDashboard: () => void
 }
 
-export const CreatureGroups: FC<CreatureGroupsProps> = ({ sessionId, backToDashboard }) => {
+export const CreatureGroups: FC<CreatureGroupsProps> = ({ backToDashboard }) => {
     const [selectedGroup, setSelectedGroup] = useState<string>('');
     const [characters, setCharacters] = useState<Character[]>([]);
     const [groupOptions, setGroupOptions] = useState<SessionGroup[]>([]);
@@ -33,6 +33,7 @@ export const CreatureGroups: FC<CreatureGroupsProps> = ({ sessionId, backToDashb
     const [alert, setAlert] = useState<AlertInfo | null>(null);
 
     let lastJsonMessage = useContext(WebsocketContext);
+    let sessionId = useContext(SessionContext);
 
     useEffect(() => {
         getAllGroups();
@@ -172,7 +173,7 @@ export const CreatureGroups: FC<CreatureGroupsProps> = ({ sessionId, backToDashb
                 </Button>
                 <CreateGroup onAddClick={handleCreateGroup} />
                 {selectedGroup != '' ? (<Box>
-                    <AddGroupCharacterDialog sessionId={sessionId} groupId={selectedGroup} closeDialog={() => reloadList(selectedGroup)} />
+                    <AddGroupCharacterDialog groupId={selectedGroup} closeDialog={() => reloadList(selectedGroup)} />
                     <div style={style}>{
                     characters.length > 0 ?
                         characters.map((card, i) => renderCard(card, i, selectedGroup)) :

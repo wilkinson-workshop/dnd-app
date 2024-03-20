@@ -4,7 +4,7 @@ import { Box, Button, DialogActions, DialogContent, DialogTitle, Fab, IconButton
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/PersonAdd'
 import Dialog from '@mui/material/Dialog';
-import { FC, useState } from 'react';
+import { FC, useContext, useState } from 'react';
 import { AddRandomCharacter } from './add-random-character';
 import { Character } from '@/app/_apis/character';
 import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
@@ -13,16 +13,18 @@ import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { AddCustomCharacter } from './add-custom_character';
 import { Monster } from '@/app/_apis/dnd5eTypings';
-import { addCustomMonster } from '@/app/_apis/dnd5eApi';
+import { addCustomMonster } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from './session-context';
 
 export interface AddCharacterDialogProps {
-    sessionId: string
 }
 
-export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) => {
+export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ }) => {
     const [open, setOpen] = useState(false)
     const [value, setValue] = useState(0);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
+
+    let sessionId = useContext(SessionContext);
 
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -47,7 +49,7 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) =
     }
 
     function handleAddCustomCharacter(monster: Monster){
-        addCustomMonster(monster)
+        addCustomMonster(sessionId, monster)
         .then(_ =>
             setAlert({ type: 'success', message: `${monster.name} added!` })
         );
