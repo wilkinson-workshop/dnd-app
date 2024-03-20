@@ -1,7 +1,7 @@
 'use client'
 
 import { Box, Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
-import { FC, useCallback, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState, useContext } from "react";
 import { Character } from "@/app/_apis/character";
 import { addMultipleCharacter } from "@/app/_apis/characterApi";
 import { CreateGroup } from "./create-group";
@@ -10,8 +10,9 @@ import { createGroup, deleteGroup, deleteGroupCharacter, getGroupCharacters, get
 import { Card } from "../character-card";
 import { EditCharacter } from "../edit-character";
 import { AddGroupCharacterDialog } from "./add-group-character-dialog";
-import { useRouter } from "next/navigation";
 import { AlertInfo, Alerts } from "../../alert/alerts";
+import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
+import { WebsocketContext } from "../websocket-context";
 
 const style = {
     minHeight: '30px',
@@ -20,31 +21,45 @@ const style = {
 }
 
 export interface CreatureGroupsProps {
-    params: { sessionid: string }
+    sessionId: string,
+    backToDashboard: () => void
 }
 
-const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
+export const CreatureGroups: FC<CreatureGroupsProps> = ({ sessionId, backToDashboard }) => {
     const [selectedGroup, setSelectedGroup] = useState<string>('');
     const [characters, setCharacters] = useState<Character[]>([]);
     const [groupOptions, setGroupOptions] = useState<SessionGroup[]>([]);
     const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
 
-    const router = useRouter();
+    let lastJsonMessage = useContext(WebsocketContext);
 
     useEffect(() => {
         getAllGroups();
     }, []);
 
+    useEffect(() => {
+		if (lastJsonMessage !== null) {
+			switch (lastJsonMessage.event_type) {
+				case EventType.ReceiveOrderUpdate: {
+                    reloadList(selectedGroup);
+					return;
+				}
+			}
+		}
+	}, [lastJsonMessage]);
+
+
+
     function getAllGroups() {
-        getGroups(params.sessionid)
+        getGroups(sessionId)
             .then(groups => {
                 setGroupOptions(groups);
             });
     }
 
     function handleCreateGroup(newGroup: SessionGroup) {
-        createGroup(params.sessionid, newGroup)
+        createGroup(sessionId, newGroup)
             .then(groupId => {
                 const fullGroup = { group_name: newGroup.group_name, group_uuid: groupId, characters: [] };
 
@@ -58,7 +73,7 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
 
     function handleDeleteGroup(groupId: string){
         setSelectedGroup('');
-        deleteGroup(params.sessionid, groupId)
+        deleteGroup(sessionId, groupId)
         .then(_ => {
             getAllGroups();
         });
@@ -75,7 +90,7 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
     }
 
     function addGroupToInitiative(characters: Character[]) {
-        addMultipleCharacter(params.sessionid, { characters })
+        addMultipleCharacter(sessionId, { characters })
             .then(_ => {
                 setAlert({ type: 'success', message: `${characters.length} creatures added to initiative! Its safe to delete the group now.` });
                 //should we delete the group after applying it? 
@@ -84,17 +99,19 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
     }
 
     function onDelete(character: Character, groupId: string) {
-        deleteGroupCharacter(params.sessionid, groupId, character.creature_id)
+        deleteGroupCharacter(sessionId, groupId, character.creature_id)
             .then(_ => reloadList(groupId));
     }
 
     function updateCharacter(character: Character, groupId: string) {
-        saveGroupCharacter(params.sessionid, groupId, character)
+        saveGroupCharacter(sessionId, groupId, character)
             .then(_ => reloadList(groupId));
     }
 
     function reloadList(groupId: string) {
-        getGroupCharacters(params.sessionid, groupId)
+        if(groupId == '')
+            return;
+        getGroupCharacters(sessionId, groupId)
             .then(c => {
                 setCharacterEdit(null);
                 setCharacters(c);
@@ -116,14 +133,18 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
             )
         },
         [],
-    )
+    );
+
+    function handleBackToDashboard(){ 
+        backToDashboard();
+    }
 
     return (
         <>
             <Box>
                 <Alerts info={alert} />
                 <Box>
-                    <Button variant="contained" aria-label="back" onClick={() => router.push(`/${params.sessionid}/dm`)}>
+                    <Button variant="contained" aria-label="back" onClick={handleBackToDashboard}>
                         Back to Dashboard
                     </Button>
                 </Box>
@@ -151,7 +172,7 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
                 </Button>
                 <CreateGroup onAddClick={handleCreateGroup} />
                 {selectedGroup != '' ? (<Box>
-                    <AddGroupCharacterDialog sessionId={params.sessionid} groupId={selectedGroup} closeDialog={() => reloadList(selectedGroup)} />
+                    <AddGroupCharacterDialog sessionId={sessionId} groupId={selectedGroup} closeDialog={() => reloadList(selectedGroup)} />
                     <div style={style}>{
                     characters.length > 0 ?
                         characters.map((card, i) => renderCard(card, i, selectedGroup)) :
@@ -167,5 +188,3 @@ const CreatureGroups: FC<CreatureGroupsProps> = ({ params }) => {
         </>
     );
 }
-
-export default CreatureGroups

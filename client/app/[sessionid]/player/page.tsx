@@ -3,10 +3,10 @@
 import { addSessionInput, getSingleSession } from "@/app/_apis/sessionApi";
 import { useEffect, useState } from "react";
 import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OperatorType } from "@/app/_apis/character";
+import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OBSERVER_NAME, OperatorType } from "@/app/_apis/character";
 import { Box, Grid, Paper } from "@mui/material";
 import useWebSocket from 'react-use-websocket';
-import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
+import { EventType, SubscriptionEventType, WebsocketEvent } from "@/app/_apis/eventType";
 import { PlayerMessage, RequestPlayerInput } from "@/app/_apis/playerInput";
 import { SendPlayerMessage } from "../chat/send-player-message";
 import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
@@ -39,7 +39,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 	const router = useRouter();
 
 	const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } =
-		useWebSocket<{ event_type: EventType, event_body: any | string }>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
+		useWebSocket<WebsocketEvent>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
 
 	useEffect(() => {
 		getLatestInitiativeOrder();
@@ -73,7 +73,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 					return;
 				}
 				case EventType.JoinSession: {
-					if (!getName()) {
+					const name = getName();
+					if (!name) {
 						router.push(`/${params.sessionid}`);
 						return;
 					}
@@ -82,8 +83,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 						event_type: SubscriptionEventType.JoinSession,
 						event_body: {
 							session_uuid: params.sessionid,
-							role: CharacterType.Player,
-							name: getName(),
+							role: name == OBSERVER_NAME ? CharacterType.Observer : CharacterType.Player,
+							name: name,
 							client_uuid: EMPTY_GUID
 						}
 					});

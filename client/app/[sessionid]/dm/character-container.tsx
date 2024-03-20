@@ -1,11 +1,13 @@
 import type { FC } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Card } from './character-card'
 import { Character, LogicType } from '@/app/_apis/character'
 import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { EditCharacter } from './edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
 import { AddCharacterDialog } from './add-character-dialog'
+import { WebsocketContext } from './websocket-context'
+import { EventType } from '@/app/_apis/eventType'
 
 const style = {
 	minHeight: '30px',
@@ -15,13 +17,13 @@ const style = {
 
 export interface ContainerProps {
 	sessionId: string,
-	reload: boolean,
-	reloadDone: () => void
 }
 
-export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
+export const Container: FC<ContainerProps> = ({ sessionId }) => {
 	const [cards, setCards] = useState<Character[]>([]);
 	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
+
+	let lastJsonMessage = useContext(WebsocketContext);
 
 	const cardsRef = useRef<Character[]>([]);
 
@@ -32,11 +34,15 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 	},[]);
 
 	useEffect(() => {
-		if(reload){
-			reloadList();
-			reloadDone();
+		if (lastJsonMessage !== null) {
+			switch (lastJsonMessage.event_type) {
+				case EventType.ReceiveOrderUpdate: {
+                    reloadList();
+					return;
+				}
+			}
 		}
-	}, [reload])
+	}, [lastJsonMessage]);
 
 	function markDone(){
 		updateCurrentInOrder(cardsRef.current[1]);
@@ -84,7 +90,7 @@ export const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone })
 
 	return (
 		<>
-			<AddCharacterDialog sessionId={sessionId} closeDialog={reloadList} />
+			<AddCharacterDialog sessionId={sessionId} />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(

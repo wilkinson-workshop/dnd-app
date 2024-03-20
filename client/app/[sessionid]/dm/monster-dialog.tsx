@@ -80,8 +80,10 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showAction(action: Action, index: number) {
 		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
-			<Box><span className="bold-label">Name:</span> {action.name}</Box>
-			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description:</span> {action.desc}</Box>
+			<Box className="bold-label">{action.name}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}>{action.desc}</Box>
+			{/* 
+			Description seems to have all this info already.
 			{action.dc ? (<Box><span className="bold-label">DC:</span> {showDC(action.dc)}</Box>): ''}
 			{action.attack_bonus ? (<Box><span className="bold-label">Attack Bonus</span> {action.attack_bonus}</Box>): ''}
 			{action.damage ? 
@@ -102,16 +104,14 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 				))}</Box>)
 				:''
 			}
-			{/* Manticore example */}
 			{action.multiattack_type == 'action_options' ?
 				showActionOptions(action.action_options)
 				:''
 			}
-			{/*Adult Silver Dragon*/}
 			{action.options ? 
 				showActionOptions(action.options)
 				:''
-			}
+			}*/}
 			{
 				action.usage ? showUsage(action.usage) : ''
 			}
@@ -200,8 +200,8 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	function showSpecialAbilities(ability: SpecialAbility, index: number) {
 		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
-			<Box><span className="bold-label">Name: </span>{ability.name}</Box>
-			<Box sx={{whiteSpace: 'pre-wrap'}}><span className="bold-label">Description: </span>{ability.desc}</Box>
+			<Box className="bold-label">{ability.name}</Box>
+			<Box sx={{whiteSpace: 'pre-wrap'}}>{ability.desc}</Box>
 			{ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
 			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus: </span>{ability.attack_bonus}</Box>): ''}
 			{ability.damage && ability.damage.length > 0 ? 
@@ -210,7 +210,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			}
 			{ability.usage ? showUsage(ability.usage): ''}
 			{ability.spellcasting ? 
-				(<Box><span className="bold-label">Spellcasting: </span>{showSpellcasting(ability.spellcasting)}</Box>)
+				showSpellcasting(ability.spellcasting)
 				:''
 			}
 		</Box>);
@@ -251,15 +251,20 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 
 	//archmage example
 	function showSpellcasting(spellcasting: Spellcasting){
-		return (<Box sx={{marginLeft: 2}}>
-			<Box><span className="bold-label">Level: </span>{spellcasting.level}</Box>
-			<Box><span className="bold-label">Ability: </span>{spellcasting.ability.name}</Box>
-			<Box><span className="bold-label">DC: </span>{spellcasting.dc}</Box>
-			<Box><span className="bold-label">Modifier: </span>{spellcasting.modifier}</Box>
-			<Box><span className="bold-label">Components Required: </span>{spellcasting.components_required.join(', ')}</Box>
-			<Box><span className="bold-label">School: </span>{spellcasting.school}</Box>
-			<Box><span className="bold-label">Slots: </span>{showSlots(spellcasting.slots)}</Box>
-			<Box><span className="bold-label">Spells: </span>{showSpells(spellcasting.spells)}</Box>
+		return (
+		<Box><span className="bold-label">Spellcasting: </span>
+			<Box sx={{marginLeft: 2}}>
+				{/* 
+				<Box><span className="bold-label">Level: </span>{spellcasting.level}</Box>
+				<Box><span className="bold-label">Ability: </span>{spellcasting.ability.name}</Box>
+				<Box><span className="bold-label">DC: </span>{spellcasting.dc}</Box>
+				<Box><span className="bold-label">Modifier: </span>{spellcasting.modifier}</Box>
+				<Box><span className="bold-label">Components Required: </span>{spellcasting.components_required.join(', ')}</Box>
+				<Box><span className="bold-label">School: </span>{spellcasting.school}</Box>
+				<Box><span className="bold-label">Slots: </span>{showSlots(spellcasting.slots)}</Box> 
+				*/}
+				<Box><span className="bold-label">Spells: </span>{showSpells(spellcasting.spells)}</Box>
+			</Box>
 		</Box>)
 	}
 
@@ -348,7 +353,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 						<Box><span className="bold-label">Proficiency Bonus: </span>{monsterInfo.proficiency_bonus}</Box>
 						<Box><span className="bold-label">Proficiencies: </span> 
 							{monsterInfo.proficiencies.length > 0 ?
-								monsterInfo.proficiencies.map(p => `${p.proficiency.name}: ${p.value}`).join(', ')
+								monsterInfo.proficiencies.map((p, i) => <Box key={i}>{`${p.proficiency.name}: ${p.value}`}</Box>)
 								: 'None'
 							}
 						</Box>

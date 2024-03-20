@@ -17,7 +17,7 @@ export const HpAdjust: FC<HpAdjustProps> = ({hp,  updateHp}) => {
 
     return (
     <>
-        <Box sx={{display: "inline-block", px: 1 }}>{hp}</Box>
+        <TextField sx={{maxWidth: 60}} size="small" value={hp} variant="outlined" onChange={x => updateHp(Number.parseInt(x.target.value? x.target.value : '0'))} />
         <IconButton sx={quickEdit} onClick={() => updateHp(hp - hpChange)}>
             <RemoveIcon />
         </IconButton>

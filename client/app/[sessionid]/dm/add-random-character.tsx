@@ -1,21 +1,9 @@
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
-import AddIcon from '@mui/icons-material/PersonAdd'
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
@@ -169,7 +157,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
                 </FormGroup>
             </Box>
             <Box sx={{margin: '10px 0'}}>
-                <Button variant="contained" aria-label="add" onClick={handleSubmit}>
+                <Button fullWidth variant="contained" aria-label="add" onClick={handleSubmit}>
                     Add
                 </Button>
             </Box>

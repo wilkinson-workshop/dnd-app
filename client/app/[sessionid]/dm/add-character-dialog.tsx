@@ -14,12 +14,11 @@ import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 
 export interface AddCharacterDialogProps {
-    sessionId: string,
-    closeDialog: () => void
+    sessionId: string
 }
 
-export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, closeDialog }) => {
-    const [open, setOpen] = useState(false);
+export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) => {
+    const [open, setOpen] = useState(false)
     const [value, setValue] = useState(0);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
 
@@ -29,7 +28,7 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, clo
 
     function handleClose() {
         setOpen(false);
-        closeDialog();
+        setAlert(null);
     }
 
     function handleAddMultipleCharacters(characters: Character[]) {
@@ -64,7 +63,7 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, clo
                     >
                         <CloseIcon />
                     </IconButton>
-                    <DialogContent>
+                    <DialogContent sx={{pt: 0}}>
                         <Alerts info={alert} />
                         <Box sx={{ width: '100%' }}>
                             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -81,11 +80,6 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, clo
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>
-                    <DialogActions>
-                        <Button variant="contained" aria-label="cancel" onClick={handleClose}>
-                            Done
-                        </Button>
-                    </DialogActions>
                 </Dialog>) : (
                 <Fab sx={{ position: 'fixed', bottom: 75, right: 16, }} color="primary" onClick={() => setOpen(true)}>
                     <AddIcon />

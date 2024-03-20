@@ -145,6 +145,18 @@ async def pc_send_event_action(
 
     return (await send_event_action(sock, event))
 
+@event_action
+@roled_action(roles=[Role.PLAYER, Role.OBSERVER])
+async def pc_observer_send_event_action(
+    sock: WebSocket,
+    event: Event) -> ActionResult:
+    """
+    Send an event action to the players.
+    """
+
+    return (await send_event_action(sock, event))
+
+
 
 class Session[C: SessionSocket](Service):
     """
@@ -416,7 +428,7 @@ class CombatSession[C: SessionSocket](Session[C]):
 
         client_uuid = await super().attach_client(client, body)
 
-        if body["role"] == Role.DUNGEON_MASTER:
+        if body["role"] == Role.DUNGEON_MASTER or body['role'] == Role.OBSERVER:
             return client_uuid    
 
         if (found := await self.characters.locate(client_uuid)): #type: ignore

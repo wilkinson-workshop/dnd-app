@@ -54,3 +54,4 @@ class Role(enum.StrEnum):
     NON_PLAYER     = enum.auto()
     PLAYER         = enum.auto()
     DUNGEON_MASTER = enum.auto()
+    OBSERVER       = enum.auto()

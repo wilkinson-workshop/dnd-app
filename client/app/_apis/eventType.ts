@@ -11,3 +11,5 @@ export enum EventType{
 export enum SubscriptionEventType{
     JoinSession = 'join_session',
 }
+
+export interface WebsocketEvent { event_type: EventType, event_body: any }

@@ -13,6 +13,7 @@ import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getMonster } from "@/app/_apis/d
 import { AlertInfo, Alerts } from "../alert/alerts";
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
+import { CharacterHp } from "./character-hp";
 
 
 const ITEM_HEIGHT = 48;
@@ -39,7 +40,6 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
     const [initiative, setInitiative] = useState('1');
     const [name, setName] = useState('Creature');
     const [conditions, setConditions] = useState<string[]>([]);
-    const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
 
     const conditionOptions = useContext(ConditionsContext);
@@ -53,23 +53,9 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
             setInitiative(existingCharacter.initiative.toString());
             setName(existingCharacter.name);
             setConditions(existingCharacter.conditions);
-            if (existingCharacter.monster) {
-                getMonsterInfo(existingCharacter.monster);
-            }
             onEdit(true);
         }
     }, [existingCharacter]);
-
-    function getMonsterInfo(monsterId: string) {
-        if(monsterId == CUSTOM_MONSTER_OPTION.index){
-            setMonsterInfo(CUSTOM_MONSTER);
-        } else {
-            getMonster(monsterId)
-                .then(m => {
-                    setMonsterInfo(m);
-                });
-        }
-    }
 
     function handleSubmit(): void {
         if (currentHp > maxHp) {
@@ -106,7 +92,6 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
         setMaxHp(1);
         setName('Creature');
         setConditions([]);
-        setMonsterInfo(null);
         setAlert(null);
     }
 
@@ -122,13 +107,11 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
 
     function updateExistingCurrentHp(newHp: number) {
         if (newHp < 0) {
-            setAlert({ type: 'warning', message: 'Cant set HP less then 0' });
             setCurrentHp(0);
             return;
         }
 
         if (newHp > maxHp) {
-            setAlert({ type: 'warning', message: `Cant set HP greater than the set max (${maxHp})` });
             setCurrentHp(maxHp);
             return;
         }
@@ -152,7 +135,11 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
                 </Select>
             )
         } else {
-            return (<HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />);
+            return (
+            <>
+                <CharacterHp character={{...existingCharacter!, hit_points: [currentHp, maxHp]}} />
+                <HpAdjust hp={currentHp} updateHp={x => updateExistingCurrentHp(x)} />
+            </>);
         }
     }
 
@@ -175,7 +162,7 @@ export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSave
                     >
                         <CloseIcon />
                     </IconButton>
-                    <DialogContent>
+                    <DialogContent sx={{pt:0}}>
                         <Alerts info={alert} />
                         <Box>
                             <Box sx={{ margin: '10px 0' }}>

@@ -50,7 +50,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
             {open ? (
                 <Dialog onClose={handleClose} open={open}>
                     <DialogTitle sx={{ m: 0, p: 2 }}>
-                        Add Creatures
+                        Add Creatures to Group
                     </DialogTitle>
                     <IconButton
                         aria-label="close"
@@ -64,7 +64,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                     >
                         <CloseIcon />
                     </IconButton>
-                    <DialogContent>
+                    <DialogContent sx={{pt: 0}}>
                         <Alerts info={alert} />
                         <Box sx={{ width: '100%' }}>
                             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -81,11 +81,6 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>
-                    <DialogActions>
-                        <Button variant="contained" aria-label="cancel" onClick={handleClose}>
-                            Done
-                        </Button>
-                    </DialogActions>
                 </Dialog>) : (
                 <Fab sx={{ position: 'fixed', bottom: 75, right: 16, }} color="primary" onClick={() => setOpen(true)}>
                     <AddIcon />
