@@ -6,12 +6,6 @@ const baseUrl = 'https://www.dnd5eapi.co';
 
 const apiBaseUrl = `${baseUrl}/api`;
 
-export const CUSTOM_MONSTER_OPTION: APIReference = {
-  index: 'custom',
-  name: 'Custom',
-  url: ''
-};
-
 export const CUSTOM_MONSTER: Monster = {
   index: "custom",
   name: "Custom",
@@ -26,17 +20,17 @@ export const CUSTOM_MONSTER: Monster = {
     }
   ],
   hit_points: 19,
-  hit_dice: "3d10",
-  hit_points_roll: "3d10+3",
+  hit_dice: "",
+  hit_points_roll: "",
   speed: {
     walk: "20 ft.",
   },
-  strength: 15,
+  strength: 10,
   dexterity: 10,
-  constitution: 13,
-  intelligence: 2,
+  constitution: 10,
+  intelligence: 10,
   wisdom: 10,
-  charisma: 5,
+  charisma: 10,
   proficiencies: [],
   damage_vulnerabilities: [],
   damage_resistances: [],
@@ -46,9 +40,9 @@ export const CUSTOM_MONSTER: Monster = {
     passive_perception: 10
   },
   languages: "",
-  challenge_rating: 0.5,
-  proficiency_bonus: 2,
-  xp: 100,
+  challenge_rating: 0,
+  proficiency_bonus: 0,
+  xp: 0,
   special_abilities: [],
   actions: [],
   //image:,
@@ -58,6 +52,28 @@ export const CUSTOM_MONSTER: Monster = {
   subtype: "",
   forms: [],
   reactions: []
+}
+
+let customMonsters: Monster[] = [];
+
+export async function addCustomMonster(monster: Monster): Promise<any> {
+  const count = customMonsters.length;
+  customMonsters.push({...monster, index: `custom${count}`});
+  
+  return Promise.resolve();
+}
+
+export async function getCustomMonster(monsterId: string): Promise<Monster>{
+  const monster = customMonsters.find(x => x.index == monsterId)!;
+  
+  return Promise.resolve(monster);
+}
+
+export async function getCustomMonsters(): Promise<APIReference[]>{
+  const customMonsterOptions = customMonsters.map<APIReference>(m => { return { name: m.name, index: m.index, url:'' };});
+
+
+  return Promise.resolve(customMonsterOptions);
 }
 
 

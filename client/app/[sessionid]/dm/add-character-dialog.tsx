@@ -1,6 +1,5 @@
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
 import { Box, Button, DialogActions, DialogContent, DialogTitle, Fab, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/PersonAdd'
@@ -12,6 +11,9 @@ import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
 import { AlertInfo, Alerts } from '../alert/alerts';
 import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
+import { AddCustomCharacter } from './add-custom_character';
+import { Monster } from '@/app/_apis/dnd5eTypings';
+import { addCustomMonster } from '@/app/_apis/dnd5eApi';
 
 export interface AddCharacterDialogProps {
     sessionId: string
@@ -44,6 +46,13 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) =
             );
     }
 
+    function handleAddCustomCharacter(monster: Monster){
+        addCustomMonster(monster)
+        .then(_ =>
+            setAlert({ type: 'success', message: `${monster.name} added!` })
+        );
+    }
+
     return (
         <>
             {open ? (
@@ -70,6 +79,7 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) =
                                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                                     <Tab label="Single" {...a11yProps(0)} />
                                     <Tab label="Multiple" {...a11yProps(1)} />
+                                    <Tab label="Custom" {...a11yProps(2)} />
                                 </Tabs>
                             </Box>
                             <CustomTabPanel value={value} index={0}>
@@ -77,6 +87,9 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId }) =
                             </CustomTabPanel>
                             <CustomTabPanel value={value} index={1}>
                                 <AddRandomCharacter onAddClick={handleAddMultipleCharacters} />
+                            </CustomTabPanel>
+                            <CustomTabPanel value={value} index={2}>
+                                <AddCustomCharacter onAddClick={handleAddCustomCharacter} />
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>

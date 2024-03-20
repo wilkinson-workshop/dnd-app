@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getAllMonsters, getCustomMonster, getCustomMonsters, getMonster } from "@/app/_apis/dnd5eApi";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -74,33 +74,36 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     },[monster]);
 
     function getMonsterOptions(){
-        getAllMonsters([])
+        Promise.all([getAllMonsters([]), getCustomMonsters()])        
         .then(m => {
-            setMonsterOptions([...m.results, CUSTOM_MONSTER_OPTION]);
+            setMonsterOptions([...m[0].results, ...m[1]]);
         });
     }
 
-    function getMonsterInfo(monsterId: string){   
-        if(monsterId == CUSTOM_MONSTER_OPTION.index){
-            setMonsterInfo(CUSTOM_MONSTER);
+    function getMonsterInfo(monsterId: string){
+        let getApi: Promise<Monster>;
+        if(monsterId.startsWith('custom')){
+            getApi = getCustomMonster(monsterId)
         } else {
-            getMonster(monsterId)
-            .then(m => {
-                setMonsterInfo(m);
-                const hp = calculateHp(m);
-                
-                const c: CalculatedMonsterInfo = {
-                    initiativeAdd: calculateInitiative(m),
-                    minHp: hp[0],
-                    maxHp: hp[1],                
-                    averageHp: hp[2]
-                }
-                setCalculatedMonsterInfo(c);
-
-                generateHp(c);
-                generateInitiative(c);
-            });
+            getApi = getMonster(monsterId)
         }
+
+        getApi
+        .then(m => {
+            setMonsterInfo(m);
+            const hp = calculateHp(m);
+            
+            const c: CalculatedMonsterInfo = {
+                initiativeAdd: calculateInitiative(m),
+                minHp: hp[0],
+                maxHp: hp[1],                
+                averageHp: hp[2]
+            }
+            setCalculatedMonsterInfo(c);
+
+            generateHp(c);
+            generateInitiative(c);
+        });
     }
 
     function handleSubmit(): void {
@@ -140,6 +143,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
 
     function calculateHp(monsterInfo: Monster): number[] {
         const strValue = monsterInfo.hit_points_roll;
+        if(strValue == ''){
+            const hp = monsterInfo.hit_points;
+            return [hp, hp, hp];
+        }
         var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
         const result = values.exec(strValue);
         if(result){

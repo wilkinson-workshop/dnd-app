@@ -192,15 +192,15 @@ export interface Attack {
 export interface Action {
     name: string,
     desc: string,
-    action_options: Choice,
-    actions: ActionType[],
-    options: Choice,
-    multiattack_type: string,
-    attack_bonus: number,
-    dc: DC,
-    attacks: Attack[],
-    damage: Choice[] | Damage[],
-    usage: Usage
+    // action_options: Choice,
+    // actions: ActionType[],
+    // options: Choice,
+    // multiattack_type: string,
+    // attack_bonus: number,
+    // dc: DC,
+    // attacks: Attack[],
+    // damage: Choice[] | Damage[],
+    usage?: Usage
 }
 
 export interface Monster {

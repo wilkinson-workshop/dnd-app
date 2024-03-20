@@ -11,6 +11,9 @@ import { AlertInfo, Alerts } from '../../alert/alerts';
 import { AddCharacter } from './../add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';
+import { Monster } from '@/app/_apis/dnd5eTypings';
+import { addCustomMonster } from '@/app/_apis/dnd5eApi';
+import { AddCustomCharacter } from '../add-custom_character';
 
 export interface AddCharacterDialogProps {
     sessionId: string,
@@ -45,6 +48,13 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
             );
     }
 
+    function handleAddCustomCharacter(monster: Monster){
+        addCustomMonster(monster)
+        .then(_ =>
+            setAlert({ type: 'success', message: `${monster.name} added!` })
+        );
+    }
+
     return (
         <>
             {open ? (
@@ -71,6 +81,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                                     <Tab label="Single" {...a11yProps(0)} />
                                     <Tab label="Multiple" {...a11yProps(1)} />
+                                    <Tab label="Custom" {...a11yProps(2)} />
                                 </Tabs>
                             </Box>
                             <CustomTabPanel value={value} index={0}>
@@ -78,6 +89,9 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                             </CustomTabPanel>
                             <CustomTabPanel value={value} index={1}>
                                 <AddRandomCharacter onAddClick={handleAddMultipleCharacters} />
+                            </CustomTabPanel>
+                            <CustomTabPanel value={value} index={2}>
+                                <AddCustomCharacter onAddClick={handleAddCustomCharacter} />
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>

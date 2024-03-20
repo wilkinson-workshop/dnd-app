@@ -3,7 +3,7 @@ import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
 import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getAllMonsters, getMonster, getCustomMonster, getCustomMonsters } from "@/app/_apis/dnd5eApi";
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
@@ -24,15 +24,22 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }, []);
 
     function getMonsterOptions(){
-        getAllMonsters([])
+        Promise.all([getAllMonsters([]), getCustomMonsters()])        
         .then(m => {
-            setMonsterOptions(m.results);
+            setMonsterOptions([...m[0].results, ...m[1]]);
         });
     }
 
-    function getMonsterInfo(monsterId: string){        
-        getMonster(monsterId)
-        .then(m => generateMonster(m));
+    function getMonsterInfo(monsterId: string){  
+        let getApi: Promise<Monster>;
+        if(monsterId.startsWith('custom')){
+            getApi = getCustomMonster(monsterId)
+        } else {
+            getApi = getMonster(monsterId)
+        }
+
+        getApi
+        .then(m => generateMonster(m));        
     }
 
     function generateMonster(monsterInfo: Monster) {
@@ -96,6 +103,10 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
 
     function generateHp(monsterInfo: Monster): number[] {
         const strValue = monsterInfo.hit_points_roll;
+        if(strValue == ''){
+            const hp = monsterInfo.hit_points;
+            return [hp, hp];
+        }
         var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
         const result = values.exec(strValue);
         if(result){
@@ -110,7 +121,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
             const maxHp = randomNumber(min, max);
             return [maxHp, maxHp];
         }        
-        return [0]
+        return [0, 0]
     }
 
     function resetForm(){
