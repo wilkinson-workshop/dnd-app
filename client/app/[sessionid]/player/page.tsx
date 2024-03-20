@@ -18,8 +18,7 @@ import { Session } from "@/app/_apis/session";
 import { ChatBox } from "../chat/chat-box";
 import { useRouter } from "next/navigation";
 import { AlertInfo, Alerts } from "../alert/alerts";
-import { SessionContext } from "../dm/session-context";
-
+import { SessionContext } from "../../common/session-context";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;

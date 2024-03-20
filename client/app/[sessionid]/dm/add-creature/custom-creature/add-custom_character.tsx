@@ -2,7 +2,7 @@ import { FC, useState } from "react";
 import { Box, Button, Grid, TextField } from "@mui/material";
 import { Action, Monster } from "@/app/_apis/dnd5eTypings";
 import { CUSTOM_MONSTER } from "@/app/_apis/dnd5eApi";
-import { CustomActions } from "./custom-actions";
+import { CustomActions } from "./custom-actions-list";
 
 export interface AddCustomCharacterProps {
     onAddClick: (monster: Monster) => void

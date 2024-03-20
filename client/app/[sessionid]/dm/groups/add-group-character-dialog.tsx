@@ -5,16 +5,16 @@ import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/PersonAdd'
 import Dialog from '@mui/material/Dialog';
 import { FC, useContext, useState } from 'react';
-import { AddRandomCharacter } from './../add-random-character';
+import { AddRandomCharacter } from '../add-creature/add-random-character';
 import { Character } from '@/app/_apis/character';
 import { AlertInfo, Alerts } from '../../alert/alerts';
-import { AddCharacter } from './../add-character';
+import { AddCharacter } from '../add-creature/add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';
 import { Monster } from '@/app/_apis/dnd5eTypings';
 import { addCustomMonster } from '@/app/_apis/customMonsterApi';
-import { AddCustomCharacter } from '../add-custom_character';
-import { SessionContext } from '../session-context';
+import { AddCustomCharacter } from '../add-creature/custom-creature/add-custom_character';
+import { SessionContext } from '../../../common/session-context';
 
 export interface AddCharacterDialogProps {
     groupId: string,

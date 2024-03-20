@@ -1,8 +1,8 @@
 import { FC, useContext, useState } from "react";
 import Chip from '@mui/material/Chip';
-import { ConditionsContext } from "./page";
 import { getCondition } from "@/app/_apis/dnd5eApi";
 import { DescriptionTooltip } from "@/app/description-tooltip";
+import { ConditionsContext } from "../../common/conditions-context";
 
 export interface ConditionItemProps {
     conditionId: string,

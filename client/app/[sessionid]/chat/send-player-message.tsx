@@ -9,7 +9,7 @@ import { Character, EMPTY_GUID } from "@/app/_apis/character";
 import { getClientId, getName } from "@/app/_apis/sessionStorage";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import CloseIcon from '@mui/icons-material/Close';
-import { SessionContext } from "../dm/session-context";
+import { SessionContext } from "../../common/session-context";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;

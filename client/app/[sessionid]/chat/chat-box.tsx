@@ -6,7 +6,7 @@ import { PlayerMessage } from "@/app/_apis/playerInput";
 import { Character } from "@/app/_apis/character";
 import CloseIcon from '@mui/icons-material/Close';
 import ChatIcon from "@mui/icons-material/Chat";
-import { SessionContext } from "../dm/session-context";
+import { SessionContext } from "../../common/session-context";
 
 export interface ThreadOptions {
     ids: string,

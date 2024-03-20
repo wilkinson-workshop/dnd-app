@@ -11,7 +11,7 @@ import { INIT_DESC, getAllSkills, getSkill } from "@/app/_apis/dnd5eApi";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
-import { SessionContext } from "./session-context";
+import { SessionContext } from "../../common/session-context";
 
 
 const ITEM_HEIGHT = 48;

@@ -12,8 +12,8 @@ import { EditCharacter } from "../edit-character";
 import { AddGroupCharacterDialog } from "./add-group-character-dialog";
 import { AlertInfo, Alerts } from "../../alert/alerts";
 import { EventType, SubscriptionEventType } from "@/app/_apis/eventType";
-import { WebsocketContext } from "../websocket-context";
-import { SessionContext } from "../session-context";
+import { WebsocketContext } from "../../../common/websocket-context";
+import { SessionContext } from "../../../common/session-context";
 
 const style = {
     minHeight: '30px',

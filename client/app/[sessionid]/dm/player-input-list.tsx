@@ -4,7 +4,7 @@ import { Box, Button, Grid, DialogActions, DialogContent, DialogTitle, IconButto
 import { FC, useContext, useEffect, useState } from "react"
 import Dialog from '@mui/material/Dialog';
 import CloseIcon from '@mui/icons-material/Close';
-import { SessionContext } from "./session-context";
+import { SessionContext } from "../../common/session-context";
 
 export interface PlayerInputListProps {
     playerInputs: PlayerInput[],

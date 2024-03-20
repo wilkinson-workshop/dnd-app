@@ -1,11 +1,11 @@
 import { FC, useContext, useEffect, useRef, useState } from "react";
-import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
+import { Character, CharacterType, EMPTY_GUID } from "../../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
-import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
 import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
-import { SessionContext } from "./session-context";
+import { SessionContext } from "../../../common/session-context";
+import { ConditionsContext } from "../../../common/conditions-context";
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
@@ -19,8 +19,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
     const [monster, setMonster] = useState('');
 
-    let sessionId = useContext(SessionContext);
-
+    const sessionId = useContext(SessionContext);
     const conditionOptions = useContext(ConditionsContext);
 
     useEffect(() => {

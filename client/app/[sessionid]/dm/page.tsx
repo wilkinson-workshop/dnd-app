@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useReducer, useState } from 'react';
-import { clearSessionInput, endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
+import { useEffect, useReducer, useState, createContext } from 'react';
+import { endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { Container } from "./character-container";
 import { Box, Button, IconButton, Paper } from "@mui/material";
@@ -13,19 +13,18 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerMessage } from '../chat/send-player-message';
 import { getCharacters } from '@/app/_apis/characterApi';
-import { createContext } from 'react';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
 import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
 import ChatIcon from "@mui/icons-material/Chat";
-import { WebsocketContext } from './websocket-context';
+import { WebsocketContext } from '../../common/websocket-context';
 import { CreatureGroups } from './groups/groups';
-import { SessionContext } from './session-context';
+import { SessionContext } from '../../common/session-context';
+import { ConditionsContext } from '../../common/conditions-context';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
-export const ConditionsContext = createContext<APIReference[]>([]);
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
 	const [inputs, setInputs] = useState<PlayerInput[]>([]);

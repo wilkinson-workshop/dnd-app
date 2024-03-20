@@ -12,7 +12,7 @@ import { getCustomMonster } from '@/app/_apis/customMonsterApi';
 import { Monster } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
 import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
-import { SessionContext } from './session-context'
+import { SessionContext } from '../../common/session-context'
 
 const style = {
 	border: '1px solid lightgray',

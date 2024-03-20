@@ -6,7 +6,7 @@ import { Character, LogicType } from '@/app/_apis/character'
 import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { EditCharacter } from './../edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
-import { AddCharacterDialog } from './../add-character-dialog'
+import { AddCharacterDialog } from '../add-creature/add-character-dialog'
 
 const style = {
 	minHeight: '30px',

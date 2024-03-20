@@ -1,16 +1,16 @@
 import { FC, FormEvent, useContext, useEffect, useState } from "react";
-import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
+import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../../_apis/character";
 import { Autocomplete, Box, Button, TextField } from "@mui/material";
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
 import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
-import { SessionContext } from "./session-context";
+import { SessionContext } from "../../../common/session-context";
+import { ConditionsContext } from "../../../common/conditions-context";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -52,8 +52,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
 
-    let sessionId = useContext(SessionContext);
-
+    const sessionId = useContext(SessionContext);
     const conditionOptions = useContext(ConditionsContext);
 
     useEffect(() => {

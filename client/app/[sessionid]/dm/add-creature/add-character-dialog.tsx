@@ -8,13 +8,13 @@ import { FC, useContext, useState } from 'react';
 import { AddRandomCharacter } from './add-random-character';
 import { Character } from '@/app/_apis/character';
 import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
-import { AlertInfo, Alerts } from '../alert/alerts';
+import { AlertInfo, Alerts } from '../../alert/alerts';
 import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
-import { AddCustomCharacter } from './add-custom_character';
+import { AddCustomCharacter } from './custom-creature/add-custom_character';
 import { Monster } from '@/app/_apis/dnd5eTypings';
 import { addCustomMonster } from '@/app/_apis/customMonsterApi';
-import { SessionContext } from './session-context';
+import { SessionContext } from '../../../common/session-context';
 
 export interface AddCharacterDialogProps {
 }
