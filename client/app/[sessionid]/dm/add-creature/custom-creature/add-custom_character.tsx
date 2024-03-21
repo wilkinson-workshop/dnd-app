@@ -135,11 +135,11 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ onAddClick }) 
                     <TextField sx={{ width: 300 }} size="small" label="AC" value={monsterInfo.armor_class[0].value} variant="outlined" onChange={x => setAC(x.target.value)} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
-                    <Box>Actions</Box>
+                    <h2>Actions</h2>
                     <CustomActions currentActions={monsterInfo.actions} updateActions={setActions} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
-                    <Box>Ledgendary Actions</Box>
+                    <h2>Ledgendary Actions</h2>
                     <CustomActions currentActions={monsterInfo.actions} updateActions={setLedgendaryActions} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
