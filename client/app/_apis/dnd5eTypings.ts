@@ -262,11 +262,11 @@ export interface Spellcasting {
 export interface SpecialAbility {
     name: string
     desc: string
-    attack_bonus: number
-    damage: Damage[]
-    dc: DC
-    spellcasting: Spellcasting
-    usage: Usage
+    attack_bonus?: number
+    damage?: Damage[]
+    dc?: DC
+    spellcasting?: Spellcasting
+    usage?: Usage
 }
 
 export interface Usage {

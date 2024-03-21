@@ -202,12 +202,12 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		return (<Box key={index} sx={{marginTop: 1, paddingTop: 1, borderTop: '1px solid lightgrey'}}>
 			<Box className="bold-label">{ability.name}</Box>
 			<Box sx={{whiteSpace: 'pre-wrap'}}>{ability.desc}</Box>
-			{ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
+			{/* {ability.dc ? (<Box><span className="bold-label">DC: </span>{showDC(ability.dc)}</Box>): ''}
 			{ability.attack_bonus ? (<Box><span className="bold-label">Attack Bonus: </span>{ability.attack_bonus}</Box>): ''}
 			{ability.damage && ability.damage.length > 0 ? 
 				(<Box><span className="bold-label">Damage: </span>{ability.damage.map(d => showDamage(d))}</Box>)
 				: ''
-			}
+			} */}
 			{ability.usage ? showUsage(ability.usage): ''}
 			{ability.spellcasting ? 
 				showSpellcasting(ability.spellcasting)

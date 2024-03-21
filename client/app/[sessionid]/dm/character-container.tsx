@@ -90,7 +90,7 @@ export const Container: FC<ContainerProps> = ({ sessionId }) => {
 
 	return (
 		<>
-			<AddCharacterDialog sessionId={sessionId} />
+			<AddCharacterDialog />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(

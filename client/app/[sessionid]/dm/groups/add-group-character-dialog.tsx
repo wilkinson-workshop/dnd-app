@@ -13,8 +13,8 @@ import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';
 import { Monster } from '@/app/_apis/dnd5eTypings';
 import { addCustomMonster } from '@/app/_apis/customMonsterApi';
-import { AddCustomCharacter } from '../add-creature/custom-creature/add-custom_character';
 import { SessionContext } from '../../../common/session-context';
+import { CustomCreature } from '../add-creature/custom-creature/custom-creature';
 
 export interface AddCharacterDialogProps {
     groupId: string,
@@ -93,7 +93,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ groupId, 
                                 <AddRandomCharacter onAddClick={handleAddMultipleCharacters} />
                             </CustomTabPanel>
                             <CustomTabPanel value={value} index={2}>
-                                <AddCustomCharacter onAddClick={handleAddCustomCharacter} />
+                                <CustomCreature onAddClick={handleAddCustomCharacter} />
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>

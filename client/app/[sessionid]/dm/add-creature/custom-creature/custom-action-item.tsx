@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Action } from "@/app/_apis/dnd5eTypings";
 import { Box, Button, IconButton, TextField } from "@mui/material";
 
@@ -10,6 +10,13 @@ export interface CustomActionItemProps {
 export const CustomActionItem: FC<CustomActionItemProps> = ({ currentAction, saveAction }) => {
     const [isEdit, setIsEdit] = useState(true);
     const [action, setAction] = useState(currentAction)
+
+    useEffect(() => {
+        setAction(currentAction);
+        if(currentAction.name != ''){
+            setIsEdit(false)
+        }
+    }, [currentAction]);
 
     function updateName(name: string) {
         setAction(a => { return { ...a, name: name } });
@@ -24,6 +31,11 @@ export const CustomActionItem: FC<CustomActionItemProps> = ({ currentAction, sav
         saveAction(action);
     }
 
+    function handleCancel() {
+        saveAction(action);
+        setIsEdit(false);
+    }
+
     return (
         <>
             {isEdit ?
@@ -33,6 +45,9 @@ export const CustomActionItem: FC<CustomActionItemProps> = ({ currentAction, sav
                     <Box>
                         <Button variant="contained" onClick={handleSave}>
                             Save
+                        </Button>
+                        <Button variant="contained" onClick={handleCancel}>
+                            Cancel
                         </Button>
                     </Box>
                 </Box>) : (

@@ -23,6 +23,8 @@ const MenuProps = {
   },
 };
 
+const EMPTY_MONSTER_OPTION: APIReference = { index: '', name: '', url: ''};
+
 interface CalculatedMonsterInfo {
     initiativeAdd: number,
     minHp: number,
@@ -42,7 +44,7 @@ export interface AddCharacterProps{
 }
 
 export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
-    const [monster, setMonster] = useState('')
+    const [monster, setMonster] = useState(EMPTY_MONSTER_OPTION)
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState('1');
@@ -60,10 +62,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     }, []);
 
     useEffect(() => {
-        if(monster != ''){
-            let index = monsterOptions.find(x => x.name == monster)?.index;
-            if(index){
-                getMonsterInfo(index);
+        if(monster.index != ''){
+            if(monster.index){
+                getMonsterInfo(monster.index);
             } else {
                 setMonsterInfo(null);
                 setInitiative('1');
@@ -201,7 +202,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         return (<>
             <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
             <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-            <Button variant="contained" disabled={monster == '' || monsterInfo?.hit_points_roll == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
+            <Button variant="contained" disabled={monster.index == '' || monsterInfo?.hit_points_roll == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
         </>)
     }
 
@@ -213,14 +214,16 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                     id="monster"
                     autoSelect
                     sx={{ width: 300 }}
+                    getOptionLabel={x => x.name}
+                    getOptionKey={X => X.index}
                     onChange={(e, v) => {
                         setMonster(v!);
                         if(v != null)
-                            setName(v!);
+                            setName(v.name);
                         else 
                             setName('Creature');
                     }}
-                    options={monsterOptions.map((option) => option.name)}
+                    options={monsterOptions}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>
@@ -229,7 +232,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />
-                <Button variant="contained" disabled={monster == ''} onClick={() => generateInitiative(calculatedMonsterInfo)}>Generate Initiative</Button>
+                <Button variant="contained" disabled={monster.index == ''} onClick={() => generateInitiative(calculatedMonsterInfo)}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />

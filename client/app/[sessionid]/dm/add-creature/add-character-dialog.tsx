@@ -11,10 +11,10 @@ import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
 import { AlertInfo, Alerts } from '../../alert/alerts';
 import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
-import { AddCustomCharacter } from './custom-creature/add-custom_character';
 import { Monster } from '@/app/_apis/dnd5eTypings';
 import { addCustomMonster } from '@/app/_apis/customMonsterApi';
 import { SessionContext } from '../../../common/session-context';
+import { CustomCreature } from './custom-creature/custom-creature';
 
 export interface AddCharacterDialogProps {
 }
@@ -91,7 +91,7 @@ export const AddCharacterDialog: FC<AddCharacterDialogProps> = ({ }) => {
                                 <AddRandomCharacter onAddClick={handleAddMultipleCharacters} />
                             </CustomTabPanel>
                             <CustomTabPanel value={value} index={2}>
-                                <AddCustomCharacter onAddClick={handleAddCustomCharacter} />
+                                <CustomCreature onAddClick={handleAddCustomCharacter} />
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>

@@ -66,6 +66,8 @@ class CustomMonsterMemoryBroker(MemoryBroker[str, CustomMonster]):
 
         index = f"custom{self._next_index}"
         dict['index'] = index
+        if(dict['name'] == 'Custom'):
+            dict['name'] = f"Custom{self._next_index}"
         monster = self.resource_cls.new_instance(
             dict)
         

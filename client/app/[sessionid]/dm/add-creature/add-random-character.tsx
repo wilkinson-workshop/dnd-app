@@ -7,6 +7,8 @@ import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterAp
 import { SessionContext } from "../../../common/session-context";
 import { ConditionsContext } from "../../../common/conditions-context";
 
+const EMPTY_MONSTER_OPTION: APIReference = { index: '', name: '', url: ''};
+
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
 }
@@ -17,7 +19,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     const [challengeRatings, setChallengeRatings] = useState<string>('');
     const [conditions, setConditions] = useState(false);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
-    const [monster, setMonster] = useState('');
+    const [monster, setMonster] = useState(EMPTY_MONSTER_OPTION);
 
     const sessionId = useContext(SessionContext);
     const conditionOptions = useContext(ConditionsContext);
@@ -64,9 +66,9 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }
 
     function handleSubmit(): void {
-        if(monster){
+        if(monster.index != ''){
             let number = 0;
-            let index = monsterOptions.find(x => x.name == monster)!.index;                   
+            let index = monster.index         
             while(number < count){
                 //ideally only make request once since only creating one monster type
                 //but this api is force cached so not actually making multple calls.
@@ -132,7 +134,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
         monsters.current = [];
         setChallengeRatings('');
         setConditions(false);
-        setMonster('');
+        setMonster(EMPTY_MONSTER_OPTION);
     }
 
     return (
@@ -143,10 +145,12 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
                     id="monster"
                     autoSelect
                     sx={{ width: 300 }}
+                    getOptionLabel={x => x.name}
+                    getOptionKey={X => X.index}
                     onChange={(e, v) => {
                         setMonster(v!);
                     }}
-                    options={monsterOptions.map((option) => option.name)}
+                    options={monsterOptions}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>

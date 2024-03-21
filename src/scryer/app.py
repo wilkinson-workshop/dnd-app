@@ -39,6 +39,7 @@ from scryer.services import (
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
 from scryer.util.events import NewCurrentOrder
+from scryer.util.monster import CustomMonster
 from scryer.util.session_group import SessionGroup, SessionGroupApi
 
 # Root directory appliction is being executed
@@ -518,7 +519,7 @@ async def characters_kill(
 
 
 
-@APP_ROUTERS["monster"].get("/{session_uuid}", description="Get all session groups.")
+@APP_ROUTERS["monster"].get("/{session_uuid}", description="Get all custom monster.")
 async def get_custom_monsters(
     session_uuid: UUID):
     """Attempt to fetch custom monsters."""
@@ -526,7 +527,11 @@ async def get_custom_monsters(
     _, session = (await _sessions_find(session_uuid))[0]
     found  = await session.custom_monsters.locate()
 
-    return [custom_monster.monster for _, custom_monster in found]
+
+    def mapper(m: CustomMonster): 
+        return { 
+            'name': m['name'], 'index': m['index'], 'url': ''}
+    return [mapper(custom_monster.monster) for _, custom_monster in found]
 
 
 @APP_ROUTERS["monster"].post("/{session_uuid}")
