@@ -3,14 +3,14 @@ import { APIReference, Monster } from "./dnd5eTypings";
 const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/monsters`;
 
-export const CUSTOM_MONSTER_OPTION: APIReference = { index: 'custom', name: 'Custom', url: ''};
+export const CUSTOM_MONSTER_OPTION: APIReference = { index: 'custom', name: 'New Custom', url: ''};
 
 export const CUSTOM_MONSTER: Monster = {
   index: "custom",
   name: "Custom",
   size: "Medium",
-  type: "beast",
-  alignment: "unaligned",
+  type: "humanoid",
+  alignment: "neutral",
   armor_class: [
     {
       type: "natural",

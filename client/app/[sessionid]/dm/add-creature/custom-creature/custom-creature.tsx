@@ -1,5 +1,5 @@
 import { FC, useCallback, useContext, useEffect, useState } from "react";
-import { Autocomplete, Box, TextField } from "@mui/material";
+import { Autocomplete, Box, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { SessionContext } from "@/app/common/session-context";
 import { getCustomMonster, getCustomMonsters, CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION } from "@/app/_apis/customMonsterApi";
@@ -10,7 +10,7 @@ export interface CustomCreatureProps {
 }
 
 export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
-    const [monster, setMonster] = useState(CUSTOM_MONSTER_OPTION)
+    const [monster, setMonster] = useState(CUSTOM_MONSTER_OPTION.index)
     const [monsterInfo, setMonsterInfo] = useState<Monster>(CUSTOM_MONSTER);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
 
@@ -21,7 +21,7 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
     }, []);
 
     useEffect(() => {
-        getMonsterInfo(monster.index);
+        getMonsterInfo(monster);
     }, [monster]);
 
     function getMonsterOptions() {
@@ -57,19 +57,20 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
         <>
             <Box sx={{ width: '100%' }}>
                 <Box>
-                    <Autocomplete
-                        id="monster"
-                        autoSelect
-                        value={monster}
-                        getOptionLabel={x => x.name}
-                        getOptionKey={X => X.index}
-                        sx={{ width: 300 }}
-                        onChange={(e, v) => {
-                            setMonster(v!);
-                        }}
-                        options={monsterOptions}
-                        renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
-                    />
+                    <FormControl fullWidth>
+                        <InputLabel id="monster">Monster</InputLabel>
+                        <Select
+                            labelId="monster"
+                            value={monster}
+                            size="small"
+                            label="Speed Type"
+                            onChange={(e) => {
+                                setMonster(e.target.value);
+                            }}
+                        >
+                            {monsterOptions.map(s => (<MenuItem key={s.index} value={s.index}>{s.name}</MenuItem>))}
+                        </Select>
+                    </FormControl>
                 </Box>
                 {renderCustomCreature(monsterInfo)}
             </Box>

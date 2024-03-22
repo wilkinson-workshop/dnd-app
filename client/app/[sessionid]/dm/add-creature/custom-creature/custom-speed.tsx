@@ -1,5 +1,4 @@
 import { FC, useEffect, useState } from "react";
-import AddIcon from '@mui/icons-material/Add';
 import { Speed } from "@/app/_apis/dnd5eTypings";
 import { Box, Button, Chip, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
 
@@ -11,20 +10,12 @@ export interface CustomSpeedProps {
 enum speedOptions { 'walk', 'fly', 'swim', 'burrow', 'climb' }
 
 export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) => {
-    const [isEdit, setIsEdit] = useState(false);
     const [editType, setEditType] = useState<speedOptions>(speedOptions.walk);
     const [speed, setSpeed] = useState(currentSpeed);
 
     useEffect(() => {
         setSpeed(currentSpeed);
-        if(currentSpeed.walk){
-            setIsEdit(false)
-        }
     }, [currentSpeed]);
-
-    function addAction() {
-        setIsEdit(true);
-    }
 
     function handleChangeSpeed(event: SelectChangeEvent<speedOptions>) {
         setEditType(event.target.value as speedOptions);
@@ -70,11 +61,7 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
         }
     }
 
-
-
     function handleSave() {
-        setIsEdit(false);
-
         if (speed.walk && !speed.walk.endsWith('ft.')) {
             speed.walk = speed.walk + " ft.";
         }
@@ -114,7 +101,7 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
 
     return (
         <>
-            {isEdit ? (<Box sx={{ margin: '10px 0' }}>
+            <Box sx={{ margin: '10px 0' }}>
                 <Grid sx={{ paddingTop: 1 }} container spacing={2}>
                     <Grid item xs={4}>
                         <FormControl fullWidth>
@@ -143,15 +130,14 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
                         </Button>
                     </Grid>
                 </Grid>
-            </Box>) : (
-            <Box sx={{ marginBottom: 1, paddingBottom: 1, borderBottom: '1px solid lightgrey' }} >
+            </Box>
+            <Box sx={{ mt: 1, pt: 1 }} >
                 {speed.walk ? (<Chip size="small" color="info" label={`Walk: ${speed.walk}`} onDelete={() => deleteSpeed(speedOptions.walk)} />) : ''}
                 {speed.fly ? (<Chip size="small" color="info" label={`Fly: ${speed.fly}`} onDelete={() => deleteSpeed(speedOptions.fly)} />) : ''}
                 {speed.swim ? (<Chip size="small" color="info" label={`Swim: ${speed.swim}`} onDelete={() => deleteSpeed(speedOptions.swim)} />) : ''}
                 {speed.climb ? (<Chip size="small" color="info" label={`Climb: ${speed.climb}`} onDelete={() => deleteSpeed(speedOptions.climb)} />) : ''}
                 {speed.burrow ? (<Chip size="small" color="info" label={`Burrow: ${speed.burrow}`} onDelete={() => deleteSpeed(speedOptions.burrow)} />) : ''}
-                <Chip size="small" color="info" label="+" clickable onClick={addAction} />
-            </Box>)}
+            </Box>
         </>
     )
 }

@@ -52,6 +52,21 @@ export async function getAllConditions(): Promise<GetAll> {
     return res.json()
   } 
 
+  export async function getAllAlignments(): Promise<GetAll> {
+    const res = await fetch(`${apiBaseUrl}/alignments`, {
+      headers:{
+        'Content-Type': 'application/json',
+      }, 
+      cache: 'force-cache'
+    });
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch data')
+    }
+    
+    return res.json()
+  } 
+
   export async function getSkill(skill: string): Promise<Skill> {
     const res = await fetch(`${apiBaseUrl}/skills/${skill}`, {
       headers:{
