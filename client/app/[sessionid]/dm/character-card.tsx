@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { memo, useState } from 'react'
+import { memo, useContext, useState } from 'react'
 import { Character, CharacterType } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './character-conditions'
@@ -7,10 +7,12 @@ import { Box, Button, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
-import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getMonster } from '@/app/_apis/dnd5eApi'
+import { getMonster } from '@/app/_apis/dnd5eApi';
+import { getCustomMonster } from '@/app/_apis/customMonsterApi';
 import { Monster } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
 import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
+import { SessionContext } from '../../common/session-context'
 
 const style = {
 	border: '1px solid lightgray',
@@ -31,6 +33,8 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
 	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
 	const [responseDialogInfo, setResponseDialogInfo] = useState<ResponseDialogInfo>({title: 'Delete', message: []});
+
+	let sessionId = useContext(SessionContext);
 
 	function handleDelete(){
 		//extra caution deleting PC or creatures with hp left
@@ -53,17 +57,22 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 	}
 
 	function getMonsterInfo(monsterId: string) {
+
 		if (monsterInfo) {
 			setIsMonsterInfoOpen(true);
-		} else if(monsterId == CUSTOM_MONSTER_OPTION.index){
-			setMonsterInfo(CUSTOM_MONSTER);
-			setIsMonsterInfoOpen(true);
 		} else {
-			getMonster(monsterId)
-				.then(m => {
-					setMonsterInfo(m);
-					setIsMonsterInfoOpen(true);
-				});
+			let getApi: Promise<Monster>;
+			if(monsterId.startsWith('custom')){
+				getApi = getCustomMonster(sessionId, monsterId)
+			} else {
+				getApi = getMonster(monsterId)
+			}
+	
+			getApi
+			.then(m => {
+				setMonsterInfo(m);
+				setIsMonsterInfoOpen(true);
+			});
 		}
 	}
 

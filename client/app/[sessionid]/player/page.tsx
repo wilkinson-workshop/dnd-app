@@ -18,7 +18,7 @@ import { Session } from "@/app/_apis/session";
 import { ChatBox } from "../chat/chat-box";
 import { useRouter } from "next/navigation";
 import { AlertInfo, Alerts } from "../alert/alerts";
-
+import { SessionContext } from "../../common/session-context";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -179,51 +179,53 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 
 	return (
 		<>
-			<Box sx={{ pb: '60px' }}>
-				<Alerts info={alert} />
-				{showDeveloperUI ?
-					(<a href={playerJoinUrl} target='_blank'>
-						Player Join
-					</a>) : ''}
-				<Box>
-					<Box sx={{fontWeight:'bold', fontSize:'1em'}}>
-						{`Welcome ${getName()}`}
+			<SessionContext.Provider value={params.sessionid}>
+				<Box sx={{ pb: '60px' }}>
+					<Alerts info={alert} />
+					{showDeveloperUI ?
+						(<a href={playerJoinUrl} target='_blank'>
+							Player Join
+						</a>) : ''}
+					<Box>
+						<Box sx={{ fontWeight: 'bold', fontSize: '1em' }}>
+							{`Welcome ${getName()}`}
+						</Box>
+						<Box>
+							{session?.session_name}
+						</Box>
+						<Box>
+							{session?.session_description}
+						</Box>
 					</Box>
 					<Box>
-						{session?.session_name}
+						<h2>Initiative Order</h2>
+						{initiativeOrder.map(order => (
+							<div key={order.creature_id} style={{ border: '1px solid lightgray' }}>
+								<Box>
+									<Grid container spacing={2}>
+										<Grid item xs={12} sm={4}>
+											<Box className="item">{order.name}</Box>
+										</Grid>
+										<Grid item xs={6} sm={3}>
+											<Box className="item">{calculateHP(order)}</Box>
+										</Grid>
+										<Grid item xs={6} sm={5}>
+											<Box className="item">{order.conditions.map(c =>
+												<ConditionItem key={c} conditionId={c} conditionOptions={conditionOptions} />)}
+											</Box>
+										</Grid>
+									</Grid>
+								</Box>
+							</div>
+						))}
 					</Box>
-					<Box>
-						{session?.session_description}
-					</Box>
+					<SkillRequest isOpen={isGetDiceRoll} skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} />
 				</Box>
-				<Box>
-					<h2>Initiative Order</h2>
-					{initiativeOrder.map(order => (
-						<div key={order.creature_id} style={{ border: '1px solid lightgray' }}>
-							<Box>
-								<Grid container spacing={2}>
-									<Grid item xs={12} sm={4}>
-										<Box className="item">{order.name}</Box>
-									</Grid>
-									<Grid item xs={6} sm={3}>
-										<Box className="item">{calculateHP(order)}</Box>
-									</Grid>
-									<Grid item xs={6} sm={5}>
-										<Box className="item">{order.conditions.map(c =>
-											<ConditionItem key={c} conditionId={c} conditionOptions={conditionOptions} />)}
-										</Box>
-									</Grid>
-								</Grid>
-							</Box>
-						</div>
-					))}
-				</Box>
-				<SkillRequest isOpen={isGetDiceRoll} skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} />
-			</Box>
-			<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-				<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
-				<ChatBox sessionId={params.sessionid} recipientOptions={playerOptions} secretInfo={secretBody!} />
-			</Paper>
+				<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+					<SendPlayerMessage recipientOptions={playerOptions} />
+					<ChatBox recipientOptions={playerOptions} secretInfo={secretBody!} />
+				</Paper>
+			</SessionContext.Provider>
 		</>
 	)
 }

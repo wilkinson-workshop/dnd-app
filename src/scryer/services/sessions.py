@@ -27,6 +27,7 @@ from scryer.util.events import (
     dump_event
 )
 from scryer.util.filters import FilterStatement, LogicalOp
+from scryer.util.monster import CustomMonster, CustomMonsterMemoryBroker
 from scryer.util.session_group import SessionGroup, SessionGroupMemoryBroker
 
 # Special types used only in `Session` specific
@@ -339,6 +340,7 @@ class CombatSession[C: SessionSocket](Session[C]):
 
     _groups:              Broker[UUID, SessionGroup]
     _characters:          Broker[UUID, Creature]
+    _custom_monsters:     Broker[str, CustomMonster]
     _events:              Broker[UUID, Event]
 
     @classmethod
@@ -356,10 +358,11 @@ class CombatSession[C: SessionSocket](Session[C]):
         inst._session_name = name
         inst._session_current_character = current_character
 
-        inst._clients      = client_broker
-        inst._groups       = SessionGroupMemoryBroker(SessionGroup)
-        inst._characters   = CreaturesMemoryBroker(CharacterV2)
-        inst._events       = event_broker
+        inst._clients         = client_broker
+        inst._groups          = SessionGroupMemoryBroker(SessionGroup)
+        inst._characters      = CreaturesMemoryBroker(CharacterV2)
+        inst._custom_monsters = CustomMonsterMemoryBroker(CustomMonster)
+        inst._events          = event_broker
         return inst
 
     @property
@@ -369,6 +372,10 @@ class CombatSession[C: SessionSocket](Session[C]):
     @property
     def groups(self) -> Broker[UUID, SessionGroup]:
         return self._groups
+    
+    @property
+    def custom_monsters(self) -> Broker[str, CustomMonster]:
+        return self._custom_monsters
 
     @property
     def events(self) -> Broker[UUID, Event]:

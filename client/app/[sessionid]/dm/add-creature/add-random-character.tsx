@@ -1,9 +1,13 @@
 import { FC, useContext, useEffect, useRef, useState } from "react";
-import { Character, CharacterType, EMPTY_GUID } from "../../_apis/character";
+import { Character, CharacterType, EMPTY_GUID } from "../../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
-import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from "../../../common/session-context";
+import { ConditionsContext } from "../../../common/conditions-context";
+
+const EMPTY_MONSTER_OPTION: APIReference = { index: '', name: '', url: ''};
 
 export interface AddRandomCharacterProps{
     onAddClick: (characters: Character[]) => void
@@ -15,8 +19,9 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     const [challengeRatings, setChallengeRatings] = useState<string>('');
     const [conditions, setConditions] = useState(false);
     const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
-    const [monster, setMonster] = useState('')
+    const [monster, setMonster] = useState(EMPTY_MONSTER_OPTION);
 
+    const sessionId = useContext(SessionContext);
     const conditionOptions = useContext(ConditionsContext);
 
     useEffect(() => {
@@ -24,15 +29,22 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }, []);
 
     function getMonsterOptions(){
-        getAllMonsters([])
+        Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
-            setMonsterOptions(m.results);
+            setMonsterOptions([...m[0].results, ...m[1]]);
         });
     }
 
-    function getMonsterInfo(monsterId: string){        
-        getMonster(monsterId)
-        .then(m => generateMonster(m));
+    function getMonsterInfo(monsterId: string){  
+        let getApi: Promise<Monster>;
+        if(monsterId.startsWith('custom')){
+            getApi = getCustomMonster(sessionId, monsterId)
+        } else {
+            getApi = getMonster(monsterId)
+        }
+
+        getApi
+        .then(m => generateMonster(m));        
     }
 
     function generateMonster(monsterInfo: Monster) {
@@ -54,9 +66,9 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }
 
     function handleSubmit(): void {
-        if(monster){
+        if(monster.index != ''){
             let number = 0;
-            let index = monsterOptions.find(x => x.name == monster)!.index;                   
+            let index = monster.index         
             while(number < count){
                 //ideally only make request once since only creating one monster type
                 //but this api is force cached so not actually making multple calls.
@@ -96,6 +108,10 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
 
     function generateHp(monsterInfo: Monster): number[] {
         const strValue = monsterInfo.hit_points_roll;
+        if(strValue == ''){
+            const hp = monsterInfo.hit_points;
+            return [hp, hp];
+        }
         var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
         const result = values.exec(strValue);
         if(result){
@@ -110,7 +126,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
             const maxHp = randomNumber(min, max);
             return [maxHp, maxHp];
         }        
-        return [0]
+        return [0, 0]
     }
 
     function resetForm(){
@@ -118,7 +134,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
         monsters.current = [];
         setChallengeRatings('');
         setConditions(false);
-        setMonster('');
+        setMonster(EMPTY_MONSTER_OPTION);
     }
 
     return (
@@ -129,10 +145,12 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
                     id="monster"
                     autoSelect
                     sx={{ width: 300 }}
+                    getOptionLabel={x => x.name}
+                    getOptionKey={X => X.index}
                     onChange={(e, v) => {
                         setMonster(v!);
                     }}
-                    options={monsterOptions.map((option) => option.name)}
+                    options={monsterOptions}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>

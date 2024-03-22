@@ -172,7 +172,7 @@ export interface Senses {
     truesight?: string  //A monster with truesight can, out to a specific range, see in normal and magical darkness, see invisible creatures and objects, automatically detect visual illusions and succeed on saving throws against them, and perceive the original form of a shapechanger or a creature that is transformed by magic. Furthermore, the monster can see into the Ethereal Plane within the same range.
 }
 
-interface Proficiency {
+export interface Proficiency {
     value: number
     proficiency: APIReference
 }
@@ -192,15 +192,15 @@ export interface Attack {
 export interface Action {
     name: string,
     desc: string,
-    action_options: Choice,
-    actions: ActionType[],
-    options: Choice,
-    multiattack_type: string,
-    attack_bonus: number,
-    dc: DC,
-    attacks: Attack[],
-    damage: Choice[] | Damage[],
-    usage: Usage
+    // action_options: Choice,
+    // actions: ActionType[],
+    // options: Choice,
+    // multiattack_type: string,
+    // attack_bonus: number,
+    // dc: DC,
+    // attacks: Attack[],
+    // damage: Choice[] | Damage[],
+    usage?: Usage
 }
 
 export interface Monster {
@@ -262,11 +262,11 @@ export interface Spellcasting {
 export interface SpecialAbility {
     name: string
     desc: string
-    attack_bonus: number
-    damage: Damage[]
-    dc: DC
-    spellcasting: Spellcasting
-    usage: Usage
+    attack_bonus?: number
+    damage?: Damage[]
+    dc?: DC
+    spellcasting?: Spellcasting
+    usage?: Usage
 }
 
 export interface Usage {

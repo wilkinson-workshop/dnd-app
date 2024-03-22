@@ -5,8 +5,8 @@ import { Character, LogicType } from '@/app/_apis/character'
 import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { EditCharacter } from './edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
-import { AddCharacterDialog } from './add-character-dialog'
-import { WebsocketContext } from './websocket-context'
+import { AddCharacterDialog } from './add-creature/add-character-dialog'
+import { WebsocketContext } from '../../common/websocket-context'
 import { EventType } from '@/app/_apis/eventType'
 
 const style = {
@@ -90,7 +90,7 @@ export const Container: FC<ContainerProps> = ({ sessionId }) => {
 
 	return (
 		<>
-			<AddCharacterDialog sessionId={sessionId} />
+			<AddCharacterDialog />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(

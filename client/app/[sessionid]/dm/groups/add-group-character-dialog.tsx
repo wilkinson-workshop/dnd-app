@@ -4,24 +4,29 @@ import { Box, Button, DialogActions, DialogContent, DialogTitle, Fab, IconButton
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/PersonAdd'
 import Dialog from '@mui/material/Dialog';
-import { FC, useState } from 'react';
-import { AddRandomCharacter } from './../add-random-character';
+import { FC, useContext, useState } from 'react';
+import { AddRandomCharacter } from '../add-creature/add-random-character';
 import { Character } from '@/app/_apis/character';
 import { AlertInfo, Alerts } from '../../alert/alerts';
-import { AddCharacter } from './../add-character';
+import { AddCharacter } from '../add-creature/add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';
+import { Monster } from '@/app/_apis/dnd5eTypings';
+import { addCustomMonster } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from '../../../common/session-context';
+import { CustomCreature } from '../add-creature/custom-creature/custom-creature';
 
 export interface AddCharacterDialogProps {
-    sessionId: string,
     groupId: string,
     closeDialog: () => void
 }
 
-export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId, groupId, closeDialog }) => {
+export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ groupId, closeDialog }) => {
     const [open, setOpen] = useState(false);
     const [value, setValue] = useState(0);
     const [alert, setAlert] = useState<AlertInfo | null>(null);
+
+    let sessionId = useContext(SessionContext);
 
     const handleChange = (event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -43,6 +48,13 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
             .then(_ =>
                 setAlert({ type: 'success', message: `${character.name} added!` })
             );
+    }
+
+    function handleAddCustomCharacter(monster: Monster){
+        addCustomMonster(sessionId, monster)
+        .then(_ =>
+            setAlert({ type: 'success', message: `${monster.name} added!` })
+        );
     }
 
     return (
@@ -71,6 +83,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                                 <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
                                     <Tab label="Single" {...a11yProps(0)} />
                                     <Tab label="Multiple" {...a11yProps(1)} />
+                                    <Tab label="Custom" {...a11yProps(2)} />
                                 </Tabs>
                             </Box>
                             <CustomTabPanel value={value} index={0}>
@@ -78,6 +91,9 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ sessionId
                             </CustomTabPanel>
                             <CustomTabPanel value={value} index={1}>
                                 <AddRandomCharacter onAddClick={handleAddMultipleCharacters} />
+                            </CustomTabPanel>
+                            <CustomTabPanel value={value} index={2}>
+                                <CustomCreature onAddClick={handleAddCustomCharacter} />
                             </CustomTabPanel>
                         </Box>
                     </DialogContent>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useReducer, useState } from 'react';
-import { clearSessionInput, endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
+import { useEffect, useReducer, useState, createContext } from 'react';
+import { endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { Container } from "./character-container";
 import { Box, Button, IconButton, Paper } from "@mui/material";
@@ -13,18 +13,18 @@ import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
 import { SendPlayerMessage } from '../chat/send-player-message';
 import { getCharacters } from '@/app/_apis/characterApi';
-import { createContext } from 'react';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
 import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
 import ChatIcon from "@mui/icons-material/Chat";
-import { WebsocketContext } from './websocket-context';
+import { WebsocketContext } from '../../common/websocket-context';
 import { CreatureGroups } from './groups/groups';
+import { SessionContext } from '../../common/session-context';
+import { ConditionsContext } from '../../common/conditions-context';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
-export const ConditionsContext = createContext<APIReference[]>([]);
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
 	const [inputs, setInputs] = useState<PlayerInput[]>([]);
@@ -135,42 +135,44 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 	return (<>
 		<WebsocketContext.Provider value={lastJsonMessage}>
 			<ConditionsContext.Provider value={conditions}>
-				{groupIsVisible ? (<CreatureGroups sessionId={params.sessionid} backToDashboard={() => setGroupIsVisible(false)} />) :
-					(<Box sx={{ pb: '60px' }}>
-						<Box>
-							<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
-								End Session
-							</Button>
+				<SessionContext.Provider value={params.sessionid}>
+					{groupIsVisible ? (<CreatureGroups backToDashboard={() => setGroupIsVisible(false)} />) :
+						(<Box sx={{ pb: '60px' }}>
 							<Box>
-								<Button variant="contained" aria-label="end session" onClick={() => setGroupIsVisible(true)}>
-									Groups
+								<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
+									End Session
 								</Button>
-								<RequestPlayerInput sessionId={params.sessionid} recipientOptions={playerOptions} />
-								<PlayerInputList playerInputs={inputs} sessionId={params.sessionid} />
-								<Button variant="contained" aria-label="end session" onClick={handleResetInitiative}>
-									Reset Initiative
-								</Button>
+								<Box>
+									<Button variant="contained" aria-label="end session" onClick={() => setGroupIsVisible(true)}>
+										Groups
+									</Button>
+									<RequestPlayerInput recipientOptions={playerOptions} />
+									<PlayerInputList playerInputs={inputs} />
+									<Button variant="contained" aria-label="end session" onClick={handleResetInitiative}>
+										Reset Initiative
+									</Button>
+								</Box>
+								<Box>
+									<a href={`${playerJoinUrl}/qr`} target='_blank'>
+										Show QR code
+									</a>
+									{showDeveloperUI ?
+										(<a href={playerJoinUrl} target='_blank'>
+											Player Join
+										</a>) : ''}
+								</Box>
 							</Box>
-							<Box>
-								<a href={`${playerJoinUrl}/qr`} target='_blank'>
-									Show QR code
-								</a>
-								{showDeveloperUI ?
-									(<a href={playerJoinUrl} target='_blank'>
-										Player Join
-									</a>) : ''}
-							</Box>
+							<Container sessionId={params.sessionid} />
+						</Box>)}
+					<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+						<SendPlayerMessage recipientOptions={playerOptions} />
+						<Box sx={{ margin: '10px 0', float: "right" }}>
+							<IconButton aria-label="placeholder">
+								<ChatIcon />
+							</IconButton>
 						</Box>
-						<Container sessionId={params.sessionid} />
-					</Box>)}
-				<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-					<SendPlayerMessage sessionId={params.sessionid} recipientOptions={playerOptions} />
-					<Box sx={{ margin: '10px 0', float: "right" }}>
-						<IconButton aria-label="placeholder">
-							<ChatIcon />
-						</IconButton>
-					</Box>
-				</Paper>
+					</Paper>
+				</SessionContext.Provider>
 			</ConditionsContext.Provider>
 		</WebsocketContext.Provider>
 	</>

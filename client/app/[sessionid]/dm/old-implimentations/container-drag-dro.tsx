@@ -1,12 +1,13 @@
 import update from 'immutability-helper'
 import type { FC } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Card } from './card-drag-drop'
 import { Character, LogicType } from '@/app/_apis/character'
 import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
 import { EditCharacter } from './../edit-character';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi'
-import { AddCharacterDialog } from './../add-character-dialog'
+import { AddCharacterDialog } from '../add-creature/add-character-dialog'
+import { SessionContext } from '@/app/common/session-context'
 
 const style = {
 	minHeight: '30px',
@@ -19,14 +20,15 @@ export interface ContainerState {
 }
 
 export interface ContainerProps {
-	sessionId: string,
 	reload: boolean,
 	reloadDone: () => void
 }
 
-const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
+const Container: FC<ContainerProps> = ({ reload, reloadDone }) => {
 	const [cards, setCards] = useState<Character[]>([]);
 	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
+
+	let sessionId = useContext(SessionContext);
 
 	const cardsRef = useRef<Character[]>([]);
 
@@ -112,7 +114,7 @@ const Container: FC<ContainerProps> = ({ sessionId, reload, reloadDone }) => {
 
 	return (
 		<>
-			<AddCharacterDialog sessionId={sessionId} closeDialog={reloadList} />
+			<AddCharacterDialog />
 			<div style={style}>{cards && cards.length > 0 ?
 				cards.map((card, i) => renderCard(card, i)) :
 				(

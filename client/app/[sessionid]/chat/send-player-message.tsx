@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useContext, useEffect, useState } from "react";
 import { Box, Button, Checkbox, Icon, IconButton, ListItemText, Paper, TextField } from "@mui/material";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -9,6 +9,7 @@ import { Character, EMPTY_GUID } from "@/app/_apis/character";
 import { getClientId, getName } from "@/app/_apis/sessionStorage";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import CloseIcon from '@mui/icons-material/Close';
+import { SessionContext } from "../../common/session-context";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -22,16 +23,18 @@ const MenuProps = {
 };
 
 export interface SendPlayerMessageProps {
-    sessionId: string,
     recipientOptions: Character[]
 }
 
-export const SendPlayerMessage: FC<SendPlayerMessageProps> = ({ sessionId, recipientOptions }) => {
+export const SendPlayerMessage: FC<SendPlayerMessageProps> = ({ recipientOptions }) => {
     const [edit, onEdit] = useState(false);
     //When starting a conversation as DM it add the DM as a recipient even though they are not an option
     //this causes no ill effect and there is a potential future story to add them so keeping the side effect for now.
     const [recipients, setRecipient] = useState<string[]>([]);
     const [message, setMessage] = useState('');
+
+    let sessionId = useContext(SessionContext);
+
 
     useEffect(() => {
         setRecipient([getClientId()])

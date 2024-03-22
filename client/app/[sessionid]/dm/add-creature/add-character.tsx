@@ -1,14 +1,16 @@
 import { FC, FormEvent, useContext, useEffect, useState } from "react";
-import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../_apis/character";
+import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions } from "../../../_apis/character";
 import { Autocomplete, Box, Button, TextField } from "@mui/material";
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { ConditionsContext } from "./page";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
-import { CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
+import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { SessionContext } from "../../../common/session-context";
+import { ConditionsContext } from "../../../common/conditions-context";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -20,6 +22,8 @@ const MenuProps = {
     },
   },
 };
+
+const EMPTY_MONSTER_OPTION: APIReference = { index: '', name: '', url: ''};
 
 interface CalculatedMonsterInfo {
     initiativeAdd: number,
@@ -40,7 +44,7 @@ export interface AddCharacterProps{
 }
 
 export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
-    const [monster, setMonster] = useState('')
+    const [monster, setMonster] = useState(EMPTY_MONSTER_OPTION)
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)
     const [initiative, setInitiative] = useState('1');
@@ -50,6 +54,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
     const [calculatedMonsterInfo, setCalculatedMonsterInfo] = useState<CalculatedMonsterInfo>(DEFAULT_CALC_MONSTER_INFO);
 
+    const sessionId = useContext(SessionContext);
     const conditionOptions = useContext(ConditionsContext);
 
     useEffect(() => {
@@ -57,10 +62,9 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     }, []);
 
     useEffect(() => {
-        if(monster != ''){
-            let index = monsterOptions.find(x => x.name == monster)?.index;
-            if(index){
-                getMonsterInfo(index);
+        if(monster.index != ''){
+            if(monster.index){
+                getMonsterInfo(monster.index);
             } else {
                 setMonsterInfo(null);
                 setInitiative('1');
@@ -74,33 +78,36 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     },[monster]);
 
     function getMonsterOptions(){
-        getAllMonsters([])
+        Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
-            setMonsterOptions([...m.results, CUSTOM_MONSTER_OPTION]);
+            setMonsterOptions([...m[0].results, ...m[1]]);
         });
     }
 
-    function getMonsterInfo(monsterId: string){   
-        if(monsterId == CUSTOM_MONSTER_OPTION.index){
-            setMonsterInfo(CUSTOM_MONSTER);
+    function getMonsterInfo(monsterId: string){
+        let getApi: Promise<Monster>;
+        if(monsterId.startsWith('custom')){
+            getApi = getCustomMonster(sessionId, monsterId)
         } else {
-            getMonster(monsterId)
-            .then(m => {
-                setMonsterInfo(m);
-                const hp = calculateHp(m);
-                
-                const c: CalculatedMonsterInfo = {
-                    initiativeAdd: calculateInitiative(m),
-                    minHp: hp[0],
-                    maxHp: hp[1],                
-                    averageHp: hp[2]
-                }
-                setCalculatedMonsterInfo(c);
-
-                generateHp(c);
-                generateInitiative(c);
-            });
+            getApi = getMonster(monsterId)
         }
+
+        getApi
+        .then(m => {
+            setMonsterInfo(m);
+            const hp = calculateHp(m);
+            
+            const c: CalculatedMonsterInfo = {
+                initiativeAdd: calculateInitiative(m),
+                minHp: hp[0],
+                maxHp: hp[1],                
+                averageHp: hp[2]
+            }
+            setCalculatedMonsterInfo(c);
+
+            generateHp(c);
+            generateInitiative(c);
+        });
     }
 
     function handleSubmit(): void {
@@ -140,6 +147,10 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
 
     function calculateHp(monsterInfo: Monster): number[] {
         const strValue = monsterInfo.hit_points_roll;
+        if(strValue == ''){
+            const hp = monsterInfo.hit_points;
+            return [hp, hp, hp];
+        }
         var values = RegExp(/(\d+)d(\d+)(\+|\-*)(\d*)/);
         const result = values.exec(strValue);
         if(result){
@@ -191,7 +202,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         return (<>
             <TextField sx={{maxWidth: 80}} size="small" label="Starting HP" value={currentHp} variant="outlined" onChange={x => setCurrentHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
             <TextField sx={{maxWidth: 80}} size="small" label="Max HP" value={maxHp} variant="outlined" onChange={x => setMaxHp(Number.parseInt(x.target.value ? x.target.value : '0'))} />
-            <Button variant="contained" disabled={monster == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
+            <Button variant="contained" disabled={monster.index == '' || monsterInfo?.hit_points_roll == ''} onClick={() => generateHp(calculatedMonsterInfo)}>Generate HP</Button>
         </>)
     }
 
@@ -203,14 +214,16 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
                     id="monster"
                     autoSelect
                     sx={{ width: 300 }}
+                    getOptionLabel={x => x.name}
+                    getOptionKey={X => X.index}
                     onChange={(e, v) => {
                         setMonster(v!);
                         if(v != null)
-                            setName(v!);
+                            setName(v.name);
                         else 
                             setName('Creature');
                     }}
-                    options={monsterOptions.map((option) => option.name)}
+                    options={monsterOptions}
                     renderInput={(params) => <TextField {...params} label="Monster" size="small" variant="outlined" />}
                 />
             </Box>
@@ -219,14 +232,14 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 100 }} size="small" label="Initiative" value={initiative} variant="outlined" onChange={x => setInitiative(x.target.value)} />
-                <Button variant="contained" disabled={monster == ''} onClick={() => generateInitiative(calculatedMonsterInfo)}>Generate Initiative</Button>
+                <Button variant="contained" disabled={monster.index == ''} onClick={() => generateInitiative(calculatedMonsterInfo)}>Generate Initiative</Button>
             </Box>
             <Box sx={{margin: '10px 0'}}>
                 <TextField sx={{ width: 300 }} size="small" label="Name" value={name} variant="outlined" onChange={x => setName(x.target.value)} />
             </Box>
-            <Box>
-                Hit Points Roll: {monsterInfo?.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
-            </Box>
+            {monsterInfo && monsterInfo.hit_points_roll ? (<Box>
+                Hit Points Roll: {monsterInfo.hit_points_roll} Average: {calculatedMonsterInfo.averageHp}               
+            </Box>): 'Hit Points Static'}
             <Box sx={{margin: '10px 0'}}>
                 {hpCreate()}
             </Box>
