@@ -2,23 +2,23 @@
 
 import { addSessionInput, getSingleSession } from "@/app/_apis/sessionApi";
 import { useEffect, useState } from "react";
-import { getCharacters, getCharactersPlayer } from "@/app/_apis/characterApi";
-import { Character, CharacterType, EMPTY_GUID, FieldType, HpBoundaryOptions, LogicType, OBSERVER_NAME, OperatorType } from "@/app/_apis/character";
-import { Box, Grid, Paper } from "@mui/material";
+import { getCharactersPlayer } from "@/app/_apis/characterApi";
+import { Character, CharacterType, EMPTY_GUID, HpBoundaryOptions, OBSERVER_NAME } from "@/app/_apis/character";
+import { Box, Grid } from "@mui/material";
 import useWebSocket from 'react-use-websocket';
 import { EventType, SubscriptionEventType, WebsocketEvent } from "@/app/_apis/eventType";
-import { PlayerMessage, RequestPlayerInput } from "@/app/_apis/playerInput";
-import { SendPlayerMessage } from "../chat/send-player-message";
+import { RequestPlayerInput } from "@/app/_apis/playerInput";
 import { getAllConditions, getAllSkills } from "@/app/_apis/dnd5eApi";
 import { ConditionItem } from "./condition-item";
 import { SkillRequest } from "./skill-request";
 import { APIReference } from "@/app/_apis/dnd5eTypings";
 import { getClientId, getName, setClientId } from "@/app/_apis/sessionStorage";
 import { Session } from "@/app/_apis/session";
-import { ChatBox } from "../chat/chat-box";
 import { useRouter } from "next/navigation";
 import { AlertInfo, Alerts } from "../alert/alerts";
 import { SessionContext } from "../../common/session-context";
+import { WebsocketContext } from '../../common/websocket-context';
+import { Footer } from "@/app/common/footer";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -27,9 +27,7 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 
 	const [initiativeOrder, setInitiativeOrder] = useState<Character[]>([]);
 	const [isGetDiceRoll, setIsGetDiceRoll] = useState(false);
-	const [secretBody, setSecret] = useState<PlayerMessage | null>(null);
 	const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({ client_uuids: [], reason: '', dice_type: 20 });
-	const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
 	const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
 	const [skills, setSkills] = useState<APIReference[]>([]);
 	const [session, setSession] = useState<Session>();
@@ -44,7 +42,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 	useEffect(() => {
 		getLatestInitiativeOrder();
 		getConditionOptions();
-		loadPlayerOptions();
 		getSkillOptions();
 		getCurrentSession();
 	}, []);
@@ -61,11 +58,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 					setAlert({ type: 'info', message: 'Initiative order updates.' });
 
 					getLatestInitiativeOrder();
-					loadPlayerOptions();
-					return;
-				}
-				case EventType.ReceiveMessage: {
-					setSecret(lastJsonMessage.event_body);
 					return;
 				}
 				case EventType.EndSession: {
@@ -139,32 +131,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 			});
 	}
 
-	function loadPlayerOptions() {
-		getCharacters(params.sessionid, {
-			filters: [{
-				field: FieldType.Role,
-				operator: OperatorType.Equals,
-				value: CharacterType.Player
-			}],
-			logic: LogicType.And
-		})
-			.then(c => {
-				const withAll: Character[] = [];
-				if (c && c.length) {
-					withAll.push({
-						creature_id: EMPTY_GUID,
-						name: "All Players",
-						initiative: 0, hit_points: [],
-						role: CharacterType.Player,
-						conditions: [],
-						monster: ''
-					});
-					withAll.push(...c)
-				}
-				setPlayerOptions(withAll);
-			});
-	}
-
 	function calculateHP(character: Character): string {
 		const hpPercent = (character.hit_points[0] / character.hit_points[1]) * 100;
 		if (hpPercent == 0)
@@ -179,53 +145,52 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 
 	return (
 		<>
-			<SessionContext.Provider value={params.sessionid}>
-				<Box sx={{ pb: '60px' }}>
-					<Alerts info={alert} />
-					{showDeveloperUI ?
-						(<a href={playerJoinUrl} target='_blank'>
-							Player Join
-						</a>) : ''}
-					<Box>
-						<Box sx={{ fontWeight: 'bold', fontSize: '1em' }}>
-							{`Welcome ${getName()}`}
+			<WebsocketContext.Provider value={lastJsonMessage}>
+				<SessionContext.Provider value={params.sessionid}>
+					<Box sx={{ pb: '60px' }}>
+						<Alerts info={alert} />
+						{showDeveloperUI ?
+							(<a href={playerJoinUrl} target='_blank'>
+								Player Join
+							</a>) : ''}
+						<Box>
+							<Box sx={{ fontWeight: 'bold', fontSize: '1em' }}>
+								{`Welcome ${getName()}`}
+							</Box>
+							<Box>
+								{session?.session_name}
+							</Box>
+							<Box>
+								{session?.session_description}
+							</Box>
 						</Box>
 						<Box>
-							{session?.session_name}
+							<h2>Initiative Order</h2>
+							{initiativeOrder.map(order => (
+								<div key={order.creature_id} style={{ border: '1px solid lightgray' }}>
+									<Box>
+										<Grid container spacing={2}>
+											<Grid item xs={12} sm={4}>
+												<Box className="item">{order.name}</Box>
+											</Grid>
+											<Grid item xs={6} sm={3}>
+												<Box className="item">{calculateHP(order)}</Box>
+											</Grid>
+											<Grid item xs={6} sm={5}>
+												<Box className="item">{order.conditions.map(c =>
+													<ConditionItem key={c} conditionId={c} conditionOptions={conditionOptions} />)}
+												</Box>
+											</Grid>
+										</Grid>
+									</Box>
+								</div>
+							))}
 						</Box>
-						<Box>
-							{session?.session_description}
-						</Box>
+						<SkillRequest isOpen={isGetDiceRoll} skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} />
 					</Box>
-					<Box>
-						<h2>Initiative Order</h2>
-						{initiativeOrder.map(order => (
-							<div key={order.creature_id} style={{ border: '1px solid lightgray' }}>
-								<Box>
-									<Grid container spacing={2}>
-										<Grid item xs={12} sm={4}>
-											<Box className="item">{order.name}</Box>
-										</Grid>
-										<Grid item xs={6} sm={3}>
-											<Box className="item">{calculateHP(order)}</Box>
-										</Grid>
-										<Grid item xs={6} sm={5}>
-											<Box className="item">{order.conditions.map(c =>
-												<ConditionItem key={c} conditionId={c} conditionOptions={conditionOptions} />)}
-											</Box>
-										</Grid>
-									</Grid>
-								</Box>
-							</div>
-						))}
-					</Box>
-					<SkillRequest isOpen={isGetDiceRoll} skillName={requestRollBody.reason} diceType={requestRollBody.dice_type} skillOptions={skills} sendValue={handleInputSubmit} />
-				</Box>
-				<Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
-					<SendPlayerMessage recipientOptions={playerOptions} />
-					<ChatBox recipientOptions={playerOptions} secretInfo={secretBody!} />
-				</Paper>
-			</SessionContext.Provider>
+					<Footer />
+				</SessionContext.Provider>
+			</WebsocketContext.Provider>
 		</>
 	)
 }
