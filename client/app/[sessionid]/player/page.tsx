@@ -19,6 +19,7 @@ import { AlertInfo, Alerts } from "../alert/alerts";
 import { SessionContext } from "../../common/session-context";
 import { WebsocketContext } from '../../common/websocket-context';
 import { Footer } from "@/app/common/footer";
+import { TopNav } from "@/app/common/top-nav";
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
@@ -30,10 +31,8 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 	const [requestRollBody, setRequestRollBody] = useState<RequestPlayerInput>({ client_uuids: [], reason: '', dice_type: 20 });
 	const [conditionOptions, setConditionOptions] = useState<APIReference[]>([]);
 	const [skills, setSkills] = useState<APIReference[]>([]);
-	const [session, setSession] = useState<Session>();
 	const [alert, setAlert] = useState<AlertInfo | null>(null);
 
-	const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 	const router = useRouter();
 
 	const { sendMessage, sendJsonMessage, readyState, lastJsonMessage } =
@@ -43,7 +42,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 		getLatestInitiativeOrder();
 		getConditionOptions();
 		getSkillOptions();
-		getCurrentSession();
 	}, []);
 
 	useEffect(() => {
@@ -95,13 +93,6 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 		setTimeout(() => { router.push(`/${params.sessionid}`) }, 5000);
 	}
 
-	function getCurrentSession() {
-		getSingleSession(params.sessionid)
-			.then(sessions => {
-				setSession(sessions[0]);
-			});
-	}
-
 	function handleInputSubmit(rollValue: number) {
 		setIsGetDiceRoll(false);
 		addSessionInput(params.sessionid, {
@@ -147,23 +138,9 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 		<>
 			<WebsocketContext.Provider value={lastJsonMessage}>
 				<SessionContext.Provider value={params.sessionid}>
-					<Box sx={{ pb: '60px' }}>
+				<TopNav isDM={false} />
+					<Box sx={{position: 'fixed', left: 0, right: 0, bottom: '60px', top: '64px', overflow: 'auto'}}>
 						<Alerts info={alert} />
-						{showDeveloperUI ?
-							(<a href={playerJoinUrl} target='_blank'>
-								Player Join
-							</a>) : ''}
-						<Box>
-							<Box sx={{ fontWeight: 'bold', fontSize: '1em' }}>
-								{`Welcome ${getName()}`}
-							</Box>
-							<Box>
-								{session?.session_name}
-							</Box>
-							<Box>
-								{session?.session_description}
-							</Box>
-						</Box>
 						<Box>
 							<h2>Initiative Order</h2>
 							{initiativeOrder.map(order => (

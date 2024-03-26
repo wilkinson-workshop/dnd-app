@@ -54,7 +54,7 @@ export default function HomePage() {
   }
 
   return ( 
-    <div>
+    <Box>
         <FormControl fullWidth>
           <InputLabel id="session">Session</InputLabel>
           <Select
@@ -78,6 +78,6 @@ export default function HomePage() {
       <Box>
         {session?.session_description}
       </Box>
-    </div>
+    </Box>
     );
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useReducer, useState, createContext } from 'react';
-import { endSession, getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
+import { useEffect, useReducer, useState } from 'react';
+import { getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { Container } from "./character-container";
 import { Box, Button } from "@mui/material";
@@ -20,9 +20,9 @@ import { CreatureGroups } from './groups/groups';
 import { SessionContext } from '../../common/session-context';
 import { ConditionsContext } from '../../common/conditions-context';
 import { Footer } from '@/app/common/footer';
+import { TopNav } from '@/app/common/top-nav';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
-const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
 
 const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
@@ -31,7 +31,6 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 	const [groupIsVisible, setGroupIsVisible] = useState(false);
 	const [conditions, conditionsDispatch] = useReducer(setInitialConditions, []);
 
-	const playerJoinUrl = `${baseUrl}/${params.sessionid}`;
 	const router = useRouter();
 
 	const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } =
@@ -118,14 +117,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 			.then(si =>
 				setInputs(si.map(si => si.event_body)))
 	}
-
-	function handleEndSession() {
-		endSession(params.sessionid)
-			.then(_ => {
-				router.push(baseUrl!);
-			});
-	}
-
+ 
 	function handleResetInitiative() {
 		updateInitiativeTop(params.sessionid, null)
 			.then();
@@ -135,12 +127,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 		<WebsocketContext.Provider value={lastJsonMessage}>
 			<ConditionsContext.Provider value={conditions}>
 				<SessionContext.Provider value={params.sessionid}>
-					{groupIsVisible ? (<CreatureGroups backToDashboard={() => setGroupIsVisible(false)} />) :
-						(<Box sx={{ pb: '60px' }}>
-							<Box>
-								<Button variant="contained" aria-label="end session" onClick={handleEndSession}>
-									End Session
-								</Button>
+					<TopNav isDM={true} />
+					<Box sx={{position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto'}}>
+						{groupIsVisible ? (<CreatureGroups backToDashboard={() => setGroupIsVisible(false)} />) :
+							(<Box>
 								<Box>
 									<Button variant="contained" aria-label="end session" onClick={() => setGroupIsVisible(true)}>
 										Groups
@@ -151,19 +141,10 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 										Reset Initiative
 									</Button>
 								</Box>
-								<Box>
-									<a href={`${playerJoinUrl}/qr`} target='_blank'>
-										Show QR code
-									</a>
-									{showDeveloperUI ?
-										(<a href={playerJoinUrl} target='_blank'>
-											Player Join
-										</a>) : ''}
-								</Box>
-							</Box>
-							<Container sessionId={params.sessionid} />
-						</Box>)}
-						<Footer />
+								<Container sessionId={params.sessionid} />
+							</Box>)}
+					</Box>
+					<Footer />
 				</SessionContext.Provider>
 			</ConditionsContext.Provider>
 		</WebsocketContext.Provider>
