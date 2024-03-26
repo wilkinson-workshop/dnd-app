@@ -159,7 +159,11 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
             const isAdd = result[3] == '+';
             const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
 
-            const min =  isAdd ? (count + addition) : (count - addition);
+            let min =  isAdd ? (count + addition) : (count - addition);
+            if(min <= 0){
+                min = 1;
+            }
+
             const max = isAdd ? (count*multiple + addition) : (count*multiple - addition);
             const average = (max-min)/2 + min;
 
