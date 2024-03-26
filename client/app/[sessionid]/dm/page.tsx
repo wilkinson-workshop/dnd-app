@@ -142,7 +142,8 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 									</Button>
 								</Box>
 								<Container sessionId={params.sessionid} />
-							</Box>)}
+							</Box>)
+						}
 					</Box>
 					<Footer />
 				</SessionContext.Provider>

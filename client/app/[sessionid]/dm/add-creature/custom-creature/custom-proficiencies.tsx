@@ -121,12 +121,12 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
                 <Grid sx={{ paddingTop: 1 }} container spacing={2}>
                     <Grid item xs={3}>
                         <FormControl fullWidth>
-                            <InputLabel id="recipient">Speed</InputLabel>
+                            <InputLabel id="profType">Proficiency Type</InputLabel>
                             <Select
-                                labelId="speed"
+                                labelId="profType"
                                 value={editType}
                                 size="small"
-                                label="Speed Type"
+                                label="Proficience Type"
                                 onChange={handleChaneProficiencyType}
                             >
                                 <MenuItem value="Skill">Skill</MenuItem>

@@ -12,7 +12,7 @@ export interface CustomCreatureProps {
 export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
     const [monster, setMonster] = useState(CUSTOM_MONSTER_OPTION.index)
     const [monsterInfo, setMonsterInfo] = useState<Monster>(CUSTOM_MONSTER);
-    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([]);
+    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([CUSTOM_MONSTER_OPTION]);
 
     const sessionId = useContext(SessionContext);
 

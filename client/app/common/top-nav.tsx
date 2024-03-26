@@ -1,31 +1,19 @@
 import { FC, useContext, useEffect, useState } from "react";
 import { WebsocketContext } from "./websocket-context";
 import { SessionContext } from "./session-context";
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Menu from '@mui/material/Menu';
+import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Button, Tooltip, MenuItem, Divider, Container, Link } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import Container from '@mui/material/Container';
-import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import Divider from '@mui/material/Divider';
-
-
 import { EventType } from "../_apis/eventType";
 import { useRouter } from "next/navigation";
 import { endSession, getSingleSession } from "../_apis/sessionApi";
 import { getName } from "../_apis/sessionStorage";
 import { Session } from "../_apis/session";
-import { Link } from "@mui/material";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 const showDeveloperUI = process.env.NEXT_PUBLIC_DEVELOPER_UI;
+const APP_NAME = 'Combat Companion';
 
 export interface TopNavProps {
 	isDM: boolean
@@ -110,7 +98,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 							textDecoration: 'none',
 						}}
 					>
-						Combat Companion
+						{APP_NAME}
 					</Typography>
 					<Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
 						<IconButton
