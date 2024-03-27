@@ -8,12 +8,7 @@ import { updateInitiativeTop } from '@/app/_apis/sessionApi'
 import { AddCharacterDialog } from './add-creature/add-character-dialog'
 import { WebsocketContext } from '../../common/websocket-context'
 import { EventType } from '@/app/_apis/eventType'
-
-const style = {
-	minHeight: '30px',
-	border: '#ebebeb solid 1px',
-	margin: '10px 0'
-}
+import { Box, Grid } from '@mui/material'
 
 export interface ContainerProps {
 	sessionId: string,
@@ -31,44 +26,44 @@ export const Container: FC<ContainerProps> = ({ sessionId }) => {
 
 	useEffect(() => {
 		reloadList();
-	},[]);
+	}, []);
 
 	useEffect(() => {
 		if (lastJsonMessage !== null) {
 			switch (lastJsonMessage.event_type) {
 				case EventType.ReceiveOrderUpdate: {
-                    reloadList();
+					reloadList();
 					return;
 				}
 			}
 		}
 	}, [lastJsonMessage]);
 
-	function markDone(){
+	function markDone() {
 		updateCurrentInOrder(cardsRef.current[1]);
 	}
 
-	function updateCurrentInOrder(character: Character){
+	function updateCurrentInOrder(character: Character) {
 		updateInitiativeTop(sessionId, character.creature_id)
-		.then(_ => reloadList());
+			.then(_ => reloadList());
 	}
 
 	function onDelete(character: Character) {
 		deleteCharacter(sessionId, character.creature_id)
-		.then(_ => reloadList());
+			.then(_ => reloadList());
 	}
 
 	function updateCharacter(character: Character) {
 		saveCharacter(sessionId, character)
-		.then(_ => reloadList());
+			.then(_ => reloadList());
 	}
 
 	function reloadList() {
 		getCharacters(sessionId, { filters: [], logic: LogicType.Or })
-		.then(c => {
-			setCharacterEdit(null);
-			setCards(c);
-		});
+			.then(c => {
+				setCharacterEdit(null);
+				setCards(c);
+			});
 	}
 
 	const renderCard = useCallback(
@@ -91,13 +86,47 @@ export const Container: FC<ContainerProps> = ({ sessionId }) => {
 	return (
 		<>
 			<AddCharacterDialog />
-			<div style={style}>{cards && cards.length > 0 ?
-				cards.map((card, i) => renderCard(card, i)) :
-				(
-					<div style={{ display: "inline-block", padding: "5px" }}>Please add Characters</div>
-				)
-			}
-			</div>
+			<Box sx={{ minHeight: '30px', m: '10px 0' }}>
+				<Box sx={{ fontSize: "14px" }}>
+					<Grid container spacing={2}>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">
+								Initiative
+							</Box>
+						</Grid>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">
+								AC
+							</Box>
+						</Grid>
+						<Grid item xs={5} sm={3}>
+							<Box className="item">
+								Name
+							</Box>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Box className="item">
+								HP
+							</Box>
+						</Grid>
+						<Grid item xs={8} sm={2}>
+							<Box className="item">
+								Condtitions
+							</Box>
+						</Grid>
+						<Grid item xs={4} sm={2}>
+							<Box className="item" sx={{ textAlign: "right" }}>
+								Actions
+							</Box>
+						</Grid>
+					</Grid>
+				</Box>
+				{cards && cards.length > 0 ?
+					cards.map((card, i) => renderCard(card, i))
+					:
+					(<Box sx={{ textAlign: 'center', fontSize: '20px', border: '#ebebeb solid 1px', padding: '5px' }}>No Creatures</Box>)
+				}
+			</Box>
 			<EditCharacter existingCharacter={characterEdit} onSaveClick={updateCharacter} onCancelClick={() => setCharacterEdit(null)} />
 		</>
 	)

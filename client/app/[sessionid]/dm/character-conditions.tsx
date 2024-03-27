@@ -22,7 +22,7 @@ export const CharacterConditions: FC<CharacterConditionsProps> = ({character, up
             {character.conditions.length > 0 ?
             character.conditions.map((condition)=> (
                 <ConditionItem key={condition} conditionId={condition} onDeleteCondition={(conditionId: string) => onConditionDelete(conditionId)}  />
-            )):<Box sx={{display:"inline-block", padding: "5px"}}>No Conditions</Box>}
+            )):<Box sx={{display:"inline-block", padding: "5px"}}>None</Box>}
         </>
     )
 }

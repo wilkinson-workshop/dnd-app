@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { memo, useContext, useState } from 'react'
+import { memo, useContext, useEffect, useState } from 'react'
 import { Character, CharacterType } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
 import { CharacterConditions } from './character-conditions'
@@ -8,15 +8,14 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
 import { getMonster } from '@/app/_apis/dnd5eApi';
-import { getCustomMonster } from '@/app/_apis/customMonsterApi';
-import { Monster } from '@/app/_apis/dnd5eTypings'
+import { CUSTOM_MONSTER, getCustomMonster } from '@/app/_apis/customMonsterApi';
+import { ArmorAC, ArmorClass, ConditionAC, Monster, SpellAC } from '@/app/_apis/dnd5eTypings'
 import { MonsterInfoDialog } from './monster-dialog'
 import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
 import { SessionContext } from '../../common/session-context'
 
 const style = {
 	border: '1px solid lightgray',
-	cursor: 'move',
 }
 
 export interface CardProps {
@@ -29,12 +28,16 @@ export interface CardProps {
 }
 
 export const Card: FC<CardProps> = memo(function Card({ character, index, markDone, updateCharacter, updateCharacterButton, deleteCharacter }) {
-	const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
+	const [monsterInfo, setMonsterInfo] = useState<Monster>(CUSTOM_MONSTER);
 	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
 	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
 	const [responseDialogInfo, setResponseDialogInfo] = useState<ResponseDialogInfo>({title: 'Delete', message: []});
 
 	let sessionId = useContext(SessionContext);
+
+	useEffect(() => {
+		getMonsterInfo(character.monster!)
+	}, [])
 
 	function handleDelete(){
 		//extra caution deleting PC or creatures with hp left
@@ -57,23 +60,17 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 	}
 
 	function getMonsterInfo(monsterId: string) {
-
-		if (monsterInfo) {
-			setIsMonsterInfoOpen(true);
+		let getApi: Promise<Monster>;
+		if(monsterId.startsWith('custom')){
+			getApi = getCustomMonster(sessionId, monsterId)
 		} else {
-			let getApi: Promise<Monster>;
-			if(monsterId.startsWith('custom')){
-				getApi = getCustomMonster(sessionId, monsterId)
-			} else {
-				getApi = getMonster(monsterId)
-			}
-	
-			getApi
-			.then(m => {
-				setMonsterInfo(m);
-				setIsMonsterInfoOpen(true);
-			});
+			getApi = getMonster(monsterId)
 		}
+
+		getApi
+		.then(m => {
+			setMonsterInfo(m);
+		});
 	}
 
 	const handleMonsterDialogClose = () => {
@@ -84,6 +81,28 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 		setIsResponseDialogOpen(false);
 		if(isYes){
 			deleteCharacter(character);
+		}
+	}
+
+	function showAC(ac: ArmorClass): string {
+		switch (ac.type) {
+			case 'armor': {
+				const armor = ac as ArmorAC
+				if (armor.armor) {
+					return `${armor.value}`;
+				} else {
+					return `${armor.value}`
+				}
+			}
+			case 'spell': {
+				const spell = ac as SpellAC
+				return `${spell.value}`;
+			}
+			case 'condition': {
+				const con = ac as ConditionAC
+				return `${con.value}`;
+			}
+			default: return `${ac.value}`
 		}
 	}
 
@@ -105,12 +124,15 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 						<Grid item xs={1} sm={1}>
 							<Box className="item">{character.initiative}</Box>
 						</Grid>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">{showAC(monsterInfo.armor_class[0])}</Box>
+						</Grid>
 						<Grid item xs={5} sm={3}>
 							<Box className="item">
 								{character.name}
 								{
 									character.role == CharacterType.NonPlayer ?
-										(<IconButton aria-label="delete" onClick={() => getMonsterInfo(character.monster!)}>
+										(<IconButton aria-label="delete" onClick={() => setIsMonsterInfoOpen(true)}>
 											<InfoIcon />
 										</IconButton>) : ''
 								}
@@ -121,7 +143,7 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 								<CharacterHp character={character} />
 							</Box>
 						</Grid>
-						<Grid item xs={8} sm={3}>
+						<Grid item xs={8} sm={2}>
 							<Box className="item">
 								<CharacterConditions character={character} updateCharacter={updateCharacter} />
 							</Box>

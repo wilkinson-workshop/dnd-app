@@ -138,7 +138,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 									<RequestPlayerInput recipientOptions={playerOptions} />
 									<PlayerInputList playerInputs={inputs} />
 									<Button variant="contained" aria-label="end session" onClick={handleResetInitiative}>
-										Reset Initiative
+										Reset Order
 									</Button>
 								</Box>
 								<Container sessionId={params.sessionid} />

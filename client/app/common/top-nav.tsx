@@ -86,8 +86,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 					<Typography
 						variant="h6"
 						noWrap
-						component="a"
-						href="#app-bar-with-responsive-menu"
+						component="div"
 						sx={{
 							mr: 2,
 							display: { xs: 'none', md: 'flex' },

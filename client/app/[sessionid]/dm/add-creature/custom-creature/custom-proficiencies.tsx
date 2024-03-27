@@ -94,10 +94,16 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
 
 		for (const prof of proficiencies) {
 			const name = prof.proficiency.name.split(":");
-			if (name[0] == SKILL) {
-				skills.push(`${name[1]} +${prof.value}`);
+            let value: string;
+			if(prof.value > -1){
+				value = `+${prof.value}`;
 			} else {
-				savingThrows.push(`${name[1]} +${prof.value}`);
+				value = prof.value.toString();
+			}
+			if (name[0] == SKILL) {
+				skills.push(`${name[1]} ${value}`);
+			} else {
+				savingThrows.push(`${name[1]} ${value}`);
 			}
 		}
 
