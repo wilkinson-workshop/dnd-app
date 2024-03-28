@@ -93,7 +93,7 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
 		let savingThrows: string[] = [];
 
 		for (const prof of proficiencies) {
-			const name = prof.proficiency.name.split(":");
+			const name = prof.proficiency.name.split(": ");
             let value: string;
 			if(prof.value > -1){
 				value = `+${prof.value}`;

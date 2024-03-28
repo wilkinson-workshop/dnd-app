@@ -1,18 +1,22 @@
-import { FC, useCallback, useContext, useEffect, useState } from "react";
-import { Autocomplete, Box, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import { ChangeEvent, FC, useCallback, useContext, useEffect, useState } from "react";
+import { Box, Button, FormControl, InputLabel, Link, MenuItem, Select, TextField, styled } from "@mui/material";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { SessionContext } from "@/app/common/session-context";
 import { getCustomMonster, getCustomMonsters, CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION } from "@/app/_apis/customMonsterApi";
 import { AddCustomCharacter } from "./add-custom_character";
+
+export const IMPORT_MONSTER_OPTION: APIReference = { index: 'import', name: 'Import Monster', url: '' };
 
 export interface CustomCreatureProps {
     onAddClick: (monster: Monster) => void
 }
 
 export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
+    const [isImport, setIsImport] = useState(false);
     const [monster, setMonster] = useState(CUSTOM_MONSTER_OPTION.index)
     const [monsterInfo, setMonsterInfo] = useState<Monster>(CUSTOM_MONSTER);
-    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([CUSTOM_MONSTER_OPTION]);
+    const [monsterOptions, setMonsterOptions] = useState<APIReference[]>([CUSTOM_MONSTER_OPTION, IMPORT_MONSTER_OPTION]);
+    const [exportUrl, setExportUrl] = useState<string | null>(null);
 
     const sessionId = useContext(SessionContext);
 
@@ -21,13 +25,19 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
     }, []);
 
     useEffect(() => {
-        getMonsterInfo(monster);
+        setExportUrl(null);
+        if (monster == 'import') {
+            setIsImport(true);
+        } else {
+            setIsImport(false);
+            getMonsterInfo(monster);
+        }
     }, [monster]);
 
     function getMonsterOptions() {
         getCustomMonsters(sessionId)
             .then(m => {
-                setMonsterOptions([...m, CUSTOM_MONSTER_OPTION]);
+                setMonsterOptions([...m, CUSTOM_MONSTER_OPTION, IMPORT_MONSTER_OPTION]);
             });
     }
 
@@ -46,12 +56,36 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
         onAddClick(updateMonsterInfo);
     }
 
+    async function handleFileImport(event: ChangeEvent<any>) {
+        const file: File = event.target.files[0];
+        const monsterJson: Monster = JSON.parse(await file.text());
+        onAddClick(monsterJson);
+    }
+
+    function handleExportMonster(exportMonster: Monster) {
+        const strMonster = JSON.stringify(exportMonster);
+        var url = URL.createObjectURL(new Blob([strMonster], {type: 'text/json'}));
+        setExportUrl(url);
+    }
+
     const renderCustomCreature = useCallback(
         (monsterInfo: Monster) => {
             return (<AddCustomCharacter currentMonsterInfo={monsterInfo} onAddClick={handleSubmit} />)
-        }, 
+        },
         []
     );
+
+    const VisuallyHiddenInput = styled('input')({
+        clip: 'rect(0 0 0 0)',        
+        clipPath: 'inset(50%)',        
+        height: 1,        
+        overflow: 'hidden',        
+        position: 'absolute',        
+        bottom: 0,        
+        left: 0,        
+        whiteSpace: 'nowrap',        
+        width: 1,        
+    });
 
     return (
         <>
@@ -63,7 +97,7 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
                             labelId="monster"
                             value={monster}
                             size="small"
-                            label="Speed Type"
+                            label="Monster"
                             onChange={(e) => {
                                 setMonster(e.target.value);
                             }}
@@ -72,7 +106,19 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
                         </Select>
                     </FormControl>
                 </Box>
-                {renderCustomCreature(monsterInfo)}
+                {isImport ? '' : (<Box>                
+                    <Button variant="contained"  onClick={() => handleExportMonster(monsterInfo)}>Generate Export File</Button>
+                    {exportUrl ? (<Link target="_blank" download={`${monsterInfo.name.replaceAll(' ', '-')}-export.json`} href={exportUrl}>{`${monsterInfo.name.replaceAll(' ', '-')}-export.json`}</Link>) : ''}
+                </Box>)}
+                {isImport ? (<Button
+                    component="label"
+                    role={undefined}
+                    variant="contained"
+                    tabIndex={-1}
+                >
+                    Select File
+                    <VisuallyHiddenInput onChange={handleFileImport} type="file" />
+                </Button>) : renderCustomCreature(monsterInfo)}
             </Box>
         </>
     );

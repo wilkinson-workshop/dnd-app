@@ -81,7 +81,7 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		let savingThrows: string[] = [];
 
 		for (const prof of proficiencies) {
-			const name = prof.proficiency.name.split(":");
+			const name = prof.proficiency.name.split(": ");
 			let value: string;
 			if(prof.value > -1){
 				value = `+${prof.value}`;
@@ -438,6 +438,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 								{monsterInfo.actions.map((a, i) => showAction(a, i))}
 							</AccordionDetails>
 						</Accordion>
+						{monsterInfo.bonus_actions && monsterInfo.bonus_actions.length > 0 ?
+							(<Accordion>
+								<AccordionSummary
+									expandIcon={<ExpandMoreIcon />}
+									aria-controls="bonus-actions-content"
+									id="bonus-actions-header"
+								>
+									<span className="bold-label">Bonus Actions</span>
+								</AccordionSummary>
+								<AccordionDetails>
+									{monsterInfo.bonus_actions.map((a, i) => showAction(a, i))}
+								</AccordionDetails>
+							</Accordion>) : ''}
 						{monsterInfo.legendary_actions && monsterInfo.legendary_actions.length > 0 ?
 							(<Accordion>
 								<AccordionSummary
