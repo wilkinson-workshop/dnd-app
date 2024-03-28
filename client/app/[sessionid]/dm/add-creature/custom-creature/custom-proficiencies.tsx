@@ -93,11 +93,17 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
 		let savingThrows: string[] = [];
 
 		for (const prof of proficiencies) {
-			const name = prof.proficiency.name.split(":");
-			if (name[0] == SKILL) {
-				skills.push(`${name[1]} +${prof.value}`);
+			const name = prof.proficiency.name.split(": ");
+            let value: string;
+			if(prof.value > -1){
+				value = `+${prof.value}`;
 			} else {
-				savingThrows.push(`${name[1]} +${prof.value}`);
+				value = prof.value.toString();
+			}
+			if (name[0] == SKILL) {
+				skills.push(`${name[1]} ${value}`);
+			} else {
+				savingThrows.push(`${name[1]} ${value}`);
 			}
 		}
 
@@ -121,12 +127,12 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
                 <Grid sx={{ paddingTop: 1 }} container spacing={2}>
                     <Grid item xs={3}>
                         <FormControl fullWidth>
-                            <InputLabel id="recipient">Speed</InputLabel>
+                            <InputLabel id="profType">Proficiency Type</InputLabel>
                             <Select
-                                labelId="speed"
+                                labelId="profType"
                                 value={editType}
                                 size="small"
-                                label="Speed Type"
+                                label="Proficience Type"
                                 onChange={handleChaneProficiencyType}
                             >
                                 <MenuItem value="Skill">Skill</MenuItem>

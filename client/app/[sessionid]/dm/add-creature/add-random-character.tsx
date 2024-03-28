@@ -120,8 +120,12 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
             const isAdd = result[3] == '+';
             const addition = result[4] == '' ? 0 : Number.parseInt(result[4]);
 
-            const min =  isAdd ? (count + addition) : (count - addition)
-            const max = isAdd ? (count*multiple + addition) : (count*multiple - addition)
+            let min =  isAdd ? (count + addition) : (count - addition);
+            if(min <= 0){
+                min = 1;
+            }
+
+            const max = isAdd ? (count*multiple + addition) : (count*multiple - addition);
 
             const maxHp = randomNumber(min, max);
             return [maxHp, maxHp];

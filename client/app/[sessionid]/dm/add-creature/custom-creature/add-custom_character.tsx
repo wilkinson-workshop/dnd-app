@@ -43,6 +43,29 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
     }
 
     function handleSubmit(): void {
+        let speed = monsterInfo.speed;
+        if (speed.walk && !speed.walk.endsWith('ft.')) {
+            speed.walk = speed.walk + " ft.";
+        }
+        
+        if (speed.fly && !speed.fly.endsWith('ft.')) {
+            speed.fly = speed.fly + " ft.";
+        }
+        
+        if (speed.swim && !speed.swim.endsWith('ft.')) {
+            speed.swim = speed.swim + " ft.";
+        }
+        
+        if (speed.climb && !speed.climb.endsWith('ft.')) {
+            speed.climb = speed.climb + " ft.";
+        } 
+        
+        if (speed.burrow && !speed.burrow.endsWith('ft.')) {
+            speed.burrow = speed.burrow + " ft.";
+        }
+
+        setMonsterInfo(m => { return { ...m, speed: speed }; });
+
         onAddClick(monsterInfo);
         resetForm();
     }

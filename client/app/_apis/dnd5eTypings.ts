@@ -161,7 +161,8 @@ export interface Speed {
     burrow?: string //A monster that has a burrowing speed can use that speed to move through sand, earth, mud, or ice. A monster can’t burrow through solid rock unless it has a special trait that allows it to do so.        
     climb?: string //A monster that has a climbing speed can use all or part of its movement to move on vertical surfaces. The monster doesn’t need to spend extra movement to climb.        
     fly?: string //A monster that has a flying speed can use all or part of its movement to fly.       
-    swim?: string  //A monster that has a swimming speed doesn’t need to spend extra movement to swim.        
+    swim?: string  //A monster that has a swimming speed doesn’t need to spend extra movement to swim. 
+    float?: boolean       
 }
 
 export interface Senses {
@@ -224,6 +225,7 @@ export interface Monster {
     hit_dice: string //The hit die of a monster can be used to make a version of the same monster whose hit points are determined by the roll of the die. For example: A monster with 2d6 would have its hit points determine by rolling a 6 sided die twice.
     hit_points_roll: string //The roll for determining a monster's hit points, which consists of the hit dice (e.g. 18d10) and the modifier determined by its Constitution (e.g. +36). For example, 18d10+36
     actions: Action[]//A list of actions that are available to the monster to take during combat.
+    bonus_actions: Action[] // A list of actions that are available as a bonus during combat.
     //⮕ [ Action available to a Monster in addition to the standard creature actions. ]
     legendary_actions: Action[] //A list of legendary actions that are available to the monster to take during combat.
     //⮕ [ Action available to a Monster in addition to the standard creature actions. ]

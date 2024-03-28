@@ -25,77 +25,46 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
         switch (editType) {
             case speedOptions.walk:
                 setSpeed(a => { return { ...a, walk: value } });
-                return;
             case speedOptions.fly:
                 setSpeed(a => { return { ...a, fly: value } });
-                return;
             case speedOptions.swim:
                 setSpeed(a => { return { ...a, swim: value } });
-                return;
             case speedOptions.climb:
                 setSpeed(a => { return { ...a, climb: value } });
-                return;
             case speedOptions.burrow:
                 setSpeed(a => { return { ...a, burrow: value } });
-                return;
         }
+
+        saveSpeed(speed);        
     }
 
     function deleteSpeed(editType: speedOptions) {
         switch (editType) {
             case speedOptions.walk:
                 setSpeed(a => { return { ...a, walk: undefined } });
-                return;
             case speedOptions.fly:
                 setSpeed(a => { return { ...a, fly: undefined } });
-                return;
             case speedOptions.swim:
                 setSpeed(a => { return { ...a, swim: undefined } });
-                return;
             case speedOptions.climb:
                 setSpeed(a => { return { ...a, climb: undefined } });
-                return;
             case speedOptions.burrow:
                 setSpeed(a => { return { ...a, burrow: undefined } });
-                return;
-        }
-    }
-
-    function handleSave() {
-        if (speed.walk && !speed.walk.endsWith('ft.')) {
-            speed.walk = speed.walk + " ft.";
-        }
-        
-        if (speed.fly && !speed.fly.endsWith('ft.')) {
-            speed.fly = speed.fly + " ft.";
-        }
-        
-        if (speed.swim && !speed.swim.endsWith('ft.')) {
-            speed.swim = speed.swim + " ft.";
-        }
-        
-        if (speed.climb && !speed.climb.endsWith('ft.')) {
-            speed.climb = speed.climb + " ft.";
-        } 
-        
-        if (speed.burrow && !speed.burrow.endsWith('ft.')) {
-            speed.burrow = speed.burrow + " ft.";
-        }
-
-        saveSpeed(speed);
+         }
+        saveSpeed(speed);  
     }
 
     function determineSpeedForm(editType: speedOptions) {
         if (editType == speedOptions.walk) {
-            return (<TextField size="small" label="Walk" value={speed.walk} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
+            return (<TextField key={editType} size="small" label="Walk" value={speed.walk} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
         } else if (editType == speedOptions.fly) {
-            return (<TextField size="small" label="Fly" value={speed.fly} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
+            return (<TextField key={editType} size="small" label="Fly" value={speed.fly} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
         } else if (editType == speedOptions.swim) {
-            return (<TextField size="small" label="Swim" value={speed.swim} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
+            return (<TextField key={editType} size="small" label="Swim" value={speed.swim} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
         } else if (editType == speedOptions.climb) {
-            return (<TextField size="small" label="Climb" value={speed.climb} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
+            return (<TextField key={editType} size="small" label="Climb" value={speed.climb} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
         } else if (editType == speedOptions.burrow) {
-            return (<TextField size="small" label="Burrow" value={speed.burrow} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
+            return (<TextField key={editType} size="small" label="Burrow" value={speed.burrow} variant="outlined" onChange={x => updateSpeed(x.target.value, editType)} />);
         }
     }
 
@@ -103,7 +72,7 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
         <>
             <Box sx={{ margin: '10px 0' }}>
                 <Grid sx={{ paddingTop: 1 }} container spacing={2}>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         <FormControl fullWidth>
                             <InputLabel id="recipient">Speed</InputLabel>
                             <Select
@@ -121,13 +90,8 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
                             </Select>
                         </FormControl>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={6}>
                         {determineSpeedForm(editType)}
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Button variant="contained" onClick={handleSave}>
-                            Save
-                        </Button>
                     </Grid>
                 </Grid>
             </Box>

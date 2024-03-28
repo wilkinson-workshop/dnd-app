@@ -23,6 +23,18 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		onClose();
 	}
 
+	function calcBonus(stat: number): string {
+        const bonus = Math.floor((stat - 10)/2);
+		let ret: string;
+		if(bonus > -1){
+			ret = `+${bonus}`;
+		} else {
+			ret = bonus.toString();
+		}
+
+		return ret;
+    }
+
 	function showAC(ac: ArmorClass): string {
 		switch (ac.type) {
 			case 'armor': {
@@ -69,11 +81,18 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 		let savingThrows: string[] = [];
 
 		for (const prof of proficiencies) {
-			const name = prof.proficiency.name.split(":");
-			if (name[0] == SKILL) {
-				skills.push(`${name[1]} +${prof.value}`);
+			const name = prof.proficiency.name.split(": ");
+			let value: string;
+			if(prof.value > -1){
+				value = `+${prof.value}`;
 			} else {
-				savingThrows.push(`${name[1]} +${prof.value}`);
+				value = prof.value.toString();
+			}
+
+			if (name[0] == SKILL) {
+				skills.push(`${name[1]} ${value}`);
+			} else {
+				savingThrows.push(`${name[1]} ${value}`);
 			}
 		}
 
@@ -346,22 +365,22 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 							</Grid>
 							<Grid sx={{ paddingTop: 1 }} container spacing={2}>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.strength}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.strength} (${calcBonus(monsterInfo.strength)})`}</Box>
 								</Grid>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.dexterity}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.dexterity} (${calcBonus(monsterInfo.dexterity)})`}</Box>
 								</Grid>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.constitution}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.constitution} (${calcBonus(monsterInfo.constitution)})`}</Box>
 								</Grid>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.intelligence}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.intelligence} (${calcBonus(monsterInfo.intelligence)})`}</Box>
 								</Grid>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.wisdom}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.wisdom} (${calcBonus(monsterInfo.wisdom)})`}</Box>
 								</Grid>
 								<Grid item xs={2}>
-									<Box sx={{ textAlign: 'center' }}>{monsterInfo.charisma}</Box>
+									<Box sx={{ textAlign: 'center' }}>{`${monsterInfo.charisma}  (${calcBonus(monsterInfo.charisma)})`}</Box>
 								</Grid>
 							</Grid>
 						</Box>
@@ -419,6 +438,19 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 								{monsterInfo.actions.map((a, i) => showAction(a, i))}
 							</AccordionDetails>
 						</Accordion>
+						{monsterInfo.bonus_actions && monsterInfo.bonus_actions.length > 0 ?
+							(<Accordion>
+								<AccordionSummary
+									expandIcon={<ExpandMoreIcon />}
+									aria-controls="bonus-actions-content"
+									id="bonus-actions-header"
+								>
+									<span className="bold-label">Bonus Actions</span>
+								</AccordionSummary>
+								<AccordionDetails>
+									{monsterInfo.bonus_actions.map((a, i) => showAction(a, i))}
+								</AccordionDetails>
+							</Accordion>) : ''}
 						{monsterInfo.legendary_actions && monsterInfo.legendary_actions.length > 0 ?
 							(<Accordion>
 								<AccordionSummary
