@@ -25,14 +25,19 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
         switch (editType) {
             case speedOptions.walk:
                 setSpeed(a => { return { ...a, walk: value } });
+                break;
             case speedOptions.fly:
                 setSpeed(a => { return { ...a, fly: value } });
+                break;
             case speedOptions.swim:
                 setSpeed(a => { return { ...a, swim: value } });
+                break;
             case speedOptions.climb:
                 setSpeed(a => { return { ...a, climb: value } });
+                break;
             case speedOptions.burrow:
                 setSpeed(a => { return { ...a, burrow: value } });
+                break;
         }
 
         saveSpeed(speed);        
@@ -42,14 +47,19 @@ export const CustomSpeed: FC<CustomSpeedProps> = ({ currentSpeed, saveSpeed }) =
         switch (editType) {
             case speedOptions.walk:
                 setSpeed(a => { return { ...a, walk: undefined } });
+                break;
             case speedOptions.fly:
                 setSpeed(a => { return { ...a, fly: undefined } });
+                break;
             case speedOptions.swim:
                 setSpeed(a => { return { ...a, swim: undefined } });
+                break;
             case speedOptions.climb:
                 setSpeed(a => { return { ...a, climb: undefined } });
+                break;
             case speedOptions.burrow:
                 setSpeed(a => { return { ...a, burrow: undefined } });
+                break;
          }
         saveSpeed(speed);  
     }

@@ -1,12 +1,13 @@
 import { FC, useEffect, useState } from "react";
 import { Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@mui/material";
-import { Action, Monster, Proficiency, SpecialAbility, Speed } from "@/app/_apis/dnd5eTypings";
+import { Action, Monster, Proficiency, Senses, SpecialAbility, Speed } from "@/app/_apis/dnd5eTypings";
 import { CustomActions } from "./custom-actions-list";
 import { CustomAbilities } from "./custom-ability-list";
 import { CustomSpeed } from "./custom-speed";
 import { CUSTOM_MONSTER } from "@/app/_apis/customMonsterApi";
 import { CustomProficiencies } from "./custom-proficiencies";
 import { getAllAlignments } from "@/app/_apis/dnd5eApi";
+import { CustomSense } from "./custom-sense";
 
 type sizeType = 'Tiny' | 'Small' | 'Medium' | 'Large' | 'Huge' | 'Gargantuan';
 type alignmentType = 'chaotic neutral' | 'chaotic evil' | 'chaotic good' | 'lawful neutral' | 'lawful evil' | 'lawful good' | 'neutral' | 'neutral evil' | 'neutral good' | 'any alignment' | 'unaligned';
@@ -64,7 +65,24 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
             speed.burrow = speed.burrow + " ft.";
         }
 
-        setMonsterInfo(m => { return { ...m, speed: speed }; });
+        let senses = monsterInfo.senses;
+        if (senses.blindsight && !senses.blindsight.endsWith('ft.')) {
+            senses.blindsight = senses.blindsight + " ft.";
+        }
+
+        if (senses.darkvision && !senses.darkvision.endsWith('ft.')) {
+            senses.darkvision = senses.darkvision + " ft.";
+        }
+
+        if (senses.tremorsense && !senses.tremorsense.endsWith('ft.')) {
+            senses.tremorsense = senses.tremorsense + " ft.";
+        }
+
+        if (senses.truesight && !senses.truesight.endsWith('ft.')) {
+            senses.truesight = senses.truesight + " ft.";
+        }
+
+        setMonsterInfo(m => { return { ...m, speed: speed, senses: senses }; });
 
         onAddClick(monsterInfo);
         resetForm();
@@ -153,6 +171,10 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
         setMonsterInfo(m => { return { ...m, speed: value }; });
     }
 
+    function setSenses(value: Senses) {
+        setMonsterInfo(m => { return { ...m, senses: value }; });
+    }
+
     function setAC(value: string) {
         const num = Number.parseInt(value ? value : '0');
         let currentAC = monsterInfo.armor_class[0];
@@ -183,6 +205,10 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
 
     function setReactions(reactions: Action[]) {
         setMonsterInfo(m => { return { ...m, reactions: reactions }; });
+    }
+
+    function setBonusActions(bonusActions: Action[]) {
+        setMonsterInfo(m => { return { ...m, bonus_actions: bonusActions }; });
     }
 
     return (
@@ -238,6 +264,7 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
                 <Box sx={{ margin: '10px 0' }}>
                     <TextField sx={{ width: 300 }} size="small" label="AC" value={monsterInfo.armor_class[0].value} variant="outlined" onChange={x => setAC(x.target.value)} />
                     <CustomSpeed currentSpeed={monsterInfo.speed} saveSpeed={setSpeed} />
+                    <CustomSense currentSense={monsterInfo.senses} saveSense={setSenses} />
                 </Box>
                 <Box>
                     <Grid sx={{ paddingTop: 1 }} container spacing={2}>
@@ -318,12 +345,16 @@ export const AddCustomCharacter: FC<AddCustomCharacterProps> = ({ currentMonster
                     <CustomActions currentActions={monsterInfo.legendary_actions} updateActions={setLedgendaryActions} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
-                    <div className="bold-label">SpecialAbilities</div>
+                    <div className="bold-label">Special Abilities</div>
                     <CustomAbilities currentAbilities={monsterInfo.special_abilities} updateAbilities={setSpecialAbilities} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
                     <div className="bold-label">Reactions</div>
                     <CustomActions currentActions={monsterInfo.reactions} updateActions={setReactions} />
+                </Box>
+                <Box sx={{ margin: '10px 0' }}>
+                    <div className="bold-label">Bonus Actions</div>
+                    <CustomActions currentActions={monsterInfo.bonus_actions} updateActions={setBonusActions} />
                 </Box>
                 <Box sx={{ margin: '10px 0' }}>
                     <Button fullWidth variant="contained" aria-label="add" onClick={handleSubmit}>
