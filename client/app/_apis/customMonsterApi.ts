@@ -43,6 +43,7 @@ export const CUSTOM_MONSTER: Monster = {
   proficiency_bonus: 0,
   xp: 0,
   special_abilities: [],
+  bonus_actions: [],
   actions: [],
   //image:,
   url: "",

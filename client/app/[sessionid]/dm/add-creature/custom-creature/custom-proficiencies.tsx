@@ -46,7 +46,7 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
 
         let profName = editType == "Skill" ? skillType : attributeType;       
         
-        const newProf: Proficiency = {value: Number.parseInt(profValue), proficiency: {name:`${editType}:${profName}`, url: '', index: '' } };
+        const newProf: Proficiency = {value: Number.parseInt(profValue), proficiency: {name:`${editType}: ${profName}`, url: '', index: '' } };
         newProficiencies.push(newProf);
         setProficiencies(newProficiencies);
 
@@ -83,27 +83,26 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
         }
     }
 
-    function deleteProficiency(proficiency: any) {
+    function deleteProficiency(isSkill: boolean, prof: Proficiency) {
         //do something to delete
+        let newProf = proficiencies.slice();
+        let index = proficiencies.findIndex(p => prof == p);
+        newProf.splice(index, 1);
+        setProficiencies(newProf);
     }
 
     function showProficiencies(proficiencies: Proficiency[]) {
 		const SKILL = 'Skill';
-		let skills: string[] = [];
-		let savingThrows: string[] = [];
+		let skills: Proficiency[] = [];
+		let savingThrows: Proficiency[] = [];
 
 		for (const prof of proficiencies) {
 			const name = prof.proficiency.name.split(": ");
-            let value: string;
-			if(prof.value > -1){
-				value = `+${prof.value}`;
-			} else {
-				value = prof.value.toString();
-			}
+
 			if (name[0] == SKILL) {
-				skills.push(`${name[1]} ${value}`);
+				skills.push(prof);
 			} else {
-				savingThrows.push(`${name[1]} ${value}`);
+				savingThrows.push(prof);
 			}
 		}
 
@@ -111,15 +110,26 @@ export const CustomProficiencies: FC<CustomProficienciesProps> = ({ currentProfi
 			<>
 				{skills.length > 0 ? (<Box>
                     <span className="bold-label">Skills: </span>{skills.map(s => 
-                        (<Chip key={s} size="small" color="info" label={s} />))}
+                        (<Chip key={s.proficiency.index} size="small" color="info" label={generateProfDisplay(s)} onDelete={() => deleteProficiency(true, s)} />))}
                 </Box>) : ''}
 				{savingThrows.length > 0 ? (<Box>
                     <span className="bold-label">Saving Throws: </span>{savingThrows.map(s => 
-                        (<Chip key={s} size="small" color="info" label={s} />))}
+                        (<Chip key={s.proficiency.index} size="small" color="info" label={generateProfDisplay(s)} onDelete={() => deleteProficiency(false, s)} />))}
                 </Box>): ''}
 			</>
 		)
 	}
+
+    function generateProfDisplay(prof: Proficiency): string {
+        const name = prof.proficiency.name.split(": ");
+        let value: string;
+        if(prof.value > -1){
+            value = `+${prof.value}`;
+        } else {
+            value = prof.value.toString();
+        }
+        return `${name[1]} ${value}`
+    }
 
     return (
         <>

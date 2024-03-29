@@ -2,7 +2,7 @@ import { ChangeEvent, FC, useCallback, useContext, useEffect, useState } from "r
 import { Box, Button, FormControl, InputLabel, Link, MenuItem, Select, TextField, styled } from "@mui/material";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { SessionContext } from "@/app/common/session-context";
-import { getCustomMonster, getCustomMonsters, CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION } from "@/app/_apis/customMonsterApi";
+import { getCustomMonster, getCustomMonsters, CUSTOM_MONSTER, CUSTOM_MONSTER_OPTION, addCustomMonster } from "@/app/_apis/customMonsterApi";
 import { AddCustomCharacter } from "./add-custom_character";
 
 export const IMPORT_MONSTER_OPTION: APIReference = { index: 'import', name: 'Import Monster', url: '' };
@@ -53,7 +53,12 @@ export const CustomCreature: FC<CustomCreatureProps> = ({ onAddClick }) => {
     }
 
     function handleSubmit(updateMonsterInfo: Monster): void {
-        onAddClick(updateMonsterInfo);
+        addCustomMonster(sessionId, updateMonsterInfo)
+        .then(_ => {
+            onAddClick(updateMonsterInfo);
+            getMonsterOptions();
+
+        });
     }
 
     async function handleFileImport(event: ChangeEvent<any>) {
