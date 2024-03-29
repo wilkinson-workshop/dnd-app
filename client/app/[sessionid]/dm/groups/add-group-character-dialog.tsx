@@ -51,10 +51,7 @@ export const AddGroupCharacterDialog: FC<AddCharacterDialogProps> = ({ groupId, 
     }
 
     function handleAddCustomCharacter(monster: Monster){
-        addCustomMonster(sessionId, monster)
-        .then(_ =>
-            setAlert({ type: 'success', message: `${monster.name} added!` })
-        );
+        setAlert({ type: 'success', message: `${monster.name} added!` });
     }
 
     return (
