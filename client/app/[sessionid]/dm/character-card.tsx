@@ -36,7 +36,9 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 	let sessionId = useContext(SessionContext);
 
 	useEffect(() => {
-		getMonsterInfo(character.monster!)
+		if(character.role == CharacterType.NonPlayer){
+			getMonsterInfo(character.monster!);
+		}
 	}, [])
 
 	function handleDelete(){
@@ -110,7 +112,7 @@ export const Card: FC<CardProps> = memo(function Card({ character, index, markDo
 		<>
 			<MonsterInfoDialog
 				open={isMonsterInfoOpen}
-				monsterInfo={monsterInfo!}
+				monsterInfo={monsterInfo}
 				onClose={handleMonsterDialogClose}
 			/>
 			<ResponseDialog
