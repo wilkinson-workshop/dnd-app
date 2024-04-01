@@ -25,8 +25,6 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 	const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
 
 	const router = useRouter();
-
-	let lastJsonMessage = useContext(WebsocketContext);
 	let sessionId = useContext(SessionContext);
 
 	const playerJoinUrl = `${baseUrl}/${sessionId}`;
@@ -35,17 +33,11 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 		getCurrentSession();
 	}, []);
 
+	const navigateDashboard = () => {
+		const dashboard = isDM ? 'dm' : 'player';
+		router.push(`${playerJoinUrl}/${dashboard}`);
+	}
 
-	useEffect(() => {
-		if (lastJsonMessage !== null) {
-			switch (lastJsonMessage.event_type) {
-				case EventType.ReceiveOrderUpdate: {
-
-					return;
-				}
-			}
-		}
-	}, [lastJsonMessage]);
 
 	const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorElNav(event.currentTarget);
@@ -55,11 +47,9 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 		setAnchorElUser(event.currentTarget);
 	};
 
-
 	const handleCloseNavMenu = () => {
 		setAnchorElNav(null);
 	};
-
 
 	const handleCloseUserMenu = () => {
 		setAnchorElUser(null);
@@ -184,19 +174,22 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 							open={Boolean(anchorElUser)}
 							onClose={handleCloseUserMenu}
 						>
-							<MenuItem>
+							<MenuItem onClick={navigateDashboard}>
 								<Typography textAlign="center">{session?.session_name}</Typography>
 							</MenuItem>
 							<Divider />
+							{isDM ?
+								(<MenuItem onClick={handleEndSession}>
+									End Session
+								</MenuItem>) : ''}
+							{isDM ? (<MenuItem onClick={_ => router.push(`${playerJoinUrl}/settings`)}>
+									Session Debug
+							</MenuItem>) : ''}
 							{isDM ? (<MenuItem>
 								<Link textAlign="center" underline="none" href={`${playerJoinUrl}/qr`} target='_blank'>
 									Show QR code
 								</Link>
 							</MenuItem>) : ''}
-							{isDM ?
-								(<MenuItem onClick={handleEndSession}>
-									<Typography textAlign="center">End Session</Typography>
-								</MenuItem>) : ''}
 							{showDeveloperUI ?
 								(<MenuItem>
 									<Link textAlign="center" underline="none" href={playerJoinUrl} target='_blank'>

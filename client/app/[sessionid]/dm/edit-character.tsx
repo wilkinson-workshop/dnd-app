@@ -25,13 +25,13 @@ const MenuProps = {
     },
 };
 
-export interface AddCharacterProps {
+export interface EditCharacterProps {
     existingCharacter: Character | null,
     onSaveClick: (character: Character) => void
     onCancelClick: () => void
 }
 
-export const EditCharacter: FC<AddCharacterProps> = ({ existingCharacter, onSaveClick, onCancelClick }) => {
+export const EditCharacter: FC<EditCharacterProps> = ({ existingCharacter, onSaveClick, onCancelClick }) => {
     const [edit, onEdit] = useState(false);
     const [currentHp, setCurrentHp] = useState(1);
     const [maxHp, setMaxHp] = useState(1)

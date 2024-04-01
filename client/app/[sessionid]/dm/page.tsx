@@ -141,7 +141,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 										Reset Order
 									</Button>
 								</Box>
-								<Container sessionId={params.sessionid} />
+								<Container />
 							</Box>)
 						}
 					</Box>
