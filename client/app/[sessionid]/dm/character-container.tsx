@@ -9,16 +9,16 @@ import { AddCharacterDialog } from './add-creature/add-character-dialog'
 import { WebsocketContext } from '../../common/websocket-context'
 import { EventType } from '@/app/_apis/eventType'
 import { Box, Grid } from '@mui/material'
+import { SessionContext } from '@/app/common/session-context'
 
-export interface ContainerProps {
-	sessionId: string,
-}
+export interface ContainerProps {}
 
-export const Container: FC<ContainerProps> = ({ sessionId }) => {
+export const Container: FC<ContainerProps> = ({ }) => {
 	const [cards, setCards] = useState<Character[]>([]);
 	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
 	let lastJsonMessage = useContext(WebsocketContext);
+	let sessionId = useContext(SessionContext);
 
 	const cardsRef = useRef<Character[]>([]);
 

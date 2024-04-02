@@ -184,8 +184,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     } 
 
     function resetForm(){
-        generateInitiative(calculatedMonsterInfo!)
-        generateHp(calculatedMonsterInfo!);
+        generateInitiative(calculatedMonsterInfo)
+        generateHp(calculatedMonsterInfo);
         setName(monsterInfo!.name);
         //setMonster('')
         setConditions([]);
