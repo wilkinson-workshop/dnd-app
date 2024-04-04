@@ -60,8 +60,47 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
 
         monsters.current.push(monster);
         if(monsters.current.length == count){
+            differentiateDuplicateNames();
             onAddClick(monsters.current);
             resetForm();
+        }
+    }
+
+    function differentiateDuplicateNames(){
+        let counts: [string, number][] = [];
+
+        //get name counts
+        const names = monsters.current.map(c => c.name);
+        for(let n of names){
+            let value = counts.findIndex(c => c[0] == n);
+            if(value == -1){
+                counts.push([n, 1]);
+            } else {
+                counts[value][1] += 1;
+            }            
+        }
+
+        //find all names with duplicates
+        let namesWithDuplicates: string[] = [];
+        for(let n of counts){
+            if(n[1] > 1){
+                namesWithDuplicates.push(n[0]);
+            }
+        }
+
+        if(namesWithDuplicates.length == 0){
+            return;
+        }
+
+        //update name duplicates with incremental numbers
+        for(let n of namesWithDuplicates){
+            let currentNumber = 1;
+            for(let m of monsters.current){
+                if(m.name == n){
+                    m.name = `${m.name} ${currentNumber}`;
+                    currentNumber++;
+                }
+            }
         }
     }
 
@@ -106,7 +145,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
         return init + add;
     }
 
-    function generateHp(monsterInfo: Monster): number[] {
+    function generateHp(monsterInfo: Monster): [number, number] {
         const strValue = monsterInfo.hit_points_roll;
         if(strValue == ''){
             const hp = monsterInfo.hit_points;
