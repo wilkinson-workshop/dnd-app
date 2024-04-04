@@ -101,7 +101,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 						creature_id: EMPTY_GUID,
 						name: "All Players",
 						initiative: 0,
-						hit_points: [],
+						hit_points: [0, 0],
 						role: CharacterType.Player,
 						conditions: [],
 						monster: ''

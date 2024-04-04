@@ -5,6 +5,8 @@ const apiBaseUrl = `${baseUrl}/monsters`;
 
 export const CUSTOM_MONSTER_OPTION: APIReference = { index: 'custom', name: 'New Custom', url: ''};
 
+export const PLAYER_CHARACTER_OPTION: APIReference = { index: 'player-character', name: 'Player Character', url: ''};
+
 export const CUSTOM_MONSTER: Monster = {
   index: "custom",
   name: "Custom",
@@ -18,7 +20,7 @@ export const CUSTOM_MONSTER: Monster = {
       value: 12
     }
   ],
-  hit_points: 19,
+  hit_points: 100,
   hit_dice: "",
   hit_points_roll: "",
   speed: {
