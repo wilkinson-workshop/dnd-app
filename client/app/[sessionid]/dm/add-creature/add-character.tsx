@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-import { CUSTOM_MONSTER, PLAYER_CHARACTER_OPTION, getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { PLAYER_CHARACTER, PLAYER_CHARACTER_OPTION, getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
 import { SessionContext } from "../../../common/session-context";
 import { ConditionsContext } from "../../../common/conditions-context";
 
@@ -88,8 +88,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         let getApi: Promise<Monster>;
         if(monsterId.startsWith('custom')){
             getApi = getCustomMonster(sessionId, monsterId)
-        }else if(monsterId == PLAYER_CHARACTER_OPTION.index) {
-            getApi = Promise.resolve(CUSTOM_MONSTER);
+        } else if(monsterId == PLAYER_CHARACTER_OPTION.index) {
+            getApi = Promise.resolve(PLAYER_CHARACTER);
         } else {
             getApi = getMonster(monsterId)
         }
@@ -191,9 +191,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         generateInitiative(calculatedMonsterInfo)
         generateHp(calculatedMonsterInfo);
         setName(monsterInfo!.name);
-        //setMonster('')
         setConditions([]);
-        //setMonsterInfo(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  
