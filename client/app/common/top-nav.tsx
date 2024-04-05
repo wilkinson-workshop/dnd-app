@@ -1,14 +1,13 @@
 import { FC, useContext, useEffect, useState } from "react";
-import { WebsocketContext } from "./websocket-context";
 import { SessionContext } from "./session-context";
 import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Button, Tooltip, MenuItem, Divider, Container, Link } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import { EventType } from "../_apis/eventType";
 import { useRouter } from "next/navigation";
 import { endSession, getSingleSession } from "../_apis/sessionApi";
 import { getName } from "../_apis/sessionStorage";
 import { Session } from "../_apis/session";
+import { EMPTY_GUID } from "../_apis/character";
 
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
@@ -30,14 +29,15 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 	const playerJoinUrl = `${baseUrl}/${sessionId}`;
 
 	useEffect(() => {
-		getCurrentSession();
-	}, []);
+		if(sessionId != EMPTY_GUID){
+			getCurrentSession();
+		}
+	}, [sessionId]);
 
 	const navigateDashboard = () => {
 		const dashboard = isDM ? 'dm' : 'player';
 		router.push(`${playerJoinUrl}/${dashboard}`);
 	}
-
 
 	const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorElNav(event.currentTarget);
@@ -149,7 +149,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 							{/*Nav Item */}
 						</Button>
 					</Box>
-					<Box sx={{ flexGrow: 0 }}>
+					{sessionId == EMPTY_GUID ? '' : (<Box sx={{ flexGrow: 0 }}>
 						<Typography sx={{ display: 'inline-block', fontWeight: 'bold', pr: 1, fontSize: '1em' }}>
 							{getName()}
 						</Typography>
@@ -197,7 +197,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 									</Link>
 								</MenuItem>) : ''}
 						</Menu>
-					</Box>
+					</Box>)}
 				</Toolbar>
 			</Container>
 		</AppBar>

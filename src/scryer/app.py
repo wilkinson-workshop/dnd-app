@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Project level modules go here.
 from scryer.creatures import CharacterV2, MutlipleCharactersV2
+from scryer.creatures.attrs import Role
 from scryer.services import (
     Action,
     Broker,
@@ -39,6 +40,7 @@ from scryer.services import (
 from scryer.util import events, request_uuid, UUID
 from scryer.util.events import *
 from scryer.util.events import NewCurrentOrder
+from scryer.util.filters import FilterStatement, LogicalOp
 from scryer.util.monster import CustomMonster
 from scryer.util.session_group import SessionGroup, SessionGroupApi
 
@@ -365,6 +367,32 @@ async def characters_push(
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody())
 
+@APP_ROUTERS["character"].delete("/{session_uuid}/all")
+async def characters_kill(session_uuid: UUID):
+    """Delete the specified character."""
+
+    statement: FilterStatement = {
+        'filters': [{ 
+            'field': 'role', 
+            'operator': LogicalOp.EQ, 
+            'value': Role.NON_PLAYER   
+        }], 
+        'logic': LogicalOp.AND }
+
+    session: CombatSession
+    _, session = (await _sessions_find(session_uuid))[0]
+
+    session.set_current_character(None)
+
+    for _, c in await session.characters.locate(statement=statement):
+        await session.characters.delete(c.creature_uuid)
+
+    await _broadcast_session_event(
+        session_uuid,
+        events.ReceiveOrderUpdate, #type: ignore
+        body=events.EventBody())     
+
+
 
 @APP_ROUTERS["character"].delete("/{session_uuid}/{character_uuid}")
 async def characters_kill(session_uuid: UUID, character_uuid: UUID):
@@ -398,7 +426,6 @@ async def characters_kill(session_uuid: UUID, character_uuid: UUID):
         session_uuid,
         events.ReceiveOrderUpdate, #type: ignore
         body=events.EventBody()) 
-
 
 @APP_ROUTERS["group"].get("/{session_uuid}", description="Get all session groups.")
 #@APP_ROUTERS["group"].get("/{session_uuid}/{group_uuid}", description="Get a specific, session group.")

@@ -2,7 +2,7 @@ export interface Character {
     creature_id: string,
     name: string,
     initiative: number,
-    hit_points: number[],
+    hit_points: [number, number],
     role: CharacterType,
     conditions: string[],
     monster: string | null

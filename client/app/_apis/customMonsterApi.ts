@@ -5,6 +5,8 @@ const apiBaseUrl = `${baseUrl}/monsters`;
 
 export const CUSTOM_MONSTER_OPTION: APIReference = { index: 'custom', name: 'New Custom', url: ''};
 
+export const PLAYER_CHARACTER_OPTION: APIReference = { index: 'player-character', name: 'Player Character', url: ''};
+
 export const CUSTOM_MONSTER: Monster = {
   index: "custom",
   name: "Custom",
@@ -18,7 +20,56 @@ export const CUSTOM_MONSTER: Monster = {
       value: 12
     }
   ],
-  hit_points: 19,
+  hit_points: 20,
+  hit_dice: "",
+  hit_points_roll: "",
+  speed: {
+    walk: "20 ft.",
+  },
+  strength: 10,
+  dexterity: 10,
+  constitution: 10,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 10,
+  proficiencies: [],
+  damage_vulnerabilities: [],
+  damage_resistances: [],
+  damage_immunities: [],
+  condition_immunities: [],
+  senses: {
+    passive_perception: 10
+  },
+  languages: "",
+  challenge_rating: 0,
+  proficiency_bonus: 0,
+  xp: 0,
+  special_abilities: [],
+  bonus_actions: [],
+  actions: [],
+  //image:,
+  url: "",
+  legendary_actions: [],
+  desc: [],
+  subtype: "",
+  forms: [],
+  reactions: []
+}
+
+export const PLAYER_CHARACTER: Monster = {
+  index: "player-character",
+  name: "Player Character",
+  size: "Medium",
+  type: "humanoid",
+  alignment: "neutral",
+  armor_class: [
+    {
+      type: "natural",
+      desc: '',
+      value: 12
+    }
+  ],
+  hit_points: 100,
   hit_dice: "",
   hit_points_roll: "",
   speed: {

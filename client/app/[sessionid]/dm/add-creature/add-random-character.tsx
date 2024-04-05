@@ -3,7 +3,7 @@ import { Character, CharacterType, EMPTY_GUID } from "../../../_apis/character";
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField } from "@mui/material";
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { PLAYER_CHARACTER, PLAYER_CHARACTER_OPTION, getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
 import { SessionContext } from "../../../common/session-context";
 import { ConditionsContext } from "../../../common/conditions-context";
 
@@ -31,7 +31,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     function getMonsterOptions(){
         Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
-            setMonsterOptions([...m[0].results, ...m[1]]);
+            setMonsterOptions([...m[0].results, ...m[1], PLAYER_CHARACTER_OPTION]);
         });
     }
 
@@ -39,6 +39,8 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
         let getApi: Promise<Monster>;
         if(monsterId.startsWith('custom')){
             getApi = getCustomMonster(sessionId, monsterId)
+        } else if(monsterId == PLAYER_CHARACTER_OPTION.index) {
+            getApi = Promise.resolve(PLAYER_CHARACTER);
         } else {
             getApi = getMonster(monsterId)
         }
@@ -48,20 +50,61 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
     }
 
     function generateMonster(monsterInfo: Monster) {
+        const isPC = monsterInfo.index == PLAYER_CHARACTER_OPTION.index;
+
         const monster = {
             creature_id: EMPTY_GUID,
             initiative: generateInitiative(monsterInfo),
             name: monsterInfo.name, 
             hit_points: generateHp(monsterInfo),
             conditions: conditions ? [generateCondition()]: [],
-            role: CharacterType.NonPlayer,
-            monster: monsterInfo.index
+            role: isPC ? CharacterType.Player : CharacterType.NonPlayer,
+            monster: isPC ? null : monsterInfo.index
         };
 
         monsters.current.push(monster);
         if(monsters.current.length == count){
+            differentiateDuplicateNames();
             onAddClick(monsters.current);
             resetForm();
+        }
+    }
+
+    function differentiateDuplicateNames(){
+        let counts: [string, number][] = [];
+
+        //get name counts
+        const names = monsters.current.map(c => c.name);
+        for(let n of names){
+            let value = counts.findIndex(c => c[0] == n);
+            if(value == -1){
+                counts.push([n, 1]);
+            } else {
+                counts[value][1] += 1;
+            }            
+        }
+
+        //find all names with duplicates
+        let namesWithDuplicates: string[] = [];
+        for(let n of counts){
+            if(n[1] > 1){
+                namesWithDuplicates.push(n[0]);
+            }
+        }
+
+        if(namesWithDuplicates.length == 0){
+            return;
+        }
+
+        //update name duplicates with incremental numbers
+        for(let n of namesWithDuplicates){
+            let currentNumber = 1;
+            for(let m of monsters.current){
+                if(m.name == n){
+                    m.name = `${m.name} ${currentNumber}`;
+                    currentNumber++;
+                }
+            }
         }
     }
 
@@ -106,7 +149,7 @@ export const AddRandomCharacter:FC<AddRandomCharacterProps> = ({onAddClick}) => 
         return init + add;
     }
 
-    function generateHp(monsterInfo: Monster): number[] {
+    function generateHp(monsterInfo: Monster): [number, number] {
         const strValue = monsterInfo.hit_points_roll;
         if(strValue == ''){
             const hp = monsterInfo.hit_points;

@@ -8,7 +8,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { APIReference, Monster } from "@/app/_apis/dnd5eTypings";
 import { getAllMonsters, getMonster } from "@/app/_apis/dnd5eApi";
-import { getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import { PLAYER_CHARACTER, PLAYER_CHARACTER_OPTION, getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
 import { SessionContext } from "../../../common/session-context";
 import { ConditionsContext } from "../../../common/conditions-context";
 
@@ -80,7 +80,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
     function getMonsterOptions(){
         Promise.all([getAllMonsters([]), getCustomMonsters(sessionId)])        
         .then(m => {
-            setMonsterOptions([...m[0].results, ...m[1]]);
+            setMonsterOptions([...m[0].results, ...m[1], PLAYER_CHARACTER_OPTION]);
         });
     }
 
@@ -88,6 +88,8 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         let getApi: Promise<Monster>;
         if(monsterId.startsWith('custom')){
             getApi = getCustomMonster(sessionId, monsterId)
+        } else if(monsterId == PLAYER_CHARACTER_OPTION.index) {
+            getApi = Promise.resolve(PLAYER_CHARACTER);
         } else {
             getApi = getMonster(monsterId)
         }
@@ -118,14 +120,16 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
 
         const newInit = Number.parseFloat(initiative ? initiative : '0')
 
+        const isPC = monster.index == PLAYER_CHARACTER_OPTION.index;
+
         onAddClick({
             creature_id: EMPTY_GUID,
             initiative: newInit,
             name: name, 
             hit_points: [currentHp, maxHp],
             conditions: conditions,
-            role: CharacterType.NonPlayer,
-            monster: monsterInfo!.index
+            role:  isPC ? CharacterType.Player : CharacterType.NonPlayer,
+            monster: isPC ? null : monsterInfo!.index
         });
         resetForm();
     }
@@ -145,7 +149,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         setInitiative((init + add).toString());
     }
 
-    function calculateHp(monsterInfo: Monster): number[] {
+    function calculateHp(monsterInfo: Monster): [number, number, number] {
         const strValue = monsterInfo.hit_points_roll;
         if(strValue == ''){
             const hp = monsterInfo.hit_points;
@@ -187,9 +191,7 @@ export const AddCharacter:FC<AddCharacterProps> = ({onAddClick}) => {
         generateInitiative(calculatedMonsterInfo)
         generateHp(calculatedMonsterInfo);
         setName(monsterInfo!.name);
-        //setMonster('')
         setConditions([]);
-        //setMonsterInfo(null);
     }
 
     const handleChange = (event: SelectChangeEvent<typeof conditions>) => {  

@@ -11,7 +11,7 @@ import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorTyp
 import { EventType, SubscriptionEventType, WebsocketEvent } from '@/app/_apis/eventType';
 import { PlayerInputList } from './player-input-list';
 import { RequestPlayerInput } from './request-player-input';
-import { getCharacters } from '@/app/_apis/characterApi';
+import { deleteAllMonsters, getCharacters } from '@/app/_apis/characterApi';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
 import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
@@ -101,7 +101,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 						creature_id: EMPTY_GUID,
 						name: "All Players",
 						initiative: 0,
-						hit_points: [],
+						hit_points: [0, 0],
 						role: CharacterType.Player,
 						conditions: [],
 						monster: ''
@@ -123,6 +123,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 			.then();
 	}
 
+	function handleClearField(){
+		deleteAllMonsters(params.sessionid)
+		.then();
+	}
+
 	return (<>
 		<WebsocketContext.Provider value={lastJsonMessage}>
 			<ConditionsContext.Provider value={conditions}>
@@ -139,6 +144,9 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 									<PlayerInputList playerInputs={inputs} />
 									<Button variant="contained" aria-label="end session" onClick={handleResetInitiative}>
 										Reset Order
+									</Button>
+									<Button variant="contained" aria-label="end session" onClick={handleClearField}>
+										Clear Monsters
 									</Button>
 								</Box>
 								<Container />

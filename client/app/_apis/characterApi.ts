@@ -93,3 +93,18 @@ export async function deleteCharacter(sessionId: string, id:string) {
   
   return res.json()
 } 
+
+export async function deleteAllMonsters(sessionId: string) {
+  const res = await fetch(`${apiBaseUrl}/${sessionId}/all`, {
+    method: 'DELETE',
+    headers:{
+      'Content-Type': 'application/json',
+    } 
+  });
+  
+  if (!res.ok) {
+    throw new Error('Failed to fetch data')
+  }
+  
+  return res.json()
+} 

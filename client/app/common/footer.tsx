@@ -56,7 +56,8 @@ export const Footer: FC<FooterProps> = ({ }) => {
 					withAll.push({
 						creature_id: EMPTY_GUID,
 						name: "All Players",
-						initiative: 0, hit_points: [],
+						initiative: 0, 
+						hit_points: [0,0],
 						role: CharacterType.Player,
 						conditions: [],
 						monster: ''
