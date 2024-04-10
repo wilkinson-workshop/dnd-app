@@ -5,7 +5,7 @@ const baseUrl = process.env.NEXT_PUBLIC_API_BASEURL;
 const apiBaseUrl = `${baseUrl}/sessions`;
 
 export async function getSessions(): Promise<Session[]> {
-  const res = await fetch(apiBaseUrl, {
+  const res = await fetch(`${apiBaseUrl}/`, {
     headers:{
       'Content-Type': 'application/json',
     } 
