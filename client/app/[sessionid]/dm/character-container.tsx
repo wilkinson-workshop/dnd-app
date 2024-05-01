@@ -1,99 +1,133 @@
-import update from 'immutability-helper'
 import type { FC } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Card } from './character-card'
 import { Character, LogicType } from '@/app/_apis/character'
-import { addCharacter, deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
-import { AddCharacter } from './add-character'
-import { Button } from '@mui/material'
+import { deleteCharacter, getCharacters, saveCharacter } from '@/app/_apis/characterApi'
+import { EditCharacter } from './edit-character';
+import { updateInitiativeTop } from '@/app/_apis/sessionApi'
+import { AddCharacterDialog } from './add-creature/add-character-dialog'
+import { WebsocketContext } from '../../common/websocket-context'
+import { EventType } from '@/app/_apis/eventType'
+import { Box, Grid } from '@mui/material'
+import { SessionContext } from '@/app/common/session-context'
 
-const style = {
-    minHeight: '30px',
-    border: '#ebebeb solid 1px',
-    margin: '10px 0'
-}
+export interface ContainerProps {}
 
-export interface ContainerState {
-  cards: Character[]
-}
+export const Container: FC<ContainerProps> = ({ }) => {
+	const [cards, setCards] = useState<Character[]>([]);
+	const [characterEdit, setCharacterEdit] = useState<Character | null>(null);
 
-export interface ContainerProps{
-  sessionId: string, 
-  reload: boolean
-  reloadDone: () => void
-}
+	let lastJsonMessage = useContext(WebsocketContext);
+	let sessionId = useContext(SessionContext);
 
-export const Container: FC<ContainerProps> = ({sessionId, reload, reloadDone}) => {
+	const cardsRef = useRef<Character[]>([]);
 
-  const [cards, setCards] = useState<Character[] | null>(null);
+	cardsRef.current = cards;
 
-  if(cards == null  || reload){
-    reloadDone();
-    reloadList();    
-  }
+	useEffect(() => {
+		reloadList();
+	}, []);
 
-  const moveCard = useCallback((dragIndex: number, hoverIndex: number) => {
-    setCards((prevCards: Character[] | null) =>
-      update(prevCards, {
-        $splice: [
-          [dragIndex, 1],
-          [hoverIndex, 0, prevCards![dragIndex] as Character],
-        ],
-      }),
-    )
-  }, [])
+	useEffect(() => {
+		if (lastJsonMessage !== null) {
+			switch (lastJsonMessage.event_type) {
+				case EventType.ReceiveOrderUpdate: {
+					reloadList();
+					return;
+				}
+			}
+		}
+	}, [lastJsonMessage]);
 
-  function onDelete(npcId: string){
-    deleteCharacter(sessionId, npcId)
-    .then(_ => reloadList());
-  }
+	function markDone() {
+		updateCurrentInOrder(cardsRef.current[1]);
+	}
 
-  function updateCharacter(character: Character){
-    if(character.hit_points[0] == 0 ){
-      onDelete(character.creature_id);
-    } else {
-      saveCharacter(sessionId, character)
-      .then(_ => reloadList());
-    }
-  }
+	function updateCurrentInOrder(character: Character) {
+		updateInitiativeTop(sessionId, character.creature_id)
+			.then(_ => reloadList());
+	}
 
-  function reloadList(){
-    getCharacters(sessionId, {filters: [], logic: LogicType.Or})
-    .then(c => {
-      setCards(c);
-    });
-  }
+	function onDelete(character: Character) {
+		deleteCharacter(sessionId, character.creature_id)
+			.then(_ => reloadList());
+	}
 
-  function handleAddCharacter(character: Character){
-    addCharacter(sessionId, character)
-    .then(_ => reloadList());
-  }
+	function updateCharacter(character: Character) {
+		saveCharacter(sessionId, character)
+			.then(_ => reloadList());
+	}
 
-  const renderCard = useCallback(
-    (card: Character, index: number) => {
-      return (
-        <Card
-          key={card.creature_id}
-          index={index}
-          character={card}
-          moveCard={moveCard}
-          updateCharacter={updateCharacter}
-        />
-      )
-    },
-    [],
-  )
+	function reloadList() {
+		getCharacters(sessionId, { filters: [], logic: LogicType.Or })
+			.then(c => {
+				setCharacterEdit(null);
+				setCards(c);
+			});
+	}
 
-  return (
-    <>
-      <div style={style}>{cards && cards.length > 0 ?
-        cards.map((card, i) => renderCard(card, i)):
-        (
-          <div style={{display:"inline-block", padding: "5px"}}>Please add Characters</div>
-        )        
-      }
-      </div>        
-      <AddCharacter onAddClick={handleAddCharacter} />         
-    </>
-  )
+	const renderCard = useCallback(
+		(card: Character, index: number) => {
+			return (
+				<Card
+					key={card.creature_id}
+					index={index}
+					character={card}
+					updateCharacter={updateCharacter}
+					markDone={markDone}
+					updateCharacterButton={(c: Character) => setCharacterEdit(c)}
+					deleteCharacter={onDelete}
+				/>
+			)
+		},
+		[],
+	)
+
+	return (
+		<>
+			<AddCharacterDialog />
+			<Box sx={{ minHeight: '30px', m: '10px 0' }}>
+				<Box sx={{ fontSize: "14px" }}>
+					<Grid container spacing={2}>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">
+								Initiative
+							</Box>
+						</Grid>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">
+								AC
+							</Box>
+						</Grid>
+						<Grid item xs={5} sm={3}>
+							<Box className="item">
+								Name
+							</Box>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Box className="item">
+								HP
+							</Box>
+						</Grid>
+						<Grid item xs={8} sm={2}>
+							<Box className="item">
+								Condtitions
+							</Box>
+						</Grid>
+						<Grid item xs={4} sm={2}>
+							<Box className="item" sx={{ textAlign: "right" }}>
+								Actions
+							</Box>
+						</Grid>
+					</Grid>
+				</Box>
+				{cards && cards.length > 0 ?
+					cards.map((card, i) => renderCard(card, i))
+					:
+					(<Box sx={{ textAlign: 'center', fontSize: '20px', border: '#ebebeb solid 1px', padding: '5px' }}>No Creatures</Box>)
+				}
+			</Box>
+			<EditCharacter existingCharacter={characterEdit} onSaveClick={updateCharacter} onCancelClick={() => setCharacterEdit(null)} />
+		</>
+	)
 }

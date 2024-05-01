@@ -17,7 +17,6 @@ function LinearProgressWithLabel(props: LinearProgressProps & { value: number, t
             props.text}</Typography>
         </Box>
       </Box>
-
     </Box>
   );
 }
@@ -27,7 +26,7 @@ export default function LinearWithValueLabel(props: LinearProgressProps & { valu
   
   return (
     <Box sx={{ width: '100%' }}>
-      <LinearProgressWithLabel color={percent < 10 ? 'error': 'primary'} text={`${props.value}/${props.maxValue}`} value={percent } />
+      <LinearProgressWithLabel color={percent < 10 ? 'error':  percent < 50 ? 'warning': 'primary'} text={`${props.value}/${props.maxValue}`} value={percent } />
     </Box>
   );
 }

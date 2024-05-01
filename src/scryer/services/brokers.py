@@ -1,8 +1,10 @@
-import abc, math, typing
+import abc, asyncio, math, time, typing
+
+import redis
 
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import shelves
-from scryer.util.filters import FilterStatement, FilterValidator, compose_validator
+from scryer.util.filters import FilterStatement, compose_validator
 
 type LocatedPair[K, R] = tuple[K, R]
 type Located[K, R] = typing.Sequence[LocatedPair[K, R]]
@@ -17,18 +19,18 @@ class Broker[K, R](Service):
     """
 
     @abc.abstractmethod
-    def create(self) -> tuple[K, R]:
+    async def create(self) -> tuple[K, R]:
         """Create a new resource instance."""
     @abc.abstractmethod
-    def delete(self, key: R) -> None:
+    async def delete(self, key: K) -> None:
         """
         Delete a resource related to the key.
         """
     @abc.abstractmethod
-    def locate(
+    async def locate(
             self,
             *keys: K,
-            statement: FilterStatement | None) -> Located[K, R]:
+            statement: FilterStatement | None = None) -> Located[K, R]:
         """
         Attempt to find resources that are related
         to the given keys.
@@ -41,14 +43,14 @@ class Broker[K, R](Service):
     # implementend by lower objects.
     @typing.overload
     @abc.abstractmethod
-    def modify(self, key: K, **kwds) -> None:
+    async def modify(self, key: K, **kwds) -> None:
         pass
     @typing.overload
     @abc.abstractmethod
-    def modify(self, key: K, resource: R) -> None:
+    async def modify(self, key: K, resource: R) -> None:
         pass
     @abc.abstractmethod
-    def modify(self, key: K, *args, **kwds) -> None:
+    async def modify(self, key: K, *args, **kwds) -> None:
         """
         Push changes to an existing resource.
         """
@@ -73,7 +75,7 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
 
     @property
     def _capacity_delta(self):
-        return self.resource_map_capacity - len(self.resource_map)
+        return self.resource_map_capacity - len(self.resource_map) #type: ignore
 
     @property
     def status(self):
@@ -81,9 +83,9 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
             return ServiceStatus.ONLINE
         else:
             return ServiceStatus.BUSY
-        
+
     async def delete(self, key: K):
-        self.resource_map.pop(key)
+        self.resource_map.pop(key, None)
 
     async def locate(
             self,
@@ -91,7 +93,71 @@ class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):
             statement: FilterStatement | None = None) -> Located[K, R]:
 
         locator = lambda key: self.resource_map.get(key, None)
-        return _locate_any(locator, keys or self.resource_map.keys(), statement)
+        return _locate_any(
+            locator,
+            keys or self.resource_map.keys(), #type: ignore
+            statement)
+
+    async def modify(self, key: K, resource: R) -> None:
+        self.resource_map[key] = resource
+
+    async def wait_ready(self, timeout: float | None = None) -> bool:
+        """
+        Wait until this broker is ready to accept
+        an entry.
+        """
+
+        start = time.monotonic()
+        while self.status is ServiceStatus.BUSY:
+            await asyncio.sleep(0.1)
+            if timeout and timeout <= (time.monotonic() - start):
+                return False
+        return True
+
+
+class RedisBroker[K, R](Broker[K, R]):
+    """
+    A partial implementation of a broker which
+    interacts with a `Redis` server.
+    """
+
+    resource_cls: type[R]
+    redis_client: redis.Redis
+
+    def __init__(self, cls: type[R], url: str, **kwds):
+        """
+        Initialize a `RedisBroker` instance from
+        a `URL` connection string. By default,
+        this implementation decodes responses from
+        the server into Python native strings
+        instead of bytes.
+        """
+
+        self.resource_cls = cls
+        self.redis_client = redis.Redis.from_url( #type: ignore
+            url,
+            decode_responses=True,
+            **kwds)
+
+    @property
+    def status(self):
+        available = self.redis_client.ping()
+        return ServiceStatus.ONLINE if available else ServiceStatus.UNAVAILABLE
+
+    async def delete(self, key: str):
+        self.redis_client.delete(key)
+
+    async def locate(
+        self,
+        *keys: K,
+        statement: FilterStatement | None = None) -> Located[K, R]:
+
+        locator = lambda key: self.redis_client.get(key)
+        rkeys   = self.redis_client.keys("|".join(map(str, keys)) if keys else "*")
+        return _locate_any( #type: ignore
+            locator,
+            rkeys, #type: ignore
+            statement)
 
 
 class ShelfBroker[R](Broker[str, R]):
@@ -136,9 +202,12 @@ class ShelfBroker[R](Broker[str, R]):
         *keys: str,
         statement: FilterStatement | None = None) -> Located[str, R]:
 
-        locator = lambda key: self.resource_map.get(str(key), None)
+        locator = lambda key: self.shelf.get(str(key), None)
         with self as _:
-            return _locate_any(locator, keys or self.shelf.keys(), statement)
+            return _locate_any(
+                locator,
+                keys or self.shelf.keys(), #type: ignore
+                statement)
 
 
 def _locate_any[K: typing.Hashable, R](
@@ -152,4 +221,4 @@ def _locate_any[K: typing.Hashable, R](
 
     isvalid = compose_validator(statement) if statement else (lambda _: True)
     pred    = lambda found: found[1] is not None and isvalid(found[1])
-    return tuple(filter(pred, ((k, locator(k)) for k in keys)))
+    return tuple(filter(pred, ((k, locator(k)) for k in keys))) #type: ignore

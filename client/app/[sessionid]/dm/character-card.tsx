@@ -1,139 +1,173 @@
-import type { Identifier, XYCoord } from 'dnd-core'
 import type { FC } from 'react'
-import { useRef } from 'react'
-import { useDrag, useDrop } from 'react-dnd'
-import { ItemTypes } from './item-types'
-import { Character } from '@/app/_apis/character'
+import { memo, useContext, useEffect, useState } from 'react'
+import { Character, CharacterType } from '@/app/_apis/character'
 import { CharacterHp } from './character-hp'
-import { CharacterConditions } from './characer-conditions'
-import { Box, Grid, IconButton, styled } from "@mui/material";
+import { CharacterConditions } from './character-conditions'
+import { Box, Button, Grid, IconButton, styled } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete'
-import { CharacterInitiative } from './character-initiative'
+import EditIcon from '@mui/icons-material/Edit';
+import InfoIcon from '@mui/icons-material/Info';
+import { getMonster } from '@/app/_apis/dnd5eApi';
+import { CUSTOM_MONSTER, getCustomMonster } from '@/app/_apis/customMonsterApi';
+import { ArmorAC, ArmorClass, ConditionAC, Monster, SpellAC } from '@/app/_apis/dnd5eTypings'
+import { MonsterInfoDialog } from './monster-dialog'
+import { ResponseDialog, ResponseDialogInfo } from '@/app/common/response-dialog'
+import { SessionContext } from '../../common/session-context'
 
 const style = {
-  border: '1px solid lightgray',
-  //padding: '0.5rem 1rem',
-  cursor: 'move',
+	border: '1px solid lightgray',
 }
 
 export interface CardProps {
-  character: Character
-  index: number
-  moveCard: (dragIndex: number, hoverIndex: number) => void
-  updateCharacter: (character: Character) => void
+	character: Character,
+	index: number,
+	markDone: () => void,
+	updateCharacter: (character: Character) => void,
+	updateCharacterButton: (character: Character) => void,
+	deleteCharacter: (character: Character) => void
 }
 
-interface DragItem {
-  index: number
-  id: string
-  type: string
-}
+export const Card: FC<CardProps> = memo(function Card({ character, index, markDone, updateCharacter, updateCharacterButton, deleteCharacter }) {
+	const [monsterInfo, setMonsterInfo] = useState<Monster>(CUSTOM_MONSTER);
+	const [isMonsterInfoOpen, setIsMonsterInfoOpen] = useState(false);
+	const [isResponseDialogOpen, setIsResponseDialogOpen] = useState(false);
+	const [responseDialogInfo, setResponseDialogInfo] = useState<ResponseDialogInfo>({title: 'Delete', message: []});
 
-export const Card: FC<CardProps> = ({ character, index, moveCard, updateCharacter }) => {
-  const ref = useRef<HTMLDivElement>(null)
-  const [{ handlerId }, drop] = useDrop<
-    DragItem,
-    void,
-    { handlerId: Identifier | null }
-  >({
-    accept: ItemTypes.CARD,
-    collect(monitor) {
-      return {
-        handlerId: monitor.getHandlerId(),
-      }
-    },
-    hover(item: DragItem, monitor) {
-      if (!ref.current) {
-        return
-      }
-      const dragIndex = item.index
-      const hoverIndex = index
+	let sessionId = useContext(SessionContext);
 
-      // Don't replace items with themselves
-      if (dragIndex === hoverIndex) {
-        return
-      }
+	useEffect(() => {
+		if(character.role == CharacterType.NonPlayer){
+			getMonsterInfo(character.monster!);
+		}
+	}, [])
 
-      // Determine rectangle on screen
-      const hoverBoundingRect = ref.current?.getBoundingClientRect()
+	function handleDelete(){
+		//extra caution deleting PC or creatures with hp left
+		if (character.hit_points[0] != 0 || character.role == CharacterType.Player) {
+			let message = [`Are you sure you want to delete ${character.name}? `];
+			if(character.hit_points[0] != 0){
+				message.push(`${character.name} still has hp left.`);
+			}
 
-      // Get vertical middle
-      const hoverMiddleY =
-        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+			if(character.role == CharacterType.Player){
+				message.push(`${character.name} is a player character.`);
+			}
 
-      // Determine mouse position
-      const clientOffset = monitor.getClientOffset()
+			setResponseDialogInfo({title: responseDialogInfo.title, message: message});
 
-      // Get pixels to the top
-      const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top
+			setIsResponseDialogOpen(true);
+		} else {
+			deleteCharacter(character);	
+		}			
+	}
 
-      // Only perform the move when the mouse has crossed half of the items height
-      // When dragging downwards, only move when the cursor is below 50%
-      // When dragging upwards, only move when the cursor is above 50%
+	function getMonsterInfo(monsterId: string) {
+		let getApi: Promise<Monster>;
+		if(monsterId.startsWith('custom')){
+			getApi = getCustomMonster(sessionId, monsterId)
+		} else {
+			getApi = getMonster(monsterId)
+		}
 
-      // Dragging downwards
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-        return
-      }
+		getApi
+		.then(m => {
+			setMonsterInfo(m);
+		});
+	}
 
-      // Dragging upwards
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-        return
-      }
+	const handleMonsterDialogClose = () => {
+		setIsMonsterInfoOpen(false);
+	};
 
-      // Time to actually perform the action
-      moveCard(dragIndex, hoverIndex)
+	const handleResponseDialogClose = (isYes: boolean) => {
+		setIsResponseDialogOpen(false);
+		if(isYes){
+			deleteCharacter(character);
+		}
+	}
 
-      // Note: we're mutating the monitor item here!
-      // Generally it's better to avoid mutations,
-      // but it's good here for the sake of performance
-      // to avoid expensive index searches.
-      item.index = hoverIndex
-    },
-  })
+	function showAC(ac: ArmorClass): string {
+		switch (ac.type) {
+			case 'armor': {
+				const armor = ac as ArmorAC
+				if (armor.armor) {
+					return `${armor.value}`;
+				} else {
+					return `${armor.value}`
+				}
+			}
+			case 'spell': {
+				const spell = ac as SpellAC
+				return `${spell.value}`;
+			}
+			case 'condition': {
+				const con = ac as ConditionAC
+				return `${con.value}`;
+			}
+			default: return `${ac.value}`
+		}
+	}
 
-  const [{ isDragging }, drag] = useDrag({
-    type: ItemTypes.CARD,
-    item: () => {
-      return { character, index }
-    },
-    collect: (monitor: any) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  })
-
-  const Item = styled(Box)(({ theme }) => ({
-    padding: theme.spacing(1),  
-  })); 
-  
-
-  const opacity = isDragging ? 0 : 1
-  drag(drop(ref))
-  return (
-    <div ref={ref} style={{ ...style, opacity }} data-handler-id={handlerId}>
-      <Box>
-        <Grid container spacing={2}>
-          <Grid item xs={1}>
-            <Item><CharacterInitiative character={character} updateCharacter={updateCharacter} /></Item>
-          </Grid>
-          <Grid item xs={2}>
-            <Item>{character.name}</Item>
-          </Grid>
-          <Grid item xs={3}>
-            <Item><CharacterHp character={character} updateCharacter={updateCharacter} /></Item>
-          </Grid>
-          <Grid item xs={5}>
-            <Item><CharacterConditions character={character} updateCharacter={updateCharacter}/></Item>
-          </Grid>
-          <Grid item xs={1}>
-            <Item>            
-              <IconButton aria-label="delete" onClick={() => updateCharacter({...character, hit_points:[0, character.hit_points[1]]})}>
-                  <DeleteIcon />
-              </IconButton>
-            </Item> 
-          </Grid>
-        </Grid>
-      </Box>
-    </div>
-  )
-}
+	return (
+		<>
+			<MonsterInfoDialog
+				open={isMonsterInfoOpen}
+				monsterInfo={monsterInfo}
+				onClose={handleMonsterDialogClose}
+			/>
+			<ResponseDialog
+				open={isResponseDialogOpen}
+				info={responseDialogInfo}
+				onClose={handleResponseDialogClose}
+			/>
+			<div style={{ ...style }}>
+				<Box>
+					<Grid container spacing={2}>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">{character.initiative}</Box>
+						</Grid>
+						<Grid item xs={1} sm={1}>
+							<Box className="item">{showAC(monsterInfo.armor_class[0])}</Box>
+						</Grid>
+						<Grid item xs={5} sm={3}>
+							<Box className="item">
+								{character.name}
+								{
+									character.role == CharacterType.NonPlayer ?
+										(<IconButton aria-label="delete" onClick={() => setIsMonsterInfoOpen(true)}>
+											<InfoIcon />
+										</IconButton>) : ''
+								}
+							</Box>
+						</Grid>
+						<Grid item xs={6} sm={3}>
+							<Box className="item">
+								<CharacterHp character={character} />
+							</Box>
+						</Grid>
+						<Grid item xs={8} sm={2}>
+							<Box className="item">
+								<CharacterConditions character={character} updateCharacter={updateCharacter} />
+							</Box>
+						</Grid>
+						<Grid item xs={4} sm={2}>
+							<Box className="item" style={{ "textAlign": "right" }}>
+								<IconButton aria-label="edit" onClick={() => updateCharacterButton(character)}>
+									<EditIcon />
+								</IconButton>
+								<IconButton aria-label="delete" onClick={handleDelete}>
+									<DeleteIcon />
+								</IconButton>
+							</Box>
+						</Grid>
+					</Grid>
+				</Box>
+				{index == 0 ? 
+				(<Box>
+					<Button fullWidth aria-label="done" variant='contained' color='primary' onClick={() => markDone()}>
+						Next Character
+					</Button>
+				</Box>): ''}
+			</div>
+		</>);
+})

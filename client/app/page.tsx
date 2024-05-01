@@ -1,71 +1,49 @@
 'use client'
 
-import { createSession, getSessions } from "./_apis/sessionApi";
 import { useEffect, useState } from "react";
-import { Button, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { Box, Button, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
 
+import { TopNav } from "./common/top-nav";
+import { getSessions, getSingleSession } from "./_apis/sessionApi";
+
 export default function HomePage() {
-  const [session, setSession] = useState<string>('');
-  const [sessionOptions, setSessionOptions] = useState<string[]>([]);
+  const [selectedSession, setSelectedSession] = useState('');
+  const [isValid, setIsValid] = useState(false);
 
   const router = useRouter();
 
   useEffect(() => {
-    getAllSessions();
-  }, []);    
+    if(selectedSession.length == 36){
+      getCurrentSession();
+    } else {
+      setIsValid(false);
+    }
+  }, [selectedSession]);
 
-  function getAllSessions(){
-    getSessions()
-    .then(sessions => {
-      setSessionOptions(sessions);
-    });
+  function getCurrentSession() {
+		getSessions()
+			.then(sessions => {
+				if(sessions.length > 0 && sessions.findIndex(s => s.session_uuid == selectedSession) != -1){
+          setIsValid(true);
+        } else {
+          setIsValid(false);
+        }
+			});
+	}
+
+  function joinActiveSession(selectedSession: string) {
+    router.push(`/${selectedSession}`);
   }
 
-  function joinActiveSession(selectedSession:string){
-    router.push(`/${selectedSession}/dm`);
-  }
-
-  function handleCreateSession(){
-    createSession()
-    .then(session => {
-      let newSessionOtions = sessionOptions.slice();
-      newSessionOtions.push(session);
-
-      setSessionOptions(newSessionOtions);
-      joinActiveSession(session);
-      setSession(session);
-    });
-  }
-
-  function handleChangeSession(event: SelectChangeEvent<typeof session>){
-    const {  
-      target: { value },  
-    } = event; 
-    setSession(value);
-  }
-
-  return ( 
-    <div>
-        <FormControl fullWidth>
-          <InputLabel id="session">Session</InputLabel>
-          <Select
-            labelId="session"
-            value={session}
-            label="Session"
-            onChange={handleChangeSession}
-          >
-            {sessionOptions.map(s =>  
-            <MenuItem key={s} value={s}>{s}</MenuItem>
-            )}
-          </Select>
-      </FormControl>
-      <Button variant="contained" aria-label="create session" onClick={() => joinActiveSession(session)}>
-        Join
+  return (<>
+    <TopNav isDM={false} />
+    <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto', textAlign: 'center' }}>
+      <TextField size="small" sx={{ width: 400 }} helperText="Session ID" value={selectedSession} variant="outlined" onChange={x => setSelectedSession(x.target.value)} />
+      <Button disabled={!isValid} variant="contained" aria-label="create session" onClick={() => joinActiveSession(selectedSession)}>
+        Continue
       </Button>
-      <Button variant="contained" aria-label="create session" onClick={handleCreateSession}>
-        Create Session
-      </Button>
-    </div>
-    );
+    </Box>
+  </>
+  );
 }

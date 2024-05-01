@@ -2,7 +2,7 @@ import abc, typing
 
 from pydantic import ConfigDict, BaseModel, Field
 
-from scryer.creatures.attrs import Condition, HitPoints, Role
+from scryer.creatures.attrs import HitPoints, Role
 from scryer.util import UUID, request_uuid
 
 import typing
@@ -46,18 +46,20 @@ class CreatureModel(BaseModel):
     or non-playable character.
     """
 
+
 class CreatureV2(CreatureModel, Creature, metaclass=CreatureMeta):
     """
     Shortcut class to subclass from both
     `Creature` protocol and `CreatureModel` class.
     """
 
-    conditions:  list[int] # Change this to enum. 
+    conditions:  list[str]
     creature_id: UUID
     hit_points:  HitPoints
-    initiative:  int
+    initiative:  float
     name:        str | None = None
     role:        Role = Role.NON_PLAYER
+    monster:     str | None = None
 
     @property
     def creature_uuid(self):

@@ -103,7 +103,7 @@ def start(hostname: str, port: int, *, workers: int | None):
     """Starts the web server."""
 
     # TODO: implement startup for `client` app.
-    scryer_start_api(hostname, port, workers)
+    scryer_start_api(hostname, port, workers or 0)
 
 
 if __name__ == "__main__":
