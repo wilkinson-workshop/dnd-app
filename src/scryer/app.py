@@ -176,7 +176,7 @@ APP_SERIVCES: typing.Mapping[str, Service] = {
 app = FastAPI(
     root_path="/api/",
     title="Scryer",
-    version="1.0.0",
+    version="1.1.0",
     description="Interactive D&D combat companion REST API."
 )
 
