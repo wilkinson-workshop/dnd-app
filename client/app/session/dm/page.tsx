@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useReducer, useState } from 'react';
+import { useContext, useEffect, useReducer, useState } from 'react';
 import { getAllSessionInput, updateInitiativeTop } from "@/app/_apis/sessionApi";
 import { PlayerInput } from "@/app/_apis/playerInput";
 import { Container } from "./character-container";
@@ -14,7 +14,7 @@ import { RequestPlayerInput } from './request-player-input';
 import { deleteAllMonsters, getCharacters } from '@/app/_apis/characterApi';
 import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference } from '@/app/_apis/dnd5eTypings';
-import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
+import storage from '@/app/common/sessionStorage';
 import { WebsocketContext } from '../../common/websocket-context';
 import { CreatureGroups } from './groups/groups';
 import { SessionContext } from '../../common/session-context';
@@ -24,7 +24,7 @@ import { TopNav } from '@/app/common/top-nav';
 
 const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
 
-const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
+const DmDashboardPage = () => {
 
 	const [inputs, setInputs] = useState<PlayerInput[]>([]);
 	const [playerOptions, setPlayerOptions] = useState<Character[]>([]);
@@ -32,9 +32,11 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 	const [conditions, conditionsDispatch] = useReducer(setInitialConditions, []);
 
 	const router = useRouter();
+	const sessionId = storage().getItem("session")!;
+	const clientId  = storage().getItem("clientId")!;
 
 	const { sendMessage, sendJsonMessage, readyState, lastMessage, lastJsonMessage } =
-		useWebSocket<WebsocketEvent>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${params.sessionid}/ws`);
+		useWebSocket<WebsocketEvent>(`${process.env.NEXT_PUBLIC_WEBSOCKET_BASEURL}/sessions/${sessionId}/ws`);
 
 	function setInitialConditions(conditions: any[], updated: APIReference[]) {
 		return updated;
@@ -42,7 +44,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 
 	useEffect(() => {
 		loadPlayerOptions();
-		getConditionOptions();
+		getConditionOptions();		
 	}, []);
 
 	function getConditionOptions() {
@@ -67,20 +69,20 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 					return;
 				}
 				case EventType.JoinSession: {
-					setName("DM");
+					storage().setItem("player-name", "DM");
 					sendJsonMessage({
 						event_type: SubscriptionEventType.JoinSession,
 						event_body: {
-							session_uuid: params.sessionid,
+							session_uuid: sessionId,
 							role: CharacterType.DungeonMaster,
 							name: 'DM',
-							client_uuid: getClientId()
+							client_uuid: clientId
 						}
 					});
 				}
 				case EventType.ReceiveClientId: {
 					const body: any = lastJsonMessage.event_body;
-					setClientId(body["client_uuid"]);
+					storage().setItem("clientId", body["client_uuid"]);
 
 				}
 			}
@@ -93,7 +95,7 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 	}
 
 	function loadPlayerOptions() {
-		getCharacters(params.sessionid, { filters: [{ field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player }], logic: LogicType.And })
+		getCharacters(sessionId, { filters: [{ field: FieldType.Role, operator: OperatorType.Equals, value: CharacterType.Player }], logic: LogicType.And })
 			.then(c => {
 				const withAll: Character[] = [];
 				if (c && c.length) {
@@ -113,27 +115,27 @@ const DmDashboardPage = ({ params }: { params: { sessionid: string } }) => {
 	}
 
 	function handleGetPlayerInput() {
-		getAllSessionInput(params.sessionid)
+		getAllSessionInput(sessionId)
 			.then(si =>
 				setInputs(si.map(si => si.event_body)))
 	}
- 
+
 	function handleResetInitiative() {
-		updateInitiativeTop(params.sessionid, null)
+		updateInitiativeTop(sessionId, null)
 			.then();
 	}
 
-	function handleClearField(){
-		deleteAllMonsters(params.sessionid)
-		.then();
+	function handleClearField() {
+		deleteAllMonsters(sessionId)
+			.then();
 	}
 
 	return (<>
 		<WebsocketContext.Provider value={lastJsonMessage}>
 			<ConditionsContext.Provider value={conditions}>
-				<SessionContext.Provider value={params.sessionid}>
+				<SessionContext.Provider value={sessionId}>
 					<TopNav isDM={true} />
-					<Box sx={{position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto'}}>
+					<Box sx={{ position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto' }}>
 						{groupIsVisible ? (<CreatureGroups backToDashboard={() => setGroupIsVisible(false)} />) :
 							(<Box>
 								<Box>

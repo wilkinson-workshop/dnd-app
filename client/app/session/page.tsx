@@ -1,25 +1,31 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Box, Button, TextField, Switch, FormControl, FormControlLabel } from "@mui/material";
-import { useRouter } from "next/navigation";
-import { getName, setName } from "../_apis/sessionStorage";
+import { useRouter, useSearchParams } from "next/navigation";
+import storage from "../common/sessionStorage";
 import { OBSERVER_NAME } from "../_apis/character";
 
-const label = { inputProps: { 'aria-label': 'Switch demo' } };
-
-export default function PlayerPage({ params }: { params: { sessionid: string } }) {
+export default function PlayerPage() {
 	const [playerName, setPlayerName] = useState('');
 	const [isObserver, setIsObserver] = useState(false);
 
+	const name = storage().getItem("player-name")!;
+
 	useEffect(() => {
-		const exitingPlayerName = getName();
+		const exitingPlayerName = name;
 		if (exitingPlayerName) {
 			setPlayerName(exitingPlayerName);
 		}
 	})
 
 	const router = useRouter();
+
+	const searchParams = useSearchParams();
+	const sessionId = searchParams.get('sessionId');
+	if(sessionId){
+		storage().setItem("session", sessionId);
+	}
 
 	function handleIsObserver(event: React.ChangeEvent<HTMLInputElement>) {
 		const newValue = event.target.checked;
@@ -29,12 +35,11 @@ export default function PlayerPage({ params }: { params: { sessionid: string } }
 		} else {
 			setPlayerName('');
 		}
-
 	}
 
 	function handleJoinSubmit(e: any) {
-		setName(playerName);
-		router.push(`/${params.sessionid}/player`);
+		storage().setItem("player-name", playerName);
+		router.push('/session/player');
 	}
 
 	return (

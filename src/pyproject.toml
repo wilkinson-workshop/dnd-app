@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools", "isort", "mypy", "pytest", "twine", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    { name = "Keenan W. Wilkinson" },
+    { name = "Joshua Hoff" }
+]
+dependencies = [
+    "annotated-types==0.6.0",
+    "anyio==4.2.0",
+    "blinker==1.7.0",
+    "click==8.1.7",
+    "fastapi==0.109.0",
+    "h11==0.14.0",
+    "idna==3.6",
+    "itsdangerous==2.1.2",
+    "Jinja2==3.1.3",
+    "MarkupSafe==2.1.3",
+    "pydantic==2.5.3",
+    "pydantic_core==2.14.6",
+    "PyYAML==6.0.1",
+    "redis==5.0.1",
+    "sniffio==1.3.0",
+    "starlette==0.35.1",
+    "types-psutil==5.9.5.20240106",
+    "typing_extensions==4.9.0",
+    "uvicorn==0.25.0",
+    "websockets==12.0",
+    "Werkzeug==3.0.1",
+]
+name = "dnd-app"
+requires-python = ">=3.12"
+version = "1.0.0"
+
+[project.scripts]
+scryer = "scryer.cli:main"

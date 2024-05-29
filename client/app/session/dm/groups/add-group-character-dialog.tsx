@@ -7,7 +7,7 @@ import Dialog from '@mui/material/Dialog';
 import { FC, useContext, useState } from 'react';
 import { AddRandomCharacter } from '../add-creature/add-random-character';
 import { Character } from '@/app/_apis/character';
-import { AlertInfo, Alerts } from '../../alert/alerts';
+import { AlertInfo, Alerts } from '../../../common/alerts';
 import { AddCharacter } from '../add-creature/add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { addGroupCharacter, addGroupMultipleCharacter } from '@/app/_apis/sessionGroupApi';

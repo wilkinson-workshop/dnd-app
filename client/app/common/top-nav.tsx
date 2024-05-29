@@ -5,7 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { useRouter } from "next/navigation";
 import { endSession, getSingleSession } from "../_apis/sessionApi";
-import { getName } from "../_apis/sessionStorage";
+import storage from "./sessionStorage";
 import { Session } from "../_apis/session";
 import { EMPTY_GUID } from "../_apis/character";
 
@@ -25,8 +25,9 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 
 	const router = useRouter();
 	let sessionId = useContext(SessionContext);
+	const name = storage().getItem("player-name")!;
 
-	const playerJoinUrl = `${baseUrl}/${sessionId}`;
+	const sessionBaseUrl = `${baseUrl}/session`;
 
 	useEffect(() => {
 		if(sessionId != EMPTY_GUID){
@@ -36,7 +37,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 
 	const navigateDashboard = () => {
 		const dashboard = isDM ? 'dm' : 'player';
-		router.push(`${playerJoinUrl}/${dashboard}`);
+		router.push(`${sessionBaseUrl}/${dashboard}`);
 	}
 
 	const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -151,7 +152,7 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 					</Box>
 					{sessionId == EMPTY_GUID ? '' : (<Box sx={{ flexGrow: 0 }}>
 						<Typography sx={{ display: 'inline-block', fontWeight: 'bold', pr: 1, fontSize: '1em' }}>
-							{getName()}
+							{name}
 						</Typography>
 						<Tooltip title="Open settings">
 							<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
@@ -182,17 +183,17 @@ export const TopNav: FC<TopNavProps> = ({ isDM }) => {
 								(<MenuItem onClick={handleEndSession}>
 									End Session
 								</MenuItem>) : ''}
-							{isDM ? (<MenuItem onClick={_ => router.push(`${playerJoinUrl}/settings`)}>
+							{isDM ? (<MenuItem onClick={_ => router.push(`${sessionBaseUrl}/settings`)}>
 									Session Debug
 							</MenuItem>) : ''}
 							{isDM ? (<MenuItem>
-								<Link textAlign="center" underline="none" href={`${playerJoinUrl}/qr`} target='_blank'>
+								<Link textAlign="center" underline="none" href={`${sessionBaseUrl}/qr?sessionId=${sessionId}`} target='_blank'>
 									Show QR code
 								</Link>
 							</MenuItem>) : ''}
 							{showDeveloperUI ?
 								(<MenuItem>
-									<Link textAlign="center" underline="none" href={playerJoinUrl} target='_blank'>
+									<Link textAlign="center" underline="none" href={`${sessionBaseUrl}?sessionId=${sessionId}`} target='_blank'>
 										Player Join
 									</Link>
 								</MenuItem>) : ''}

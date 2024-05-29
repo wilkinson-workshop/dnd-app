@@ -1,7 +1,7 @@
 import { Box, Button, TextField, FormControl, InputLabel, Select, SelectChangeEvent, MenuItem, Paper, IconButton } from "@mui/material";
 import { FC, useContext, useEffect, useRef, useState } from "react";
 import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
-import { getName } from "@/app/_apis/sessionStorage";
+import storage  from "@/app/common/sessionStorage";
 import { PlayerMessage } from "@/app/_apis/playerInput";
 import { Character } from "@/app/_apis/character";
 import CloseIcon from '@mui/icons-material/Close';
@@ -27,7 +27,8 @@ export const ChatBox: FC<ChatBoxProps> = ({ recipientOptions, secretInfo }) => {
     const [currentThread, setCurrentThread] = useState<string>('');
 
     let sessionId = useContext(SessionContext);
-
+    const name = storage().getItem("player-name")!;
+    
     //handle new messages incoming
     useEffect(() => {
         if(secretInfo){
@@ -46,7 +47,7 @@ export const ChatBox: FC<ChatBoxProps> = ({ recipientOptions, secretInfo }) => {
 
     function handleClickSendMessage() {
         sendPlayerMessageApi(sessionId, {
-            sender: getName(),
+            sender: name,
             message: message,
             client_uuids: currentThread.split(',')
         }).then();
@@ -101,7 +102,7 @@ export const ChatBox: FC<ChatBoxProps> = ({ recipientOptions, secretInfo }) => {
                     </FormControl>
                     <Box sx={{ overflowY: 'auto', maxHeight: 500, border: 1, borderColor: 'lightgrey' }}>
                         {threadMessages.map((m, i) => {
-                            return m.sender == getName() ?
+                            return m.sender == name ?
                                 (<div key={i} className="message-line self">
                                     <div className="message self">
                                         {m.message}

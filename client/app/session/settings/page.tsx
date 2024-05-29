@@ -3,22 +3,17 @@
 import { useEffect, useReducer, useState } from 'react';
 import { Box, Button, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from '@/app/_apis/character';
-import { EventType, SubscriptionEventType, WebsocketEvent } from '@/app/_apis/eventType';
+import { Character, LogicType } from '@/app/_apis/character';
 import { deleteCharacter, getCharacters } from '@/app/_apis/characterApi';
-import { getAllConditions } from '@/app/_apis/dnd5eApi';
 import { APIReference, Monster } from '@/app/_apis/dnd5eTypings';
-import { getClientId, setClientId, setName } from '@/app/_apis/sessionStorage';
 import { TopNav } from '@/app/common/top-nav';
-import { SessionContext } from '@/app/common/session-context';
 import { updateInitiativeTop } from '@/app/_apis/sessionApi';
 import { deleteGroup, getGroupCharacters, getGroups } from '@/app/_apis/sessionGroupApi';
 import { SessionGroup } from '@/app/_apis/sesssionGroup';
 import { deleteCustomMonster, getCustomMonster, getCustomMonsters } from '@/app/_apis/customMonsterApi';
+import storage from '@/app/common/sessionStorage';
 
-const baseUrl = process.env.NEXT_PUBLIC_CLIENT_BASEURL;
-
-const SettingsPage = ({ params }: { params: { sessionid: string } }) => {
+const SettingsPage = () => {
 	const [cards, setCards] = useState<Character[]>([]);
 	const [creatureId, setCreatureId] = useState('');
 	const [selectedGroup, setSelectedGroup] = useState<string>('');
@@ -28,7 +23,7 @@ const SettingsPage = ({ params }: { params: { sessionid: string } }) => {
 	const [selectedCustom, setSelectedCustom] = useState('');
 	const [monsterInfo, setMonsterInfo] = useState<Monster | null>(null);
 
-	const router = useRouter();
+	let sessionId = storage().getItem("session")!;
 
 	useEffect(() => {
 		reloadList();
@@ -41,59 +36,59 @@ const SettingsPage = ({ params }: { params: { sessionid: string } }) => {
 			return;
 		}
 
-		deleteCharacter(params.sessionid, creatureId)
+		deleteCharacter(sessionId, creatureId)
 			.then(_ => reloadList());
 	}
 
 	function updateCurrentInOrder() {
-		updateInitiativeTop(params.sessionid, creatureId)
+		updateInitiativeTop(sessionId, creatureId)
 			.then(_ => reloadList());
 	}
 
 	function reloadList() {
-		getCharacters(params.sessionid, { filters: [], logic: LogicType.Or })
+		getCharacters(sessionId, { filters: [], logic: LogicType.Or })
 			.then(c => {
 				setCards(c);
 			});
 	}
 
 	function getAllGroups() {
-		getGroups(params.sessionid)
+		getGroups(sessionId)
 			.then(groups => {
 				setGroupOptions(groups);
 			});
 	}
 
 	function reloadGroupList() {
-		getGroupCharacters(params.sessionid, selectedGroup)
+		getGroupCharacters(sessionId, selectedGroup)
 			.then(c => {
 				setGroupCharacters(c);
 			});
 	}
 
 	function handleDeleteGroup() {
-		deleteGroup(params.sessionid, selectedGroup)
+		deleteGroup(sessionId, selectedGroup)
 			.then(_ => {
 				getAllGroups();
 			});
 	}
 
 	function getMonsterOptions() {
-		getCustomMonsters(params.sessionid)
+		getCustomMonsters(sessionId)
 			.then(m => {
 				setCustomCreatureOptions(m);
 			});
 	}
 
 	function getMonsterInfo() {
-		getCustomMonster(params.sessionid, selectedCustom)
+		getCustomMonster(sessionId, selectedCustom)
 			.then(m => {
 				setMonsterInfo(m);
 			});
 	}
 
 	function handleDeleteCustom() {
-		deleteCustomMonster(params.sessionid, selectedCustom)
+		deleteCustomMonster(sessionId, selectedCustom)
 			.then(_ => {
 				getMonsterOptions();
 				setMonsterInfo(null);
@@ -102,10 +97,9 @@ const SettingsPage = ({ params }: { params: { sessionid: string } }) => {
 
 
 	return (<>
-		<SessionContext.Provider value={params.sessionid}>
 			<TopNav isDM={true} />
 			<Box sx={{ position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto' }}>
-				<h2>{params.sessionid}</h2>
+				<h2>{sessionId}</h2>
 				<h2>Creatures</h2>
 				<Box>
 					<Box sx={{ margin: '10px 0' }}>
@@ -144,7 +138,6 @@ const SettingsPage = ({ params }: { params: { sessionid: string } }) => {
 					{groupCharacters.map((card, i) => (<Box key={card.creature_id}><pre>{JSON.stringify(card, undefined, 2)}</pre></Box>))}
 				</Box>
 			</Box>
-		</SessionContext.Provider>
 	</>
 	)
 }

@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { Box, Button, TextField } from "@mui/material";
 import { useRouter } from "next/navigation";
-
 import { TopNav } from "./common/top-nav";
 import { getSessions, getSingleSession } from "./_apis/sessionApi";
+import storage from "./common/sessionStorage";
 
 export default function HomePage() {
   const [selectedSession, setSelectedSession] = useState('');
@@ -33,17 +33,18 @@ export default function HomePage() {
 	}
 
   function joinActiveSession(selectedSession: string) {
-    router.push(`/${selectedSession}`);
+    storage().setItem("session", selectedSession);
+    router.push('/session');
   }
 
   return (<>
-    <TopNav isDM={false} />
-    <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto', textAlign: 'center' }}>
-      <TextField size="small" sx={{ width: 400 }} helperText="Session ID" value={selectedSession} variant="outlined" onChange={x => setSelectedSession(x.target.value)} />
-      <Button disabled={!isValid} variant="contained" aria-label="create session" onClick={() => joinActiveSession(selectedSession)}>
-        Continue
-      </Button>
-    </Box>
+      <TopNav isDM={false} />
+      <Box sx={{ position: 'fixed', left: 0, right: 0, bottom: '60px', top: '70px', overflow: 'auto', textAlign: 'center' }}>
+        <TextField size="small" sx={{ width: 400 }} helperText="Session ID" value={selectedSession} variant="outlined" onChange={x => setSelectedSession(x.target.value)} />
+        <Button disabled={!isValid} variant="contained" aria-label="create session" onClick={() => joinActiveSession(selectedSession)}>
+          Continue
+        </Button>
+      </Box>
   </>
   );
 }

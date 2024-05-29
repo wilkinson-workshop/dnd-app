@@ -174,7 +174,6 @@ APP_SERIVCES: typing.Mapping[str, Service] = {
 # Initialize the application config in static
 # space.
 app = FastAPI(
-    root_path="/api/",
     title="Scryer",
     version="1.0.0",
     description="Interactive D&D combat companion REST API."
@@ -233,7 +232,7 @@ APP_MIDDLEWARES: tuple[AppMiddleware, ...] = (
         CORSMiddleware,
         tuple(),
         dict(
-            allow_origins=("http://localhost", "http://localhost:3000"),
+            allow_origins=("*","http://localhost", "http://localhost:3000"),
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"]

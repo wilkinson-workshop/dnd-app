@@ -6,7 +6,7 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import { sendPlayerMessageApi } from "@/app/_apis/sessionApi";
 import { Character, EMPTY_GUID } from "@/app/_apis/character";
-import { getClientId, getName } from "@/app/_apis/sessionStorage";
+import storage from "@/app/common/sessionStorage";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import CloseIcon from '@mui/icons-material/Close';
 import { SessionContext } from "../../common/session-context";
@@ -34,21 +34,22 @@ export const SendPlayerMessage: FC<SendPlayerMessageProps> = ({ recipientOptions
     const [message, setMessage] = useState('');
 
     let sessionId = useContext(SessionContext);
-
+    const clientId  = storage().getItem("clientId")!;
+    const name = storage().getItem("player-name")!;
 
     useEffect(() => {
-        setRecipient([getClientId()])
+        setRecipient([clientId])
     }, [recipientOptions])
 
     function handleClickRequestRoll() {
         onEdit(false);
 
         sendPlayerMessageApi(sessionId, {
-            sender: getName(),
+            sender: name,
             message: message,
             client_uuids: recipients
         }).then();
-        setRecipient([getClientId()]);
+        setRecipient([clientId]);
         setMessage('');
     }
 
@@ -88,7 +89,7 @@ export const SendPlayerMessage: FC<SendPlayerMessageProps> = ({ recipientOptions
                                 MenuProps={MenuProps}
                             >
                                 {recipientOptions.map(s =>
-                                    <MenuItem disabled={s.creature_id == getClientId()} key={s.creature_id} value={s.creature_id}>
+                                    <MenuItem disabled={s.creature_id == clientId} key={s.creature_id} value={s.creature_id}>
                                         <Checkbox checked={recipients.indexOf(s.creature_id) > -1} />
                                         <ListItemText primary={s.name} />
                                     </MenuItem>

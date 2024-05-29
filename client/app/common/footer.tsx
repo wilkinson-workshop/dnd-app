@@ -3,15 +3,14 @@ import { FC, useContext, useEffect, useState } from "react";
 import { WebsocketContext } from "./websocket-context";
 import { SessionContext } from "./session-context";
 import { Paper } from "@mui/material";
-import { ChatBox } from "../[sessionid]/chat/chat-box";
-import { SendPlayerMessage } from "../[sessionid]/chat/send-player-message";
+import { ChatBox } from "../session/chat/chat-box";
+import { SendPlayerMessage } from "../session/chat/send-player-message";
 import { PlayerMessage } from "../_apis/playerInput";
 import { EventType } from "../_apis/eventType";
 import { Character, CharacterType, EMPTY_GUID, FieldType, LogicType, OperatorType } from "../_apis/character";
 import { getCharacters } from "../_apis/characterApi";
 
-export interface FooterProps {
-}
+export interface FooterProps {}
 
 export const Footer: FC<FooterProps> = ({ }) => {
     const [secretBody, setSecret] = useState<PlayerMessage | null>(null);

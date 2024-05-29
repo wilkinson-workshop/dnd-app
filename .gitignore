@@ -3,3 +3,7 @@
 .vscode/
 __pycache__/
 build/
+api.zip
+app-docker/
+commands.txt
+

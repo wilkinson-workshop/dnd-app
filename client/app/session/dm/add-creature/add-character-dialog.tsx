@@ -8,7 +8,7 @@ import { FC, useContext, useState } from 'react';
 import { AddRandomCharacter } from './add-random-character';
 import { Character } from '@/app/_apis/character';
 import { addCharacter, addMultipleCharacter } from '@/app/_apis/characterApi';
-import { AlertInfo, Alerts } from '../../alert/alerts';
+import { AlertInfo, Alerts } from '../../../common/alerts';
 import { AddCharacter } from './add-character';
 import { CustomTabPanel, a11yProps } from '@/app/common/tab-common';
 import { Monster } from '@/app/_apis/dnd5eTypings';

@@ -266,11 +266,11 @@ export const MonsterInfoDialog: FC<MonsterInfoDialogProps> = ({ open, monsterInf
 			}
 		}
 
-		return ret.map(r => (<Box>{`${r.level}: ${r.count}`}</Box>));
+		return ret.map((r, i) => (<Box key={i}>{`${r.level}: ${r.count}`}</Box>));
 	}
 
 	function showSpells(spells: SpecialAbilitySpell[]) {
-		return spells.map(s => (<Box>
+		return spells.map((s, i) => (<Box key={i}>
 			{`${s.level}:`} <SpellItem spell={s} /> {s.usage ? showUsage(s.usage) : ''}
 		</Box>))
 	}

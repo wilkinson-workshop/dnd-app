@@ -76,3 +76,14 @@ To start the application running locally in dev mode. Once running you can go to
   npm run dev
 ```
 
+# AWS Hosting #
+
+## API layer ##
+The Api layer is hostes in a docker container within elastic beanstalk just because it requires python >= 3.12 and the latestes python server was 3.11.
+The Docker File is in the root directory for the api layer just to maintain the project structure requries for the commands. 
+
+To create a new version create a new zip with the Dockerfile, pyproject.toml and src folder and upload it to the api environment.
+
+## UI layer ##
+This one was kind of chaos to get working. I build and ran UI image based on the Dockerfile locally then copied the files in the app directory in the container removing the package.json file and zipping that up.
+Then upload the zip to the ui environment in elastic beanstalk.

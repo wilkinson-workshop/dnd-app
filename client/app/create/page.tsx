@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Session } from "../_apis/session";
 import { CreateSession } from "../create-session";
 import { TopNav } from "../common/top-nav";
+import storage from "../common/sessionStorage";
 
 export default function HomePage() {
   const [session, setSession] = useState<Session | null>(null);
@@ -26,8 +27,9 @@ export default function HomePage() {
     });
   }
 
-  function joinActiveSession(selectedSession:string){
-    router.push(`/${selectedSession}/dm`);
+  function joinActiveSession(){
+    storage().setItem('session', selectedSession);
+    router.push('/session/dm');
   }
 
   function handleCreateSession(newSession: Session){
@@ -73,7 +75,7 @@ export default function HomePage() {
             )}
           </Select>
       </FormControl>      
-      <Button disabled={session==null} variant="contained" aria-label="create session" onClick={() => joinActiveSession(session!.session_uuid)}>
+      <Button disabled={session==null} variant="contained" aria-label="create session" onClick={() => joinActiveSession()}>
         Join
       </Button>
       <CreateSession onAddClick={handleCreateSession} />
