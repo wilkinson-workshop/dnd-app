@@ -33,6 +33,7 @@ class BaseGroup(BaseModel):
     The base model for session groups
     """
 
+
 class SessionGroup(BaseGroup):
     """
     A session group used to store creatures in advance 

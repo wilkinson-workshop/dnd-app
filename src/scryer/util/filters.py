@@ -1,21 +1,21 @@
 import enum, typing
 
-type BinaryOperation[A, B, R] = typing.Callable[[A, B], R]
-type FilterValidator          = typing.Callable[[typing.Any], bool]
+type BinaryOperation[Lhs, Rhs, R] = typing.Callable[[Lhs, Rhs], R]
+type FilterValidator = typing.Callable[[typing.Any], bool]
 
 
-class LogicalOp(enum.StrEnum):
+class LogicalOp[Lhs, Rhs](enum.StrEnum):
     """
     A logical operation that can be carried out
     between two objects.
     """
 
-    do: BinaryOperation[object, object, bool]
+    do: BinaryOperation[Lhs, Rhs, bool]
 
     def __new__(
             cls,
             value: str,
-            do: BinaryOperation[object, object, bool] = lambda _a,_b: True):
+            do: BinaryOperation[Lhs, Rhs, bool] = lambda _a,_b: True):
 
         inst = str.__new__(cls, value)
         inst._value_  = value
