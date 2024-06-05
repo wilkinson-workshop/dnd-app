@@ -4,7 +4,9 @@ import pathlib
 import typing
 
 from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import DeclarativeBase, Session
+
+from scryer.data.models import Base
 
 
 class DAO(typing.Protocol):
@@ -18,6 +20,15 @@ class DAO(typing.Protocol):
     @abc.abstractmethod
     def engine(self) -> Engine:
         """Returns the internal DAO engine."""
+
+    @property
+    @abc.abstractmethod
+    def session(self) -> Session:
+        """Returns the internal DAO session."""
+
+    @abc.abstractmethod
+    def init_tables(self) -> None:
+        """Initialize all database tables."""
 
     @abc.abstractmethod
     def __enter__(self) -> Session:
@@ -42,6 +53,15 @@ class DAOBase(DAO):
     def engine(self) -> Engine:
         return self._engine
 
+    @property
+    def session(self) -> Session:
+        if self._ctx_session:
+            return self._ctx_session
+        raise AttributeError("DAO session was not initialized")
+
+    def init_tables(self) -> None:
+        Base.metadata.create_all(self.engine)
+
     def __init__(self, conn_str: str):
         """Initialize a new `DAO` instance."""
         self._ctx_session = None
@@ -54,7 +74,7 @@ class DAOBase(DAO):
     def __exit__(self, *args):
         if self._ctx_session:
             self._ctx_session.__exit__(*args)
-            self._ctx_connection = None
+            self._ctx_session = None
 
 
 class SQLiteDAO(DAOBase):
@@ -65,7 +85,9 @@ class SQLiteDAO(DAOBase):
     in-memory.
     """
 
-    def __init__(self, file: pathlib.Path | None = None):
+    type Path = pathlib.Path | os.PathLike[str] | str
+
+    def __init__(self, file: Path | None = None):
         """
         Initialize and connect to a `SQLite`
         database file.
@@ -74,12 +96,10 @@ class SQLiteDAO(DAOBase):
         # We can optionally not pass a file path
         # and then instead run SQLite in-memory.
         conn_str = "sqlite://"
-        if file and os.name == "unix":
-            conn_str += f"//{file!s}"
-        else:
-            conn_str += f"/{file!s}"
+        if file:
+            file = file if isinstance(file, pathlib.Path) else pathlib.Path(file)
+            if os.name == "unix":
+                conn_str += f"//{file!s}"
+            else:
+                conn_str += f"/{file!s}"
         super().__init__(conn_str)
-
-
-if __name__ == "__main__":
-    dao = SQLiteDAO()

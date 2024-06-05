@@ -1,7 +1,9 @@
-import typing
+from datetime import datetime
 
-from sqlalchemy import ARRAY, ForeignKey, String, Uuid
+from sqlalchemy import DateTime, ForeignKey, String, Uuid, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from scryer.util import UUID
 
 
 class Base(DeclarativeBase):
@@ -17,10 +19,12 @@ class CombatSession(Base):
 
     __tablename__ = "combat_sessions"
 
-    uuid:              Mapped[Uuid]        = mapped_column(primary_key=True)
-    current_character: Mapped[Uuid | None] = mapped_column()
+    uuid:              Mapped[UUID]        = mapped_column(Uuid(), primary_key=True)
+    current_character: Mapped[UUID | None] = mapped_column(Uuid())
     description:       Mapped[str]         = mapped_column(String(256))
     name:              Mapped[str]         = mapped_column(String(128))
+    created_at:        Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now())
+    updated_at:        Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now(), onupdate=func.now())
 
     creatures: Mapped[list["CombatCreature"]] = relationship(
         back_populates="session",
@@ -40,9 +44,11 @@ class CombatGroup(Base):
 
     __tablename__ = "combat_groups"
 
-    uuid:         Mapped[Uuid] = mapped_column(primary_key=True)
+    uuid:         Mapped[UUID] = mapped_column(Uuid(), primary_key=True)
     name:         Mapped[str]  = mapped_column(String(128))
-    session_uuid: Mapped[Uuid] = mapped_column(ForeignKey("combat_sessions.uuid"))
+    session_uuid: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("combat_sessions.uuid"))
+    created_at:   Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now())
+    updated_at:   Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now(), onupdate=func.now())
 
     creatures: Mapped[list["CombatCreature"]] = relationship(
         back_populates="group",
@@ -60,15 +66,17 @@ class CombatCreature(Base):
 
     __tablename__ = "combat_creatures"
 
-    uuid:              Mapped[Uuid]        = mapped_column(primary_key=True)
-    conditions:        Mapped[list[str]]   = mapped_column(ARRAY(String(64)))
+    uuid:              Mapped[UUID]        = mapped_column(Uuid(), primary_key=True)
+    conditions:        Mapped[str]         = mapped_column(String(256))
     hitpoints_max:     Mapped[int]         = mapped_column()
     hitpoints_current: Mapped[int]         = mapped_column()
     name:              Mapped[str]         = mapped_column(String(128))
     role:              Mapped[str]         = mapped_column(String(16))
     monster:           Mapped[str | None]  = mapped_column(String(128), nullable=True)
-    session_uuid:      Mapped[Uuid | None] = mapped_column(ForeignKey("combat_sessions.uuid"), nullable=True)
-    group_uuid:        Mapped[Uuid | None] = mapped_column(ForeignKey("combat_groups.uuid"), nullable=True)
+    session_uuid:      Mapped[UUID | None] = mapped_column(Uuid(), ForeignKey("combat_sessions.uuid"), nullable=True)
+    group_uuid:        Mapped[UUID | None] = mapped_column(Uuid(), ForeignKey("combat_groups.uuid"), nullable=True)
+    created_at:        Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now())
+    updated_at:        Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now(), onupdate=func.now())
 
     session: Mapped["CombatSession"] = relationship(back_populates="creatures")
     group:   Mapped["CombatGroup"]   = relationship(back_populates="creatures")

@@ -13,9 +13,19 @@ __all__ = (
 )
 
 from scryer.data.dao import DAO, SQLiteDAO
-from scryer.data.models import CombatCreature, CombatGroup, CombatSession
+from scryer.data.models import Base, CombatCreature, CombatGroup, CombatSession
 
 
 if __name__ == "__main__":
+    from scryer.util import request_uuid
+
     with SQLiteDAO() as dao:
-        pass
+        cs = CombatSession(
+            uuid=request_uuid(),
+            description="A test session",
+            name="Test Session"
+        )
+
+        dao.init_tables()
+        dao.session.add(cs)
+        dao.session.commit()
