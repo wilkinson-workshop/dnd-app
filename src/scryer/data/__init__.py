@@ -13,7 +13,7 @@ __all__ = (
 )
 
 from scryer.data.dao import DAO, SQLiteDAO
-from scryer.data.models import Base, CombatCreature, CombatGroup, CombatSession
+from scryer.data.models import CombatCreature, CombatGroup, CombatSession
 
 
 if __name__ == "__main__":
