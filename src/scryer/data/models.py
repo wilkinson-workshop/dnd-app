@@ -44,11 +44,11 @@ class CombatGroup(Base):
 
     __tablename__ = "combat_groups"
 
-    uuid:         Mapped[UUID] = mapped_column(Uuid(), primary_key=True)
-    name:         Mapped[str]  = mapped_column(String(128))
-    session_uuid: Mapped[UUID] = mapped_column(Uuid(), ForeignKey("combat_sessions.uuid"))
-    created_at:   Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now())
-    updated_at:   Mapped[datetime]    = mapped_column(DateTime(), server_default=func.now(), onupdate=func.now())
+    uuid:         Mapped[UUID]     = mapped_column(Uuid(), primary_key=True)
+    name:         Mapped[str]      = mapped_column(String(128))
+    session_uuid: Mapped[UUID]     = mapped_column(Uuid(), ForeignKey("combat_sessions.uuid"))
+    created_at:   Mapped[datetime] = mapped_column(DateTime(), server_default=func.now())
+    updated_at:   Mapped[datetime] = mapped_column(DateTime(), server_default=func.now(), onupdate=func.now())
 
     creatures: Mapped[list["CombatCreature"]] = relationship(
         back_populates="group",
