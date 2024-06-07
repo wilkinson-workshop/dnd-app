@@ -8,6 +8,7 @@ __all__ = (
     "Broker",
     "CreaturesMemoryBroker",
     "CombatSession",
+    "DatabaseBroker",
     "EventBroker",
     "EventMemoryBroker",
     "MemoryBroker",
@@ -27,6 +28,7 @@ __all__ = (
 
 from scryer.services.brokers import (
     Broker,
+    DatabaseBroker,
     MemoryBroker,
     RedisBroker,
     ShelfBroker

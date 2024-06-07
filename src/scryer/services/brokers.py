@@ -2,6 +2,7 @@ import abc, asyncio, math, time, typing
 
 import redis
 
+from scryer.data import DAO
 from scryer.services.service import Service, ServiceStatus
 from scryer.util import shelves
 from scryer.util.filters import FilterStatement, compose_validator
@@ -54,6 +55,31 @@ class Broker[K, R](Service):
         """
         Push changes to an existing resource.
         """
+
+
+class DatabaseBroker[K: typing.Hashable, R](Broker[K, R]):
+    """
+    Some broker capable of interacting with a
+    database and retrieving data from it as a DAO.
+    """
+
+    resource_cls: type[R]
+    resource_dao: DAO
+
+    def __init__(self, dao: DAO, cls: type[R]):
+        self.resource_cls = cls
+        self.resource_dao = dao
+
+    def __iter__(self):
+        pass
+
+    @property
+    def status(self):
+        with self.resource_dao as dao:
+            if dao.session.is_active:
+                return ServiceStatus.ONLINE
+            else:
+                return ServiceStatus.UNAVAILABLE
 
 
 class MemoryBroker[K: typing.Hashable, R](Broker[K, R]):

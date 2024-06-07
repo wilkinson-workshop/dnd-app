@@ -31,7 +31,7 @@ class DAO(typing.Protocol):
         """Initialize all database tables."""
 
     @abc.abstractmethod
-    def __enter__(self) -> Session:
+    def __enter__(self) -> typing.Self:
         pass
 
     @abc.abstractmethod
